@@ -3,6 +3,7 @@ import { Suspense, useEffect, useReducer, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Camera from "@/components/Camera";
+import LeaveModal from "@/components/LeaveModal";
 import SpeakingWave from "@/components/SpeakingWave";
 import { useMicOpenSound } from "@/lib/useMicOpenSound";
 import {
@@ -496,13 +497,16 @@ function GeneralRoom() {
     };
   }, []);
 
+  const [leaveOpen, setLeaveOpen] = useState(false);
   function onBackHome(e: React.MouseEvent) {
     if (savedRef.current || endedRef.current) return;
-    if (!window.confirm("Leave the interview? Any answers so far will be saved to your history as an incomplete session.")) {
-      e.preventDefault();
-      return;
-    }
+    e.preventDefault();
+    setLeaveOpen(true);
+  }
+  function leaveAndSave() {
+    setLeaveOpen(false);
     savePartial();
+    router.push("/");
   }
 
   function endInterview() {
@@ -695,6 +699,7 @@ function GeneralRoom() {
           </div>
         </section>
       </div>
+      <LeaveModal open={leaveOpen} onStay={() => setLeaveOpen(false)} onLeave={leaveAndSave} />
     </main>
   );
 }
