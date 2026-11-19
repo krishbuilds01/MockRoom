@@ -1073,8 +1073,8 @@ function TechnicalRoom() {
           )}
         </section>
 
-        <section className="flex min-w-0 flex-1 flex-col lg:h-full lg:min-h-0">
-          <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 rounded-t-xl border border-line border-b-0 bg-panel px-4 py-2.5">
+        <section className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-line bg-panel lg:h-full lg:min-h-0">
+          <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-line bg-panel px-4 py-2.5">
             <div className="flex gap-2" role="group" aria-label="Language">
               {LANGS.map((l) => (
                 <button type="button" key={l.id} onClick={() => switchLang(l.id)} disabled={phaseIdx >= 4} title={phaseIdx >= 4 ? "Language is locked after you submit" : undefined} className={`btn btn-sm ${lang === l.id ? "btn-primary" : "btn-ghost"}`}>{l.label}</button>
@@ -1092,27 +1092,30 @@ function TechnicalRoom() {
               </div>
             )}
           </div>
-          <div className="h-[340px] shrink-0 overflow-hidden border border-line bg-[#1c1917] lg:h-auto lg:min-h-[120px] lg:flex-1">
+          <div className="h-[340px] shrink-0 overflow-hidden bg-[#1c1917] lg:h-auto lg:min-h-[120px] lg:flex-1">
             <Editor
               height="100%"
               language={lang}
               value={code}
               onChange={onCodeChange}
-              theme="vs-dark"
-              onMount={(_editor, monaco) => {
+              theme="interviewai-dark"
+              beforeMount={(monaco) => {
                 monaco.editor.defineTheme("interviewai-dark", {
                   base: "vs-dark",
                   inherit: true,
                   rules: [],
-                  colors: { "editor.background": "#1c1917", "editor.lineHighlightBackground": "#292524" },
+                  colors: {
+                    "editor.background": "#1c1917",
+                    "editor.lineHighlightBackground": "#292524",
+                    "editorGutter.background": "#1c1917",
+                  },
                 });
-                monaco.editor.setTheme("interviewai-dark");
               }}
               options={{ minimap: { enabled: false }, fontSize: 14, scrollBeyondLastLine: false, wordWrap: "on" }}
             />
           </div>
 
-          <div className="max-h-[280px] shrink-0 overflow-y-auto rounded-b-xl border border-line border-t-0 bg-panel p-4 lg:max-h-[30%]">
+          <div className="max-h-[280px] shrink-0 overflow-y-auto border-t border-line bg-panel p-4 lg:max-h-[30%]">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h3 className="text-sm font-semibold">Test cases {lastKind === "submit" ? "(last submit)" : lastKind === "run" ? "(last run)" : ""}</h3>
               <span className="text-xs text-stone-600">Run checks {visibleTests} visible cases. Submit checks all {problem.tests.length} cases including hidden, then starts the dry run.</span>

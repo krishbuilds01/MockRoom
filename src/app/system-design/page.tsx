@@ -43,20 +43,20 @@ export default function SystemDesignPage() {
           <p className="mt-4 text-xs leading-5 text-stone-600">
             Coding and live interviews are open now and feed the same progress page. System design sessions will land in the same history when the room opens.
           </p>
-        </div>
-
-        <div className="space-y-4">
-          <div className="card card-hero card-pad">
-            <h2 className="font-display text-h2 font-semibold">The first five topics</h2>
-            <div className="mt-3 divide-y divide-line">
+          <div className="card card-pad mt-8">
+            <h2 className="font-display text-h2 font-semibold">What you will practice</h2>
+            <div className="mt-2 divide-y divide-line">
               {topics.map((t) => (
-                <div key={t.name} className="py-3">
-                  <div className="text-sm font-semibold">{t.name}</div>
-                  <p className="mt-0.5 text-sm leading-6 text-stone-600">{t.note}</p>
+                <div key={t.name} className="flex flex-wrap items-baseline gap-x-3 py-2.5">
+                  <span className="w-32 shrink-0 text-sm font-semibold">{t.name}</span>
+                  <span className="min-w-0 flex-1 text-sm leading-6 text-stone-600">{t.note}</span>
                 </div>
               ))}
             </div>
           </div>
+        </div>
+
+        <div className="space-y-4">
           <div className="card card-pad">
             <h2 className="font-display text-h2 font-semibold">How the round will run</h2>
             <div className="mt-3 space-y-4">

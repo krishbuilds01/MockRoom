@@ -58,6 +58,44 @@ const SKILL_PROBES: Record<string, string> = {
   "machine learning": "how you evaluated your model, and what a wrong prediction costs in your use case",
 };
 
+const SKILL_DISPLAY: Record<string, string> = {
+  javascript: "JavaScript",
+  typescript: "TypeScript",
+  react: "React",
+  "next.js": "Next.js",
+  "node.js": "Node.js",
+  express: "Express",
+  python: "Python",
+  java: "Java",
+  "c++": "C++",
+  sql: "SQL",
+  mysql: "MySQL",
+  postgres: "PostgreSQL",
+  postgresql: "PostgreSQL",
+  mongodb: "MongoDB",
+  redis: "Redis",
+  graphql: "GraphQL",
+  "rest api": "REST API",
+  aws: "AWS",
+  docker: "Docker",
+  kubernetes: "Kubernetes",
+  git: "Git",
+  tailwind: "Tailwind CSS",
+  html: "HTML",
+  css: "CSS",
+  firebase: "Firebase",
+  linux: "Linux",
+  "machine learning": "Machine Learning",
+  "data analysis": "Data Analysis",
+  testing: "Testing",
+  jwt: "JWT",
+  websocket: "WebSocket",
+};
+
+export function skillDisplayName(skill: string): string {
+  return SKILL_DISPLAY[skill.toLowerCase()] || skill;
+}
+
 const SECTION_HEADERS = /^(education|experience|work experience|skills|technical skills|projects|personal projects|certifications|achievements|summary|objective|contact|internships?)\b/i;
 
 function cleanLine(l: string): string {
@@ -69,7 +107,10 @@ export function extractSkills(text: string): string[] {
   const found: string[] = [];
   for (const k of TECH_KEYWORDS) {
     const escaped = k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    if (new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`, "i").test(lower)) found.push(k);
+    if (new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`, "i").test(lower)) {
+      const display = skillDisplayName(k);
+      if (!found.includes(display)) found.push(display);
+    }
   }
   return found;
 }
@@ -117,7 +158,7 @@ export function extractProjects(text: string): { name: string; line: string }[] 
 
 function techInLine(line: string, skills: string[]): string | null {
   const lower = line.toLowerCase();
-  return skills.find((s) => lower.includes(s)) || null;
+  return skills.find((s) => lower.includes(s.toLowerCase())) || null;
 }
 
 export function buildResumeQuestionsLocal(text: string): ResumeQuestion[] {
@@ -160,7 +201,7 @@ export function buildResumeQuestionsLocal(text: string): ResumeQuestion[] {
   }
 
   for (const s of skills.slice(0, 2)) {
-    const probe = SKILL_PROBES[s];
+    const probe = SKILL_PROBES[s.toLowerCase()];
     push(
       probe
         ? `You list ${s} on your resume, so let us verify it: explain ${probe}.`
