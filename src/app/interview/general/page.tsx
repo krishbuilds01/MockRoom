@@ -28,7 +28,7 @@ import { sanitizeAiText } from "@/lib/sanitize";
 import { useVoice } from "@/lib/useVoice";
 import { useSpeaker } from "@/lib/useSpeaker";
 import { useLiveSession } from "@/lib/liveSession";
-import { initialMicGate, micGateReducer } from "@/lib/voiceGate";
+import { initialMicGate, micControlState, micGateReducer } from "@/lib/voiceGate";
 
 type Phase = "intro" | "main" | "candidate" | "done";
 
@@ -112,7 +112,7 @@ function GeneralRoom() {
   }, [gate.gated]);
 
   function onMicClick() {
-    if (speaker.speaking) {
+    if (speaker.speaking || gateRef.current) {
       speaker.stop();
       gateRef.current = false;
       dispatchGate({ type: "interrupt" });
@@ -515,6 +515,7 @@ function GeneralRoom() {
     router.push("/interview/feedback");
   }
 
+  const micState = micControlState({ speaking: speaker.speaking, gated: voice.gated, listening: voice.listening, supported: voice.supported });
   const liveActive = liveOn && live.status === "live";
   const voiceLabel = liveActive
     ? "Gemini Live"
@@ -654,13 +655,13 @@ function GeneralRoom() {
           </div>
           <div className="shrink-0 border-t border-line p-4">
             {!voice.supported && !liveActive && <p className="mb-2 text-xs text-amber-700">Voice input is not supported in this browser. Type your answer instead. Chrome works best.</p>}
-            {voice.error && !liveActive && <p className="mb-2 text-xs text-amber-700" role="alert">{voice.error}</p>}
-            {!liveActive && voice.gated ? (
+            {voice.error && !liveActive && !speaker.speaking && <p className="mb-2 text-xs text-amber-700" role="alert">{voice.error}</p>}
+            {!liveActive && micState === "paused" ? (
               <p className="mb-2 flex items-center gap-1.5 text-xs text-stone-600" role="status">
                 <span className="dot bg-stone-400" />
                 Mic paused while Alex speaks
               </p>
-            ) : !liveActive && voice.listening ? (
+            ) : !liveActive && micState === "listening" ? (
               <p className="mb-2 flex items-center gap-1.5 text-xs text-red-600" role="status">
                 <span className="dot dot-pulse bg-red-500" />
                 Listening, speak now
@@ -681,8 +682,13 @@ function GeneralRoom() {
                     Live mic on
                   </span>
                 )
+              ) : micState === "paused" ? (
+                <button type="button" onClick={onMicClick} aria-label="Interrupt Alex and turn your mic on" className="btn btn-ghost btn-sm">
+                  <span className="dot bg-stone-400" />
+                  Mic paused
+                </button>
               ) : (
-                <button type="button" onClick={onMicClick} disabled={!voice.supported && !speaker.speaking} aria-label="Toggle microphone input" className={`btn btn-sm ${voice.listening ? "border-red-400 bg-red-50 text-red-700" : "btn-ghost"}`}>{voice.listening ? "Listening..." : "Mic"}</button>
+                <button type="button" onClick={onMicClick} disabled={!voice.supported} aria-label="Toggle microphone input" className={`btn btn-sm ${voice.listening ? "border-red-400 bg-red-50 text-red-700" : "btn-ghost"}`}>{voice.listening ? "Listening..." : "Mic"}</button>
               )}
               <button type="button" onClick={() => submitAnswer()} disabled={waiting && !liveActive} className="btn btn-primary btn-sm">Send</button>
             </div>

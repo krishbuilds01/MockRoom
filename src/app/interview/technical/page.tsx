@@ -42,7 +42,7 @@ import { companyTechnicalContext, getCompany } from "@/lib/companies";
 import { sanitizeAiText } from "@/lib/sanitize";
 import { useVoice } from "@/lib/useVoice";
 import { useSpeaker } from "@/lib/useSpeaker";
-import { initialMicGate, micGateReducer } from "@/lib/voiceGate";
+import { initialMicGate, micControlState, micGateReducer } from "@/lib/voiceGate";
 
 const Editor = dynamic(() => import("@monaco-editor/react"), { ssr: false, loading: () => <div className="flex h-full items-center justify-center text-sm text-stone-600">Loading editor...</div> });
 
@@ -159,7 +159,7 @@ function TechnicalRoom() {
   }, [gate.gated]);
 
   function onMicClick() {
-    if (speaker.speaking) {
+    if (speaker.speaking || gateRef.current) {
       speaker.stop();
       gateRef.current = false;
       dispatchGate({ type: "interrupt" });
@@ -756,6 +756,7 @@ function TechnicalRoom() {
     router.push("/interview/feedback");
   }
 
+  const micState = micControlState({ speaking: speaker.speaking, gated: voice.gated, listening: voice.listening, supported: voice.supported });
   const visibleTests = problem.tests.filter((t) => !t.hidden).length;
   const voiceLabel =
     speaker.voiceSource === "gemini"
@@ -950,17 +951,29 @@ function TechnicalRoom() {
                 <p className="mb-2 text-xs leading-4 text-stone-600">Try: &quot;give me a test case&quot;, &quot;hint&quot; (recorded on Mid and Hard), &quot;what about empty input?&quot; Voice input works in Chrome.</p>
               )}
               {!voice.supported && <p className="mb-2 text-xs text-amber-700">Voice input not supported here. Type instead.</p>}
-              {voice.error && <p className="mb-2 text-xs text-amber-700" role="alert">{voice.error}</p>}
-              {voice.listening && (
+              {voice.error && !speaker.speaking && <p className="mb-2 text-xs text-amber-700" role="alert">{voice.error}</p>}
+              {micState === "paused" ? (
+                <p className="mb-2 flex items-center gap-1.5 text-xs text-stone-600" role="status">
+                  <span className="dot bg-stone-400" />
+                  Mic paused while Alex speaks
+                </p>
+              ) : micState === "listening" ? (
                 <p className="mb-2 flex items-center gap-1.5 text-xs text-red-600" role="status">
                   <span className="dot dot-pulse bg-red-500" />
                   Listening, speak now
                 </p>
-              )}
+              ) : null}
               <div className="flex gap-2">
                 <label htmlFor="tech-panel-input" className="sr-only">Message to the interviewer</label>
                 <input id="tech-panel-input" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submitPanel()} placeholder={inputPlaceholder[phase]} className="input min-w-0 flex-1" />
-                <button type="button" onClick={onMicClick} disabled={!voice.supported && !speaker.speaking} aria-label="Toggle microphone input" className={`btn btn-sm ${voice.listening ? "border-red-400 bg-red-50 text-red-700" : "btn-ghost"}`}>{voice.listening ? "Listening..." : "Mic"}</button>
+                {micState === "paused" ? (
+                  <button type="button" onClick={onMicClick} aria-label="Interrupt Alex and turn your mic on" className="btn btn-ghost btn-sm">
+                    <span className="dot bg-stone-400" />
+                    Mic paused
+                  </button>
+                ) : (
+                  <button type="button" onClick={onMicClick} disabled={!voice.supported} aria-label="Toggle microphone input" className={`btn btn-sm ${voice.listening ? "border-red-400 bg-red-50 text-red-700" : "btn-ghost"}`}>{voice.listening ? "Listening..." : "Mic"}</button>
+                )}
                 <button type="button" onClick={() => submitPanel()} disabled={waiting} className="btn btn-primary btn-sm">Send</button>
               </div>
             </div>

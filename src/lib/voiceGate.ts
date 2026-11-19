@@ -38,3 +38,17 @@ export function micGateReducer(state: MicGateState, event: MicGateEvent): MicGat
 export function micActive(state: MicGateState): boolean {
   return state.userMicOn && !state.gated;
 }
+
+export type MicControlState = "paused" | "listening" | "idle" | "unsupported";
+
+export function micControlState(input: {
+  speaking: boolean;
+  gated: boolean;
+  listening: boolean;
+  supported: boolean;
+}): MicControlState {
+  if (!input.supported) return "unsupported";
+  if (input.speaking || input.gated) return "paused";
+  if (input.listening) return "listening";
+  return "idle";
+}
