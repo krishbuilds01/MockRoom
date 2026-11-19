@@ -1092,27 +1092,29 @@ function TechnicalRoom() {
               </div>
             )}
           </div>
-          <div className="h-[340px] shrink-0 overflow-hidden bg-[#1c1917] lg:h-auto lg:min-h-[120px] lg:flex-1">
-            <Editor
-              height="100%"
-              language={lang}
-              value={code}
-              onChange={onCodeChange}
-              theme="interviewai-dark"
-              beforeMount={(monaco) => {
-                monaco.editor.defineTheme("interviewai-dark", {
-                  base: "vs-dark",
-                  inherit: true,
-                  rules: [],
-                  colors: {
-                    "editor.background": "#1c1917",
-                    "editor.lineHighlightBackground": "#292524",
-                    "editorGutter.background": "#1c1917",
-                  },
-                });
-              }}
-              options={{ minimap: { enabled: false }, fontSize: 14, scrollBeyondLastLine: false, wordWrap: "on" }}
-            />
+          <div className="flex shrink-0 flex-col bg-panel p-3 lg:min-h-0 lg:flex-1">
+            <div className="relative h-[340px] shrink-0 overflow-hidden rounded-xl bg-[#1c1917] lg:h-auto lg:min-h-[120px] lg:flex-1">
+              <Editor
+                height="100%"
+                language={lang}
+                value={code}
+                onChange={onCodeChange}
+                theme="interviewai-dark"
+                beforeMount={(monaco) => {
+                  monaco.editor.defineTheme("interviewai-dark", {
+                    base: "vs-dark",
+                    inherit: true,
+                    rules: [],
+                    colors: {
+                      "editor.background": "#1c1917",
+                      "editor.lineHighlightBackground": "#292524",
+                      "editorGutter.background": "#1c1917",
+                    },
+                  });
+                }}
+                options={{ minimap: { enabled: false }, fontSize: 14, scrollBeyondLastLine: false, wordWrap: "on" }}
+              />
+            </div>
           </div>
 
           <div className="max-h-[280px] shrink-0 overflow-y-auto border-t border-line bg-panel p-4 lg:max-h-[30%]">
