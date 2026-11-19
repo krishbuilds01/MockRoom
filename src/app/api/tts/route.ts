@@ -5,8 +5,10 @@ export const maxDuration = 30;
 
 const TTS_MODEL = "gemini-2.5-flash-preview-tts";
 const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
-const VOICE_NAME = "Kore";
+const VOICE_NAME = "Callirrhoe";
 const SAMPLE_RATE = 24000;
+const STYLE_PREFIX =
+  "Speak in a natural, warm, professional interviewer tone, at a relaxed conversational pace, with natural pauses and varied intonation, like a real person talking, not reading: ";
 
 function cleanText(raw: unknown): string {
   if (typeof raw !== "string") return "";
@@ -56,7 +58,7 @@ export async function POST(req: NextRequest) {
         "x-goog-api-key": key,
       },
       body: JSON.stringify({
-        contents: [{ parts: [{ text }] }],
+        contents: [{ parts: [{ text: STYLE_PREFIX + text }] }],
         generationConfig: {
           responseModalities: ["AUDIO"],
           speechConfig: {
