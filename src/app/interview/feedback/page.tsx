@@ -16,7 +16,7 @@ function Score({ label, value }: { label: string; value: number }) {
         <span className="text-sm font-medium text-stone-600">/10</span>
       </div>
       <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-line">
-        <div className={`h-full rounded-full ${value >= 7 ? "bg-emerald-600" : value >= 4 ? "bg-accent" : "bg-red-400"}`} style={{ width: `${value * 10}%` }} />
+        <div className={`h-full rounded-full ${value >= 7 ? "bg-emerald-600" : value >= 4 ? "bg-accent" : "bg-red-600"}`} style={{ width: `${value * 10}%` }} />
       </div>
     </div>
   );

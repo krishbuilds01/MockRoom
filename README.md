@@ -4,7 +4,12 @@ A strict AI interview practice platform. Practice a live one on one interview wi
 
 ## Features
 
-- Home page with two interview types, difficulty selector (Easy / Mid / Hard) and topic selector
+- Home page with three interview modes (Technical, Live voice, Interview on my resume), difficulty selector (Easy / Mid / Hard), company selector and topic selector
+- Company modes: pick Google, Amazon, Microsoft, Meta, Adobe, Flipkart, TCS, Infosys or Wipro and Alex runs the session in that company's style, with its own question bank and focus areas (Amazon checks stories against the Leadership Principles, service companies weight OOP, SQL and fundamentals), an opening line in that style, and feedback that frames your score against that company's bar. The company is saved on the session and shown in history and feedback
+- Interview on my resume: paste your resume (or upload a .txt or .md file) and Alex interviews you on it, with 6 to 8 questions targeted at your own projects and listed skills. With a Gemini key the questions are generated from the resume by `/api/resume-questions`; without one, a local extractor pulls out your projects and skills and builds the questions on device. The resume stays in your browser (localStorage only) and can be deleted any time
+- Progress page (`/progress`): totals, average score, practice streak, strongest area, a labelled score trend, per topic and per axis averages, your weakest area, and a rule based plan for this week with three suggested sessions. Everything is computed from the history already in your browser; under 3 sessions the page says so honestly instead of drawing trends from nothing
+- System design room: listed on the home page as Coming soon, with a page describing what the room will cover (URL shortener, chat system, news feed, rate limiter, file storage). It is not startable yet
+- Self-review recording: an optional toggle in both rooms (off by default) records your camera and mic with MediaRecorder. The video is stored only in your browser (IndexedDB, keyed by session, size guarded) and never uploaded. The feedback page shows a player with Download and Delete when a recording exists, and nothing extra when it does not
 - Live AI Interview: camera preview, voice input and voice output, follow-up questions, 5 questions per session
 - Technical Interview: LeetCode style layout with problem panel, Monaco editor (JavaScript, Python and Java, code is kept per language when you switch), Run and Submit, visible and hidden test cases
 - Both rooms run like a real interview, with a phase indicator at the top:
@@ -38,7 +43,7 @@ The feedback page is the point of the platform:
 - Model pointers, shown only after the interview ends: the intended pattern for the problem, the expected complexity, the key points, and the edge cases that matter
 - Weak areas: 2 to 4 concrete areas derived from your signals, like complexity analysis, edge cases, hint independence, or answer depth
 - Next steps: 2 to 3 recommended problems from the set with a reason for each (retry a failed problem first, rebuild the pattern, or move up the sequence), each with a link that starts that interview directly
-- Progress over time: the home page lists your sessions with date, problem, tests, hints, and overall score, shows the change versus your previous session, and draws a bar trend with each bar labeled by its overall score
+- Progress over time: the home page lists your sessions with date, problem, tests, hints, and overall score, shows the change versus your previous session, and draws a bar trend with each bar labeled by its overall score. All score bars everywhere scale on a fixed 0 to 10 axis. The dedicated `/progress` page adds streaks, per topic and per axis averages, and a weekly practice plan
 
 ## Voice and interview architecture
 
@@ -49,11 +54,22 @@ Voice on this main path:
 1. Gemini TTS (primary voice). `/api/tts` uses the Gemini TTS model (`gemini-2.5-flash-preview-tts`, voice Callirrhoe, with a natural spoken style direction prepended server side) and returns WAV audio. The client fires all sentence chunk requests in parallel, merges short fragments so a typical reply is one or two calls, caches repeated lines for the session, and plays chunks in order through one reusable audio element. If the first chunk has not arrived within about 2.5 seconds, the browser voice starts that chunk so you are never left in silence. Rooms show "Voice: Gemini voice".
 2. Browser voice (fallback). Improved speech synthesis: it picks the best available voice (Google US English, Natural, Neural, or Microsoft online voices first) at a natural rate. With no Gemini key at all, this is where the app starts, instantly, because the no-key responses are fast and latched.
 
-Mic gating: while Alex is speaking, your mic pauses automatically and the room shows "Mic paused while Alex speaks". It resumes just before he finishes (when the last chunk starts playing, or about 0.8 seconds from the end), so you can answer without a dead gap. It only auto-resumes if you had the mic on; if you muted yourself, you stay muted. Anything the recognizer hears while Alex speaks is discarded, and tapping the mic or the speaking indicator interrupts him and turns your mic straight back on. Muting Alex's voice is a separate control and does not change the mic.
+Mic gating: while Alex is speaking, your mic pauses automatically and the room shows "Mic paused while Alex speaks". It resumes just before he finishes (when the last chunk starts playing, or about 0.8 seconds from the end), so you can answer without a dead gap. It only auto-resumes if you had the mic on; if you muted yourself, you stay muted. Anything the recognizer hears while Alex speaks is discarded, and tapping the mic control while Alex speaks always interrupts him first and then turns your mic on, never starts recognition into live speech. Muting Alex's voice is a separate control and does not change the mic.
+
+Speaking indicator and mic sound: while Alex speaks, a small five bar waveform animates next to his name in the AI panel header (the one place that owns speaking status), in the accent green, and freezes to static bars when he stops. Under `prefers-reduced-motion` it stays static. When your mic opens, on auto resume after Alex finishes or when you interrupt, a soft two tone earcon plays (WebAudio sine, about 620Hz rising to 880Hz over 140ms at low volume, generated in `src/lib/sounds.ts`, no audio files). It plays only when Alex's voice is enabled, never on page load, and there is no sound when the mic pauses.
 
 Gemini Live (experimental, opt-in, general room only). The Live AI Interview room has a "Live conversation (experimental)" button, off by default. In this mode the Gemini Live model leads the conversation itself from its system instruction (the Alex persona, the opening, the 5 questions for your difficulty, strict follow-ups, your questions, the close). The app never injects instructions into a Live session; it only listens, appending the Live transcriptions to the transcript and deriving progress passively, so end-of-interview scoring still works from what was actually said. The same mic gating applies: your mic frames stop going up while Alex's audio is playing and resume as his turn ends. A visible "End live and use standard mode" button switches back to the engine path at any point. The server route `/api/live-token` mints a short lived ephemeral token from your `GEMINI_API_KEY` (the real key never reaches the browser) for the native audio model (`gemini-2.5-flash-native-audio-preview-12-2025`, changeable with `GEMINI_LIVE_MODEL`) with the Callirrhoe voice. The technical room never uses Live: code watching needs exact engine control.
 
 Voice input on the main path uses the Web Speech API (Chrome and Edge), with visible listening, paused, and error states. In Live mode your mic streams to the Live session and Gemini transcribes it. Typing always works.
+
+## Design system
+
+The app uses a warm light identity, deliberately unlike a generic AI template: warm off-white background, white panels, one emerald accent, serif display type.
+
+- Colours (tokens in `src/app/globals.css`): page background `#FAF9F6`, panel `#FFFFFF`, panel alt `#F4F1EA`, border `#E7E2D9`, strong border `#D8D1C2`, text stone-900 `#1C1917`, muted text stone-600 (darkened from stone-500 for AA contrast on the off-white), accent emerald `#15803D`, accent strong `#166534`, accent soft `#E9F4EC`. Emerald owns every primary action and selected state (Start, Send, Submit, selected chips and tabs). Black is text only. Red appears only in error states, FAIL chips, the recording dot, and the single End interview confirmation button. No indigo or purple anywhere; the Monaco editor is a warm dark panel (stone-900 `#1C1917`) inside the light shell.
+- Type: Fraunces (serif) for display headings via a hardened `.font-display` class, Inter for UI and body. Scale tokens: display 56px/1.05, h2 22px, body 15px, small 13px, caption 12px. Nothing renders under 12px. Scores, timers and counts use tabular figures (`.tnum`). Sentence case everywhere, no exclamation marks in UI copy.
+- Spacing and shape: an 8pt rhythm (4/8/12/16/24/32/48). One card padding everywhere (`.card-pad`: 16px mobile, 20px desktop). Header height 64px (`h-16`) on home, progress, system design and feedback. Radius scale: 8px controls, 12px cards, 16px hero panels (`.card-hero`). Buttons are at least 44px tall (40px for the small size) with designed hover, active, focus-visible and disabled states; a disabled button of any variant reads as neutral warm grey. Transitions are 150 to 250ms ease-out on colour only. The only pulsing elements are the recording dot and the speaking indicator.
+- Layout: the home page and feedback page flow as normal documents (content can never be clipped or overlapped); the two interview rooms and the progress summary keep fit-to-screen shells whose panels scroll internally, by design.
 
 ## How to run
 
@@ -106,28 +122,40 @@ Never commit a real key. Without a key the app still runs fully on the local eng
 
 ## Project structure
 
-- `src/app/page.tsx` - home, setup, history and progress trend
-- `src/app/interview/general/page.tsx` - live AI interview room
+- `src/app/page.tsx` - home, setup (mode, difficulty, company, topic), history and progress trend
+- `src/app/interview/general/page.tsx` - live AI interview room (also runs resume interviews)
 - `src/app/interview/technical/page.tsx` - technical coding room
-- `src/app/interview/feedback/page.tsx` - scored feedback, phase notes, model pointers, weak areas, next problems
+- `src/app/interview/feedback/page.tsx` - scored feedback, phase notes, model pointers, weak areas, next problems, session recording player
+- `src/app/progress/page.tsx` - progress analytics: trend, streak, per topic and per axis averages, weekly plan
+- `src/app/system-design/page.tsx` - system design room preview (Coming soon, not startable)
 - `src/app/api/interview/route.ts` - interview API route, Gemini first with local engine fallback
+- `src/app/api/resume-questions/route.ts` - generates resume interview questions (Gemini structured JSON, local extractor fallback)
 - `src/app/api/tts/route.ts` - Gemini TTS route returning WAV audio, with a fallback signal when unavailable
 - `src/app/api/live-token/route.ts` - mints short lived Gemini Live ephemeral tokens server side, with the session setup locked in
 - `src/lib/gemini.ts` - server only Gemini API helper
 - `src/lib/interviewApi.ts` - small client helper for calling `/api/interview`
+- `src/lib/companies.ts` - company profiles: style, focus areas, behavioural themes, opening lines, per difficulty question banks, and the verdict framing used in feedback
+- `src/lib/resume.ts` - resume question building: local project and skill extraction plus the client for `/api/resume-questions`
+- `src/lib/analytics.ts` - progress analytics computed from local history (averages, streak, trend, weekly plan inputs)
+- `src/lib/recording.ts` - self-review recording: MediaRecorder wrapper and raw IndexedDB storage, no network calls
+- `src/lib/sounds.ts` and `src/lib/useMicOpenSound.ts` - the mic-open earcon (WebAudio) and the hook that fires it on mic gate transitions
 - `src/lib/problems.ts` - 7 problems with starter code, test cases, patterns, key points and edge cases
 - `src/lib/runner.ts` - Judge0 code runner and driver builder
 - `src/lib/interviewer.ts` - local strict interviewer engine, code watching, complexity checking, scoring, session storage
-- `src/lib/feedback.ts` - weak areas, next problem recommendations, phase by phase notes
+- `src/lib/feedback.ts` - weak areas, next problem recommendations, phase by phase notes, company bar verdict
 - `src/lib/liveSession.ts` - Gemini Live session manager for the opt-in experimental mode: WebSocket, mic streaming with playout gating, gapless audio playout, transcriptions
 - `src/lib/sanitize.ts` - shared sanitizer that strips internal instruction markers from any AI text before it is shown, spoken, or saved
 - `src/lib/voiceGate.ts` - the mic gating state machine shared by both rooms (pause while Alex speaks, resume just before he ends, interrupt, user mute wins)
 - `src/lib/useVoice.ts` - Web Speech API voice input hook
 - `src/lib/useSpeaker.ts` and `src/lib/voice.ts` - fallback voice output: Gemini TTS with parallel prefetch and caching first, improved browser voice after that
-- `src/components/Camera.tsx` - camera preview with graceful fallback
+- `src/components/Camera.tsx` - camera preview with a designed off state and retry
+- `src/components/SpeakingWave.tsx` - the speaking waveform shown in the AI panel header
+- `src/components/LeaveModal.tsx` and `src/components/ConfirmModal.tsx` - the in-page dialogs for leaving a room and for ending an interview
+- `src/components/Logo.tsx` and `src/components/Footer.tsx` - brand mark, wordmark and footer used across pages
 
 ## Roadmap
 
+- The system design room itself (the preview page lists the first five topics)
 - More problems, including Trees and DP topics
 - Auth with GitHub and saving history to an account
 - A larger problem set with per topic progression paths

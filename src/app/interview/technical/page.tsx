@@ -655,7 +655,7 @@ function TechnicalRoom() {
         setLastKind("run");
       }
     } catch (e) {
-      setRunError("Code runner failed: " + (e instanceof Error ? e.message : String(e)));
+      setRunError("Could not reach the code runner. Check your connection and try again.");
     } finally {
       setRunning(false);
     }
