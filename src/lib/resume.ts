@@ -98,8 +98,10 @@ export function extractProjects(text: string): { name: string; line: string }[] 
     for (const raw of lines) {
       const line = cleanLine(raw);
       if (/\b(built|developed|created|designed and built)\b/i.test(line) && line.length > 20) {
-        const name = line.split(/[-:|–]/)[0].trim().slice(0, 60);
-        if (name.length >= 3) projects.push({ name, line });
+        let name = line.split(/[-:|–]/)[0].trim().slice(0, 60);
+        const dot = name.lastIndexOf(". ");
+        if (dot >= 0) name = name.slice(dot + 2).trim();
+        if (name.length >= 3 && !SECTION_HEADERS.test(name)) projects.push({ name, line });
       }
       if (projects.length >= 3) break;
     }
