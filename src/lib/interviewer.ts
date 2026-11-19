@@ -60,11 +60,11 @@ export function hasComplexityStatement(text: string): boolean {
 }
 
 export function techOpeningText(problem: Problem, difficulty: string, targetMin: number): string {
-  return `Hi, I am ${INTERVIEWER_NAME}, and I will be your interviewer today. Here is how this session runs: I give you a coding problem, we talk it through before any code, you code while I watch and ask questions, then we dry run it, cover complexity, and finish with your questions for me. We have about ${targetMin} minutes, and this is ${aOrAn(difficulty)} ${difficulty} session, so I will be strict: vague answers get pushed back, and hints are recorded. Before we start, introduce yourself in a few lines: your background, and what you have been building lately.`;
+  return `Hi, I am ${INTERVIEWER_NAME}, your interviewer today. This is ${aOrAn(difficulty)} ${difficulty} session of about ${targetMin} minutes: I set the problem, we talk it through, you code while I watch, then a dry run, complexity, and your questions for me.\n\nI am strict. Vague answers get pushed back, and hints are recorded. First, introduce yourself in a few lines: your background, and what you have been building.`;
 }
 
 export function generalOpeningText(difficulty: string, targetMin: number, count: number): string {
-  return `Hi, I am ${INTERVIEWER_NAME}, and I will be your interviewer today. Here is how this runs: you introduce yourself, then I ask ${count} questions with follow-ups, and we finish with your questions for me. We have about ${targetMin} minutes. This is ${aOrAn(difficulty)} ${difficulty} session, so I will be direct: short, vague answers get pushed back, at every level. First, introduce yourself in a few lines: your background, and what you have been working on.`;
+  return `Hi, I am ${INTERVIEWER_NAME}, your interviewer today. You introduce yourself, then I ask ${count} questions with follow-ups, and we finish with your questions for me. About ${targetMin} minutes.\n\nThis is ${aOrAn(difficulty)} ${difficulty} session, so I will be direct: short, vague answers get pushed back. First, introduce yourself in a few lines: your background, and what you have been working on.`;
 }
 
 export function introReaction(intro: string, seed: number): string {

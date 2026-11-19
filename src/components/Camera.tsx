@@ -19,6 +19,7 @@ export default function Camera({
   }, [onStream]);
   const [error, setError] = useState("");
   const [on, setOn] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let stream: MediaStream | null = null;
@@ -55,12 +56,30 @@ export default function Camera({
       stream?.getTracks().forEach((t) => t.stop());
       streamCbRef.current?.(null);
     };
-  }, [audio]);
+  }, [audio, attempt]);
 
   return (
     <div className="overflow-hidden rounded-xl border border-line bg-black">
       {error ? (
-        <div className="flex h-36 items-center justify-center bg-panel2 p-4 text-center text-xs leading-5 text-stone-600">{error}</div>
+        <div className={`flex flex-col items-center justify-center gap-2 bg-panel2 p-4 text-center ${small ? "h-36" : "h-52"}`}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="text-stone-500" aria-hidden="true">
+            <path d="M10.5 5H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3.5" />
+            <path d="M20 10.5 15 13V8l5 2.5Z" />
+            <path d="m3 3 18 18" />
+          </svg>
+          <div className="text-sm font-semibold text-stone-900">Camera is off</div>
+          <p className="max-w-[30ch] text-xs leading-5 text-stone-600">You can continue without it, or turn it on for a more realistic session.</p>
+          <button
+            type="button"
+            onClick={() => {
+              setError("");
+              setAttempt((a) => a + 1);
+            }}
+            className="btn btn-secondary btn-sm mt-1"
+          >
+            Turn on camera
+          </button>
+        </div>
       ) : (
         <video ref={ref} autoPlay playsInline muted className={`${small ? "h-36" : "h-52"} w-full -scale-x-100 object-cover`} />
       )}
@@ -73,7 +92,7 @@ export default function Camera({
           </>
         ) : (
           <>
-            <span className={`dot ${on ? "dot-pulse bg-emerald-600" : "bg-red-500"}`} />
+            <span className={`dot ${on ? "dot-pulse bg-emerald-600" : "bg-stone-400"}`} />
             {on ? "Camera on" : "Camera off"}
             <span className="text-stone-600">Preview only, nothing is recorded</span>
           </>

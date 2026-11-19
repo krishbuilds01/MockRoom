@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Camera from "@/components/Camera";
 import LeaveModal from "@/components/LeaveModal";
+import ConfirmModal from "@/components/ConfirmModal";
 import SpeakingWave from "@/components/SpeakingWave";
 import { useMicOpenSound } from "@/lib/useMicOpenSound";
 import { recorderSupported, saveRecording, SessionRecorder } from "@/lib/recording";
@@ -773,6 +774,7 @@ function TechnicalRoom() {
   }, []);
 
   const [leaveOpen, setLeaveOpen] = useState(false);
+  const [endOpen, setEndOpen] = useState(false);
   function onBackHome(e: React.MouseEvent) {
     if (savedRef.current || endedRef.current) return;
     e.preventDefault();
@@ -839,7 +841,7 @@ function TechnicalRoom() {
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={() => setShowAi(!showAi)} className="btn btn-ghost btn-sm lg:hidden">{showAi ? "Hide AI panel" : "Show AI panel"}</button>
             <button type="button" onClick={() => { const next = !muted; setMuted(next); if (next) speaker.stop(); }} aria-label="Toggle AI voice" className="btn btn-ghost btn-sm">{muted ? "Unmute AI" : "Mute AI"}</button>
-            <button type="button" onClick={endInterview} className="btn btn-danger btn-sm">End Interview</button>
+            <button type="button" onClick={() => setEndOpen(true)} className="btn btn-ghost btn-sm">End interview</button>
           </div>
         </div>
         <div className="mt-2.5" aria-label="Interview progress">
@@ -899,7 +901,7 @@ function TechnicalRoom() {
                 <div className="text-xs font-semibold">Record my session</div>
                 <p className="mt-0.5 text-xs leading-4 text-stone-600">{recordOn ? "Recording. Watch it back on the feedback page." : "Self-review video, stored only in this browser."}</p>
               </div>
-              <button type="button" onClick={toggleRecord} disabled={!hasStream && !recordOn} aria-pressed={recordOn} className={`btn btn-sm shrink-0 ${recordOn ? "border-red-400 bg-red-50 text-red-700" : "btn-ghost"}`}>
+              <button type="button" onClick={toggleRecord} disabled={!hasStream && !recordOn} aria-pressed={recordOn} className={`btn btn-sm shrink-0 ${recordOn ? "btn-secondary" : "btn-ghost"}`}>
                 {recordOn ? (
                   <>
                     <span className="dot dot-pulse bg-red-500" />
@@ -932,8 +934,24 @@ function TechnicalRoom() {
               </div>
             )}
           </div>
-          <div className="h-[340px] shrink-0 border border-line lg:h-auto lg:min-h-[120px] lg:flex-1">
-            <Editor height="100%" language={lang} value={code} onChange={onCodeChange} theme="vs-dark" options={{ minimap: { enabled: false }, fontSize: 14, scrollBeyondLastLine: false, wordWrap: "on" }} />
+          <div className="h-[340px] shrink-0 overflow-hidden border border-line bg-[#1c1917] lg:h-auto lg:min-h-[120px] lg:flex-1">
+            <Editor
+              height="100%"
+              language={lang}
+              value={code}
+              onChange={onCodeChange}
+              theme="vs-dark"
+              onMount={(_editor, monaco) => {
+                monaco.editor.defineTheme("interviewai-dark", {
+                  base: "vs-dark",
+                  inherit: true,
+                  rules: [],
+                  colors: { "editor.background": "#1c1917", "editor.lineHighlightBackground": "#292524" },
+                });
+                monaco.editor.setTheme("interviewai-dark");
+              }}
+              options={{ minimap: { enabled: false }, fontSize: 14, scrollBeyondLastLine: false, wordWrap: "on" }}
+            />
           </div>
 
           <div className="max-h-[280px] shrink-0 overflow-y-auto rounded-b-xl border border-line border-t-0 bg-panel p-4 lg:max-h-[30%]">
@@ -987,7 +1005,7 @@ function TechnicalRoom() {
             </div>
             <div ref={transcriptBoxRef} className="max-h-[46dvh] flex-1 space-y-3 overflow-y-auto p-4 lg:max-h-none lg:min-h-0" aria-live="polite">
               {transcript.map((m, i) => (
-                <div key={i} className={`break-words rounded-xl px-3 py-2.5 text-[13px] leading-5 ${m.role === "ai" ? "border border-line bg-panel2 text-stone-900" : "ml-4 bg-stone-900 text-stone-50"}`}>
+                <div key={i} className={`break-words whitespace-pre-wrap rounded-xl px-3 py-2.5 text-[13px] leading-5 ${m.role === "ai" ? "border border-line bg-panel2 text-stone-900" : "ml-4 bg-accent text-white"}`}>
                   <div className="mb-1 text-xs font-semibold uppercase tracking-wide opacity-60">{m.role === "ai" ? "Alex" : "You"}</div>
                   {m.text}
                 </div>
@@ -1014,8 +1032,8 @@ function TechnicalRoom() {
                   Mic paused while Alex speaks
                 </p>
               ) : micState === "listening" ? (
-                <p className="mb-2 flex items-center gap-1.5 text-xs text-red-600" role="status">
-                  <span className="dot dot-pulse bg-red-500" />
+                <p className="mb-2 flex items-center gap-1.5 text-xs text-emerald-700" role="status">
+                  <span className="dot dot-pulse bg-emerald-600" />
                   Listening, speak now
                 </p>
               ) : null}
@@ -1028,7 +1046,7 @@ function TechnicalRoom() {
                     Mic paused
                   </button>
                 ) : (
-                  <button type="button" onClick={onMicClick} disabled={!voice.supported} aria-label="Toggle microphone input" className={`btn btn-sm ${voice.listening ? "border-red-400 bg-red-50 text-red-700" : "btn-ghost"}`}>{voice.listening ? "Listening..." : "Mic"}</button>
+                  <button type="button" onClick={onMicClick} disabled={!voice.supported} aria-label="Toggle microphone input" className={`btn btn-sm ${voice.listening ? "border-emerald-300 bg-emerald-50 text-emerald-700" : "btn-ghost"}`}>{voice.listening ? "Listening..." : "Mic"}</button>
                 )}
                 <button type="button" onClick={() => submitPanel()} disabled={waiting} className="btn btn-primary btn-sm">Send</button>
               </div>
@@ -1037,6 +1055,18 @@ function TechnicalRoom() {
         )}
       </div>
       <LeaveModal open={leaveOpen} onStay={() => setLeaveOpen(false)} onLeave={leaveAndSave} />
+      <ConfirmModal
+        open={endOpen}
+        title="End this interview?"
+        body="Your feedback is generated from everything so far: your approach, your code, your test results, and the hints you used."
+        confirmLabel="End interview"
+        cancelLabel="Keep going"
+        onConfirm={() => {
+          setEndOpen(false);
+          void endInterview();
+        }}
+        onCancel={() => setEndOpen(false)}
+      />
     </main>
   );
 }

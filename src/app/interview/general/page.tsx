@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Camera from "@/components/Camera";
 import LeaveModal from "@/components/LeaveModal";
+import ConfirmModal from "@/components/ConfirmModal";
 import SpeakingWave from "@/components/SpeakingWave";
 import { useMicOpenSound } from "@/lib/useMicOpenSound";
 import { recorderSupported, saveRecording, SessionRecorder } from "@/lib/recording";
@@ -563,6 +564,7 @@ function GeneralRoom() {
   }, []);
 
   const [leaveOpen, setLeaveOpen] = useState(false);
+  const [endOpen, setEndOpen] = useState(false);
   function onBackHome(e: React.MouseEvent) {
     if (savedRef.current || endedRef.current) return;
     e.preventDefault();
@@ -631,18 +633,6 @@ function GeneralRoom() {
             <div className="tnum mt-1 text-xs text-stone-600">
               {`${statusLine} · ${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, "0")} of about ${Math.round(targetSec / 60)} min target · AI: ${engineLabel} · Voice: ${voiceLabel}`}
             </div>
-            {(speaker.speaking || liveSpeaking) &&
-              (liveActive ? (
-                <div className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-emerald-700" role="status">
-                  <SpeakingWave speaking />
-                  Interviewer is speaking
-                </div>
-              ) : (
-                <button type="button" onClick={onMicClick} className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-emerald-700" role="status" title="Tap to interrupt and answer">
-                  <SpeakingWave speaking />
-                  Interviewer is speaking - tap to interrupt
-                </button>
-              ))}
           </div>
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={() => { const next = !muted; setMuted(next); live.setMuted(next); if (next) speaker.stop(); }} aria-label="Toggle AI voice" className="btn btn-ghost btn-sm">{muted ? "Unmute AI voice" : "Mute AI voice"}</button>
@@ -653,7 +643,7 @@ function GeneralRoom() {
                 {live.status === "connecting" ? "Connecting live..." : "Live conversation (experimental)"}
               </button>
             )}
-            <button type="button" onClick={endInterview} className="btn btn-danger btn-sm">End Interview</button>
+            <button type="button" onClick={() => setEndOpen(true)} className="btn btn-ghost btn-sm">End interview</button>
           </div>
         </div>
         <div className="mt-2.5" aria-label="Interview progress">
@@ -691,7 +681,7 @@ function GeneralRoom() {
                   {recordOn ? "Recording now. Watch it back on the feedback page." : hasStream ? "For self-review afterwards. The video never leaves this browser." : "Allow camera access first, then you can record."}
                 </p>
               </div>
-              <button type="button" onClick={toggleRecord} disabled={!hasStream && !recordOn} aria-pressed={recordOn} className={`btn btn-sm shrink-0 ${recordOn ? "border-red-400 bg-red-50 text-red-700" : "btn-ghost"}`}>
+              <button type="button" onClick={toggleRecord} disabled={!hasStream && !recordOn} aria-pressed={recordOn} className={`btn btn-sm shrink-0 ${recordOn ? "btn-secondary" : "btn-ghost"}`}>
                 {recordOn ? (
                   <>
                     <span className="dot dot-pulse bg-red-500" />
@@ -704,7 +694,7 @@ function GeneralRoom() {
             </div>
           )}
           <div className="card card-pad text-xs leading-5 text-stone-600">
-            Speak your answer with the mic, or type it. After the opening and your introduction, expect one follow-up per question, and a second one if your follow-up answer is still thin. Thin answers are scored down. The interview ends with your questions for Alex.
+            Speak your answer with the mic, or type it. One follow-up per question, a second if the first answer is thin.
             {liveActive && <div className="mt-2 font-medium text-emerald-700">Live conversation is on: Alex leads and listens continuously. Use the button above to end live and return to standard mode at any time.</div>}
             {phase === "done" && <div className="mt-2 font-medium text-stone-900">Interview complete. Click End Interview to see your feedback.</div>}
           </div>
@@ -728,8 +718,29 @@ function GeneralRoom() {
             {liveOn && live.status === "fallback" && <span className="badge badge-mid">Live unavailable, standard mode</span>}
           </div>
           <div ref={transcriptBoxRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto p-5" aria-live="polite">
+            <div className="rounded-xl border border-line bg-panel p-4">
+              <div className="text-xs font-semibold uppercase tracking-wider text-stone-600">Session brief</div>
+              <dl className="mt-3 space-y-2 text-[13px] leading-5">
+                <div className="flex gap-2">
+                  <dt className="w-16 shrink-0 font-medium text-stone-600">Format</dt>
+                  <dd>{resumeMode ? "Questions built from your resume, each with follow-ups" : `${qset.length} questions with follow-ups, then your questions for Alex`}</dd>
+                </div>
+                <div className="flex gap-2">
+                  <dt className="w-16 shrink-0 font-medium text-stone-600">Target</dt>
+                  <dd>{`About ${Math.round(targetSec / 60)} minutes`}</dd>
+                </div>
+                <div className="flex gap-2">
+                  <dt className="w-16 shrink-0 font-medium text-stone-600">Phases</dt>
+                  <dd>Intro, questions, your questions, then scored feedback</dd>
+                </div>
+                <div className="flex gap-2">
+                  <dt className="w-16 shrink-0 font-medium text-stone-600">Covers</dt>
+                  <dd>{company.id !== "any" ? company.style : difficulty === "Easy" ? "Foundations, and specifics over slogans" : difficulty === "Hard" ? "Depth, trade-offs, and optimisation under pressure" : "Real depth on your answers, with trade-offs"}</dd>
+                </div>
+              </dl>
+            </div>
             {transcript.map((m, i) => (
-              <div key={i} className={`max-w-[85%] break-words rounded-xl px-4 py-3 text-sm leading-6 ${m.role === "ai" ? "border border-line bg-panel2 text-stone-900" : "ml-auto bg-stone-900 text-stone-50"}`}>
+              <div key={i} className={`max-w-[85%] break-words whitespace-pre-wrap rounded-xl px-4 py-3 text-sm leading-6 ${m.role === "ai" ? "border border-line bg-panel2 text-stone-900" : "ml-auto bg-accent text-white"}`}>
                 <div className="mb-1 text-xs font-semibold uppercase tracking-wide opacity-60">{m.role === "ai" ? "Alex" : "You"}</div>
                 {m.text}
               </div>
@@ -779,7 +790,7 @@ function GeneralRoom() {
                   Mic paused
                 </button>
               ) : (
-                <button type="button" onClick={onMicClick} disabled={!voice.supported} aria-label="Toggle microphone input" className={`btn btn-sm ${voice.listening ? "border-red-400 bg-red-50 text-red-700" : "btn-ghost"}`}>{voice.listening ? "Listening..." : "Mic"}</button>
+                <button type="button" onClick={onMicClick} disabled={!voice.supported} aria-label="Toggle microphone input" className={`btn btn-sm ${voice.listening ? "border-emerald-300 bg-emerald-50 text-emerald-700" : "btn-ghost"}`}>{voice.listening ? "Listening..." : "Mic"}</button>
               )}
               <button type="button" onClick={() => submitAnswer()} disabled={waiting && !liveActive} className="btn btn-primary btn-sm">Send</button>
             </div>
@@ -787,6 +798,18 @@ function GeneralRoom() {
         </section>
       </div>
       <LeaveModal open={leaveOpen} onStay={() => setLeaveOpen(false)} onLeave={leaveAndSave} />
+      <ConfirmModal
+        open={endOpen}
+        title="End this interview?"
+        body="Your feedback is generated from everything so far: your answers, the follow-ups, and how you handled the pushback."
+        confirmLabel="End interview"
+        cancelLabel="Keep going"
+        onConfirm={() => {
+          setEndOpen(false);
+          void endInterview();
+        }}
+        onCancel={() => setEndOpen(false)}
+      />
     </main>
   );
 }

@@ -5,6 +5,7 @@ import { getProblemById, langLabel, problems } from "@/lib/problems";
 import { overallScore, type SessionRecord } from "@/lib/interviewer";
 import { companyVerdict, phaseNotes, recommendNext, weakAreas } from "@/lib/feedback";
 import { deleteRecording, loadRecording } from "@/lib/recording";
+import Logo from "@/components/Logo";
 
 function Score({ label, value }: { label: string; value: number }) {
   return (
@@ -110,15 +111,12 @@ export default function FeedbackPage() {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-4xl flex-col px-5 py-5">
       <nav className="flex h-16 shrink-0 items-center justify-between border-b border-line">
-        <div className="flex items-center gap-2.5">
-          <span className="avatar" style={{ width: "2rem", height: "2rem", fontSize: "0.8rem" }}>A</span>
-          <span className="font-display text-lg font-semibold tracking-tight">InterviewAI</span>
-        </div>
+        <Logo />
         <Link href="/" className="text-sm text-stone-600 hover:text-stone-900">Home</Link>
       </nav>
 
       <div className="mt-4 flex shrink-0 flex-wrap items-center gap-2.5">
-        <h1 className="font-display text-4xl font-semibold tracking-tight">Interview Feedback</h1>
+        <h1 className="font-display text-4xl font-semibold tracking-tight">Interview feedback</h1>
         <span className={`badge ${rec.difficulty === "Easy" ? "badge-easy" : rec.difficulty === "Hard" ? "badge-hard" : "badge-mid"}`}>{rec.difficulty}</span>
         {rec.companyName && <span className="badge badge-accent">{rec.companyName}</span>}
         {rec.resumeInterview && <span className="badge">Resume interview</span>}
@@ -141,7 +139,7 @@ export default function FeedbackPage() {
         </div>
       )}
 
-      <div className="card mt-4 flex shrink-0 flex-wrap items-center justify-between gap-4 p-5">
+      <div className="card card-pad mt-4 flex shrink-0 flex-wrap items-center gap-4 sm:gap-8">
         <div>
           <div className="text-xs font-medium text-stone-600">Overall score</div>
           <div className="tnum mt-1 font-display text-5xl font-semibold leading-none tracking-tight">
@@ -185,7 +183,7 @@ export default function FeedbackPage() {
         </div>
       )}
 
-      <div className="mt-4 grid shrink-0 gap-4 md:grid-cols-2">
+      <div className="mt-4 grid shrink-0 items-start gap-4 md:grid-cols-2">
         <div className="card card-pad">
           <h2 className="text-sm font-semibold">Strengths</h2>
           {rec.scores.strengths.length ? <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-stone-700">{rec.scores.strengths.map((s) => <li key={s}>{s}</li>)}</ul> : <p className="mt-3 text-sm leading-6 text-stone-600">No clear strengths recorded this session. That is the honest read: rebuild from the phase notes below.</p>}
@@ -205,7 +203,7 @@ export default function FeedbackPage() {
               <div key={n.phase} className={`border-l-2 pl-4 ${n.flag ? "border-amber-400" : "border-line2"}`}>
                 <div className="text-sm font-semibold">{n.phase}</div>
                 <p className="mt-1 break-words text-sm leading-6 text-stone-700">{n.did}</p>
-                <p className={`mt-1 text-sm leading-6 ${n.flag ? "text-amber-800" : "text-stone-700"}`}>{n.flag ? "Watch out: " : "Note: "}{n.weak}</p>
+                <p className={`mt-1 text-sm leading-6 ${n.flag ? "text-amber-800" : "text-stone-700"}`}>{`${n.flag ? "Watch out:" : "Note:"} ${n.weak}`}</p>
                 <p className="mt-1 text-sm leading-6 text-stone-600">Strong version: {n.strong}</p>
               </div>
             ))}
@@ -258,6 +256,7 @@ export default function FeedbackPage() {
         </div>
       )}
 
+      {rec.transcript.length > 0 && (
       <div className="card card-pad">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold">Transcript</h2>
@@ -266,20 +265,20 @@ export default function FeedbackPage() {
         {showTranscript && (
         <div className="mt-4 max-h-96 space-y-2.5 overflow-y-auto">
           {rec.transcript.slice(-20).map((m, i) => (
-            <div key={i} className={`max-w-[85%] break-words rounded-xl px-3.5 py-2.5 text-sm leading-6 ${m.role === "ai" ? "border border-line bg-panel2 text-stone-900" : "ml-auto bg-stone-900 text-stone-50"}`}>
+            <div key={i} className={`max-w-[85%] break-words whitespace-pre-wrap rounded-xl px-3.5 py-2.5 text-sm leading-6 ${m.role === "ai" ? "border border-line bg-panel2 text-stone-900" : "ml-auto bg-accent text-white"}`}>
               <div className="mb-0.5 text-xs font-semibold uppercase tracking-wide opacity-60">{m.role === "ai" ? "Alex" : "You"}</div>
               {m.text}
             </div>
           ))}
-          {rec.transcript.length === 0 && <p className="text-sm text-stone-600">No transcript recorded.</p>}
         </div>
         )}
       </div>
+      )}
       </div>
 
-      <div className="mt-4 flex shrink-0 flex-wrap gap-3">
-        <Link href="/" className="btn btn-accent">Practice again</Link>
-        <Link href="/" className="btn btn-ghost">See your progress on home</Link>
+      <div className="mt-4 flex shrink-0 gap-3">
+        <Link href="/" className="btn btn-accent flex-1">Practice again</Link>
+        <Link href="/progress" className="btn btn-ghost flex-1">View progress</Link>
       </div>
     </main>
   );
