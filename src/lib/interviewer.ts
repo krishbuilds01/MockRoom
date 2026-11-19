@@ -124,15 +124,15 @@ export function answerClarifying(problem: Problem, qRaw: string): string {
       : "The examples in the problem panel define the expected shape.";
   }
   if (q.includes("sorted") || q.includes("order")) {
-    return `The statement says this: ${problem.statement.split(". ")[0]}. If the statement does not promise an order, do not assume one.`;
+    return `The statement says this: ${firstSentence(problem.statement)} If the statement does not promise an order, do not assume one.`;
   }
   if (q.includes("constraint") || q.includes("range") || q.includes("how large") || q.includes("how big") || q.includes("size")) {
     return `The constraints are on the left. The binding ones here: ${problem.constraints.slice(0, 2).join("; ")}. Design for those, not for the examples.`;
   }
   if (q.includes("return")) {
-    return `Return exactly what the statement asks for: ${problem.statement.split(". ").slice(0, 2).join(". ")}. Match the examples.`;
+    return `Return exactly what the statement asks for: ${asSentence(problem.statement.split(". ").slice(0, 2).join(". "))} Match the examples.`;
   }
-  return `Fair question. What the statement guarantees is this: ${problem.constraints[0]}. Anything it does not promise, your solution has to handle or explicitly rule out. The examples on the left show the expected shape.`;
+  return `Fair question. What the statement guarantees is this: ${asSentence(problem.constraints[0])} Anything it does not promise, your solution has to handle or explicitly rule out. The examples on the left show the expected shape.`;
 }
 
 export function dryRunReaction(problem: Problem, text: string): string {
@@ -324,6 +324,16 @@ export function codeWatchQuestion(prev: string, curr: string, problem: Problem):
   return null;
 }
 
+export function asSentence(text: string): string {
+  const t = text.trim().replace(/\.+$/, "");
+  return t ? t + "." : t;
+}
+
+export function firstSentence(text: string): string {
+  const idx = text.indexOf(". ");
+  return asSentence(idx >= 0 ? text.slice(0, idx) : text);
+}
+
 export function truncateWords(text: string, max: number): string {
   if (text.length <= max) return text;
   const cut = text.slice(0, max);
@@ -339,8 +349,8 @@ export function complexityPhrase(problem: Problem): string {
 export function complexityConfirmation(problem: Problem, correct: boolean): string {
   const phrase = complexityPhrase(problem);
   return correct
-    ? `You already gave the complexity: ${phrase}. That is correct, and it is recorded, so I am not asking twice.`
-    : `You already gave the complexity, and it was not right. The correct answer is: ${phrase}. That is recorded.`;
+    ? `You already gave the complexity: ${asSentence(phrase)} That is correct, and it is recorded, so I am not asking twice.`
+    : `You already gave the complexity, and it was not right. The correct answer is: ${asSentence(phrase)} That is recorded.`;
 }
 
 export function shouldAutosavePartial(input: {

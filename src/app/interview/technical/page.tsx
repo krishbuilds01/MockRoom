@@ -21,6 +21,7 @@ import {
   computeScores,
   diffLines,
   dryRunReaction,
+  firstSentence,
   hasComplexityStatement,
   introReaction,
   isBruteForceApproach,
@@ -432,7 +433,7 @@ function TechnicalRoom() {
       }
       setPhase("clarifying");
       commitAi(
-        `${reaction} Now your problem: ${problem.title}. ${problem.statement.split(". ")[0]}. The full statement, examples and constraints are on the left, so take a minute to read them properly. Before any approach talk: any clarifying questions? Ask now, or say you are ready.`
+        `${reaction} Now your problem: ${problem.title}. ${firstSentence(problem.statement)} The full statement, examples and constraints are on the left, so take a minute to read them properly. Before any approach talk: any clarifying questions? Ask now, or say you are ready.`
       );
       return;
     }
