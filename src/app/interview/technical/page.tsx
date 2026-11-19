@@ -96,6 +96,17 @@ function TechnicalRoom() {
   }, [startedAt]);
 
   useEffect(() => {
+    const h = () => speaker.unlock();
+    window.addEventListener("pointerdown", h, { once: true });
+    window.addEventListener("keydown", h, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", h);
+      window.removeEventListener("keydown", h);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     if (startedRef.current) return;
     startedRef.current = true;
     lastAiRef.current = Date.now();
@@ -478,6 +489,12 @@ function TechnicalRoom() {
             <div className="border-b border-neutral-800 px-4 py-3">
               <div className="text-sm font-semibold">AI Interviewer</div>
               <div className="text-[11px] text-neutral-500">AI: {engine === "gemini" ? "Gemini" : "local mode"} - Voice: {voiceLabel}</div>
+              {speaker.speaking && (
+                <div className="mt-1 flex items-center gap-1.5 text-[11px] text-emerald-400" role="status">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+                  Interviewer is speaking
+                </div>
+              )}
               <div className="text-[11px] text-neutral-500">
                 {phase === "approach" && "Phase 1 - Approach: explain your plan first, in detail"}
                 {phase === "coding" && "Phase 2 - Coding: I am watching your code and will stop you with counter questions"}

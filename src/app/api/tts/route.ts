@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { geminiAvailable } from "@/lib/gemini";
 
+export const maxDuration = 30;
+
 const TTS_MODEL = "gemini-2.5-flash-preview-tts";
 const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 const VOICE_NAME = "Kore";

@@ -49,6 +49,17 @@ function GeneralRoom() {
   }, [startedAt]);
 
   useEffect(() => {
+    const h = () => speaker.unlock();
+    window.addEventListener("pointerdown", h, { once: true });
+    window.addEventListener("keydown", h, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", h);
+      window.removeEventListener("keydown", h);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
@@ -184,6 +195,12 @@ function GeneralRoom() {
           <div className="text-xs text-neutral-500">
             {difficulty} level - Question {Math.min(qIndex + 1, questions.length)} of {questions.length} - {Math.floor(elapsed / 60)}:{String(elapsed % 60).padStart(2, "0")} of about {Math.round(targetSec / 60)} min target - AI: {engine === "gemini" ? "Gemini" : "local mode"} - AI voice: {voiceLabel}
           </div>
+          {speaker.speaking && (
+            <div className="mt-1 flex items-center gap-1.5 text-[11px] text-emerald-400" role="status">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+              Interviewer is speaking
+            </div>
+          )}
         </div>
         <div className="flex gap-2">
           <button type="button" onClick={() => { setMuted(!muted); if (!muted) speaker.stop(); }} aria-label="Toggle AI voice" className="rounded-lg border border-neutral-700 px-3 py-2 text-sm">{muted ? "Unmute AI voice" : "Mute AI voice"}</button>

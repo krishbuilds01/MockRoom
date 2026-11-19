@@ -1,26 +1,75 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { splitSentences, speakSentenceBrowser } from "./voice";
+import { chunkForSpeech, speakSentenceBrowser } from "./voice";
 
 export type VoiceSource = "gemini" | "browser" | null;
 
+const FIRST_CHUNK_DEADLINE_MS = 2500;
+const LATER_CHUNK_GRACE_MS = 2000;
+const CACHE_LIMIT = 60;
+const SILENT_WAV =
+  "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=";
+
+type FetchResult = string | null;
+
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T | "timeout"> {
+  if (ms <= 0) return Promise.race([p, Promise.resolve("timeout" as const)]);
+  return Promise.race([
+    p,
+    new Promise<"timeout">((resolve) => setTimeout(() => resolve("timeout"), ms)),
+  ]);
+}
+
 export function useSpeaker() {
   const [voiceSource, setVoiceSource] = useState<VoiceSource>(null);
+  const [speaking, setSpeaking] = useState(false);
   const tokenRef = useRef(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const urlRef = useRef<string | null>(null);
+  const cacheRef = useRef<Map<string, string>>(new Map());
+  const ttsDownRef = useRef(false);
+  const unlockedRef = useRef(false);
+
+  const getAudio = useCallback((): HTMLAudioElement | null => {
+    if (typeof window === "undefined") return null;
+    if (!audioRef.current) {
+      audioRef.current = new Audio();
+      audioRef.current.preload = "auto";
+    }
+    return audioRef.current;
+  }, []);
+
+  const unlock = useCallback(() => {
+    if (unlockedRef.current) return;
+    unlockedRef.current = true;
+    const audio = getAudio();
+    if (audio) {
+      try {
+        audio.src = SILENT_WAV;
+        const p = audio.play();
+        if (p) {
+          p.then(() => {
+            audio.pause();
+            audio.currentTime = 0;
+          }).catch(() => {});
+        }
+      } catch {}
+    }
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      try {
+        const u = new SpeechSynthesisUtterance("");
+        u.volume = 0;
+        window.speechSynthesis.speak(u);
+      } catch {}
+    }
+  }, [getAudio]);
 
   const stop = useCallback(() => {
     tokenRef.current += 1;
+    setSpeaking(false);
     if (audioRef.current) {
       try {
         audioRef.current.pause();
       } catch {}
-      audioRef.current = null;
-    }
-    if (urlRef.current) {
-      URL.revokeObjectURL(urlRef.current);
-      urlRef.current = null;
     }
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       try {
@@ -30,14 +79,17 @@ export function useSpeaker() {
   }, []);
 
   useEffect(() => {
+    const cache = cacheRef.current;
     return () => {
       tokenRef.current += 1;
       if (audioRef.current) {
         try {
           audioRef.current.pause();
         } catch {}
+        audioRef.current = null;
       }
-      if (urlRef.current) URL.revokeObjectURL(urlRef.current);
+      cache.forEach((url) => URL.revokeObjectURL(url));
+      cache.clear();
       if (typeof window !== "undefined" && "speechSynthesis" in window) {
         try {
           window.speechSynthesis.cancel();
@@ -46,73 +98,127 @@ export function useSpeaker() {
     };
   }, []);
 
-  const playBlob = useCallback((blob: Blob, token: number): Promise<boolean> => {
-    return new Promise((resolve) => {
-      if (token !== tokenRef.current) {
-        resolve(false);
-        return;
+  const cachePut = useCallback((text: string, url: string) => {
+    const cache = cacheRef.current;
+    if (cache.has(text)) {
+      if (cache.get(text) !== url) URL.revokeObjectURL(url);
+      return;
+    }
+    if (cache.size >= CACHE_LIMIT) {
+      const oldest = cache.keys().next().value;
+      if (oldest !== undefined) {
+        const oldUrl = cache.get(oldest);
+        if (oldUrl) URL.revokeObjectURL(oldUrl);
+        cache.delete(oldest);
       }
-      const url = URL.createObjectURL(blob);
-      urlRef.current = url;
-      const audio = new Audio(url);
-      audioRef.current = audio;
-      let settled = false;
-      const finish = (ok: boolean) => {
-        if (settled) return;
-        settled = true;
-        if (urlRef.current === url) {
-          URL.revokeObjectURL(url);
-          urlRef.current = null;
-        }
-        resolve(ok && token === tokenRef.current);
-      };
-      audio.onended = () => finish(true);
-      audio.onerror = () => finish(false);
-      audio.play().catch(() => finish(false));
-    });
+    }
+    cache.set(text, url);
   }, []);
+
+  const fetchTts = useCallback(
+    (text: string): Promise<FetchResult> => {
+      const cached = cacheRef.current.get(text);
+      if (cached) return Promise.resolve(cached);
+      if (ttsDownRef.current) return Promise.resolve(null);
+      return (async () => {
+        try {
+          const res = await fetch("/api/tts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text }),
+          });
+          if (!res.ok || !(res.headers.get("Content-Type") || "").includes("audio")) {
+            ttsDownRef.current = true;
+            return null;
+          }
+          const blob = await res.blob();
+          if (!blob.size) return null;
+          const url = URL.createObjectURL(blob);
+          cachePut(text, url);
+          return url;
+        } catch {
+          return null;
+        }
+      })();
+    },
+    [cachePut]
+  );
+
+  const playUrl = useCallback(
+    (url: string, token: number): Promise<boolean> => {
+      return new Promise((resolve) => {
+        const audio = getAudio();
+        if (!audio || token !== tokenRef.current) {
+          resolve(false);
+          return;
+        }
+        let settled = false;
+        const finish = (ok: boolean) => {
+          if (settled) return;
+          settled = true;
+          clearInterval(watchdog);
+          audio.onended = null;
+          audio.onerror = null;
+          resolve(ok && token === tokenRef.current);
+        };
+        const watchdog = setInterval(() => {
+          if (token !== tokenRef.current) finish(false);
+        }, 200);
+        audio.onended = () => finish(true);
+        audio.onerror = () => finish(false);
+        try {
+          audio.src = url;
+          const p = audio.play();
+          if (p) p.catch(() => finish(false));
+        } catch {
+          finish(false);
+        }
+      });
+    },
+    [getAudio]
+  );
 
   const speak = useCallback(
     async (text: string, muted: boolean) => {
       if (muted || !text.trim()) return;
       stop();
       const token = tokenRef.current;
-      const sentences = splitSentences(text);
-      let useGemini = true;
-      for (const sentence of sentences) {
-        if (token !== tokenRef.current) return;
-        if (useGemini) {
-          try {
-            const res = await fetch("/api/tts", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ text: sentence }),
-            });
+      const chunks = chunkForSpeech(text);
+      if (!chunks.length) return;
+      setSpeaking(true);
+      const startedAt = Date.now();
+      const pending: Promise<FetchResult>[] = chunks.map((c) => fetchTts(c));
+      try {
+        for (let i = 0; i < chunks.length; i++) {
+          if (token !== tokenRef.current) return;
+          let played = false;
+          const budget =
+            i === 0
+              ? Math.max(0, FIRST_CHUNK_DEADLINE_MS - (Date.now() - startedAt))
+              : LATER_CHUNK_GRACE_MS;
+          const result = await withTimeout(pending[i], budget);
+          if (token !== tokenRef.current) return;
+          if (result !== "timeout" && result) {
+            played = await playUrl(result, token);
             if (token !== tokenRef.current) return;
-            if (res.ok && (res.headers.get("Content-Type") || "").includes("audio")) {
-              const blob = await res.blob();
-              const played = await playBlob(blob, token);
-              if (played) {
-                setVoiceSource("gemini");
-                continue;
-              }
-              useGemini = false;
-            } else {
-              useGemini = false;
-            }
-          } catch {
-            useGemini = false;
+            if (played) setVoiceSource("gemini");
+          }
+          if (!played) {
+            setVoiceSource("browser");
+            await speakSentenceBrowser(chunks[i]);
+            if (token !== tokenRef.current) return;
+          }
+          if (i < chunks.length - 1) {
+            await new Promise((r) => setTimeout(r, 90));
+            if (token !== tokenRef.current) return;
           }
         }
-        if (token !== tokenRef.current) return;
-        setVoiceSource("browser");
-        await speakSentenceBrowser(sentence);
-        if (token !== tokenRef.current) return;
-        await new Promise((r) => setTimeout(r, 120));
+      } finally {
+        if (token === tokenRef.current) setSpeaking(false);
       }
     },
-    [playBlob, stop]
+    [fetchTts, playUrl, stop]
   );
 
-  return { speak, stop, voiceSource };
+  return { speak, stop, voiceSource, speaking, unlock };
 }

@@ -2,20 +2,42 @@ export function splitSentences(text: string): string[] {
   const clean = text.replace(/\s+/g, " ").trim();
   if (!clean) return [];
   const raw = clean.match(/[^.!?]+[.!?]+["']?|[^.!?]+$/g) || [clean];
-  const out: string[] = [];
+  return raw.map((s) => s.trim()).filter(Boolean);
+}
+
+const SHORT_FRAGMENT = 40;
+const MAX_CHUNK = 280;
+
+export function chunkForSpeech(text: string): string[] {
+  const sentences = splitSentences(text);
+  if (!sentences.length) return [];
+  const merged: string[] = [];
+  let carry = "";
+  for (let i = 0; i < sentences.length; i++) {
+    const s = (carry ? carry + " " : "") + sentences[i];
+    carry = "";
+    if (s.length < SHORT_FRAGMENT && i < sentences.length - 1) {
+      carry = s;
+      continue;
+    }
+    merged.push(s);
+  }
+  if (carry) {
+    if (merged.length) merged[merged.length - 1] = merged[merged.length - 1] + " " + carry;
+    else merged.push(carry);
+  }
+  const chunks: string[] = [];
   let buf = "";
-  for (const part of raw) {
-    const s = part.trim();
-    if (!s) continue;
-    if ((buf + " " + s).trim().length <= 220) {
-      buf = (buf + " " + s).trim();
-    } else {
-      if (buf) out.push(buf);
+  for (const s of merged) {
+    if (buf && (buf + " " + s).length > MAX_CHUNK) {
+      chunks.push(buf);
       buf = s;
+    } else {
+      buf = buf ? buf + " " + s : s;
     }
   }
-  if (buf) out.push(buf);
-  return out;
+  if (buf) chunks.push(buf);
+  return chunks;
 }
 
 export function pickBestVoice(): SpeechSynthesisVoice | null {
