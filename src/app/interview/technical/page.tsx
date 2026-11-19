@@ -4,6 +4,8 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Camera from "@/components/Camera";
+import SpeakingWave from "@/components/SpeakingWave";
+import { useMicOpenSound } from "@/lib/useMicOpenSound";
 import { getProblemById, LANGS, pickProblem, targetSecFor, type Lang } from "@/lib/problems";
 import { runCode, type RunOutput } from "@/lib/runner";
 import {
@@ -197,6 +199,7 @@ function TechnicalRoom() {
   useEffect(() => {
     mutedRef.current = muted;
   }, [muted]);
+  useMicOpenSound(gate, mutedRef);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -922,9 +925,8 @@ function TechnicalRoom() {
                   <div className="text-xs leading-4 text-stone-600">Interviewer · AI: {engineLabel} · Voice: {voiceLabel}</div>
                 </div>
                 {speaker.speaking && (
-                  <span className="ml-auto flex items-center gap-1.5 text-xs font-medium text-emerald-700" role="status">
-                    <span className="dot dot-pulse bg-emerald-600" />
-                    Speaking
+                  <span className="ml-auto text-xs font-medium text-emerald-700">
+                    <SpeakingWave speaking label="Speaking" />
                   </span>
                 )}
               </div>

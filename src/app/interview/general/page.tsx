@@ -3,6 +3,8 @@ import { Suspense, useEffect, useReducer, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Camera from "@/components/Camera";
+import SpeakingWave from "@/components/SpeakingWave";
+import { useMicOpenSound } from "@/lib/useMicOpenSound";
 import {
   candidateQuestionAnswer,
   computeScores,
@@ -154,6 +156,7 @@ function GeneralRoom() {
   useEffect(() => {
     mutedRef.current = muted;
   }, [muted]);
+  useMicOpenSound(gate, mutedRef);
   useEffect(() => {
     phaseRef.current = phase;
   }, [phase]);
@@ -559,12 +562,12 @@ function GeneralRoom() {
             {(speaker.speaking || liveSpeaking) &&
               (liveActive ? (
                 <div className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-emerald-700" role="status">
-                  <span className="dot dot-pulse bg-emerald-600" />
+                  <SpeakingWave speaking />
                   Interviewer is speaking
                 </div>
               ) : (
                 <button type="button" onClick={onMicClick} className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-emerald-700" role="status" title="Tap to interrupt and answer">
-                  <span className="dot dot-pulse bg-emerald-600" />
+                  <SpeakingWave speaking />
                   Interviewer is speaking - tap to interrupt
                 </button>
               ))}
@@ -623,6 +626,11 @@ function GeneralRoom() {
                 <div className="text-sm font-semibold leading-5">Alex</div>
                 <div className="text-xs leading-4 text-stone-600">Your interviewer</div>
               </div>
+              {(speaker.speaking || liveSpeaking) && (
+                <span className="text-xs font-medium text-emerald-700">
+                  <SpeakingWave speaking label="Speaking" />
+                </span>
+              )}
             </div>
             {live.status === "connecting" && <span className="badge">Connecting live voice</span>}
             {liveOn && live.status === "fallback" && <span className="badge badge-mid">Live unavailable, standard mode</span>}
