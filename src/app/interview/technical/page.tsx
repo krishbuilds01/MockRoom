@@ -278,15 +278,12 @@ function TechnicalRoom() {
         if (!mountedRef.current) return;
         if (phaseRef.current !== "coding") return;
         const current = codeRef.current;
-        if (pendingRef.current || pendingQRef.current) {
-          snapshotRef.current = current;
-          return;
-        }
         const now = Date.now();
         if (current !== snapshotRef.current) {
+          if (pendingRef.current || pendingQRef.current) return;
+          if (now - lastAiRef.current < 45000) return;
           const prevSnapshot = snapshotRef.current;
           snapshotRef.current = current;
-          if (now - lastAiRef.current < 45000) return;
           const localQ = nextCodeWatchQuestion(prevSnapshot, current, problem, askedQuestionsRef.current);
           if (localQ) {
             commitAi(localQ, true);
@@ -398,7 +395,7 @@ function TechnicalRoom() {
     }
     const elapsedSec = Math.floor((Date.now() - startedAt) / 1000);
     if (elapsedSec > targetSec / 2) reply += " One clock note: we are past halfway on the target time, so keep the coding tight.";
-    commitAi(reply, true);
+    commitAi(reply);
   }
 
   async function submitPanel(preset?: string) {
