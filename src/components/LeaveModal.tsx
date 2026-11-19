@@ -12,7 +12,10 @@ export default function LeaveModal({
 }) {
   const stayBtnRef = useRef<HTMLButtonElement>(null);
   const stayRef = useRef(onStay);
-  stayRef.current = onStay;
+
+  useEffect(() => {
+    stayRef.current = onStay;
+  }, [onStay]);
 
   useEffect(() => {
     if (!open) return;
