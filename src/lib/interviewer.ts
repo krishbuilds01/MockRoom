@@ -326,7 +326,8 @@ export function codeWatchQuestion(prev: string, curr: string, problem: Problem):
 
 export function asSentence(text: string): string {
   const t = text.trim().replace(/\.+$/, "");
-  return t ? t + "." : t;
+  if (!t) return t;
+  return /[?!]$/.test(t) ? t : t + ".";
 }
 
 export function firstSentence(text: string): string {

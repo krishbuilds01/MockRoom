@@ -148,10 +148,31 @@ export function computeAnalytics(history: SessionRecord[], now: Date = new Date(
         href: "/interview/general?difficulty=Mid",
       });
     } else {
+      const topicName = weakTopics[0]?.name || "HashMap";
+      const difficulty = plan.some((p) => p.href === techHref(topicName, "Mid")) ? "Hard" : "Mid";
       plan.push({
-        title: "Technical session at Mid",
-        reason: `${weakAxis.name} is your lowest scoring axis at ${weakAxis.average}/10. A full Mid coding round trains it directly.`,
-        href: techHref(weakTopics[0]?.name || "HashMap", "Mid"),
+        title: `Technical session at ${difficulty}`,
+        reason: `${weakAxis.name} is your lowest scoring axis at ${weakAxis.average}/10. A full ${difficulty} coding round trains it directly.`,
+        href: techHref(topicName, difficulty),
+      });
+    }
+  }
+  if (plan.length && plan.length < 3) {
+    if (!plan.some((p) => p.href.startsWith("/interview/general"))) {
+      plan.push({
+        title: "Live AI Interview at Mid",
+        reason: "A spoken round tests follow-ups and communication in a way coding alone never does.",
+        href: "/interview/general?difficulty=Mid",
+      });
+    }
+    if (plan.length < 3) {
+      const strong = [...topicAverages].sort((a, b) => b.average - a.average)[0];
+      plan.push({
+        title: "Technical session at Hard",
+        reason: strong
+          ? `${strong.name} is your strongest topic at ${strong.average}/10. A Hard round there shows whether it holds under pressure.`
+          : "A Hard technical round shows where your current level actually ends.",
+        href: techHref(strong?.name || "Arrays", "Hard"),
       });
     }
   }
