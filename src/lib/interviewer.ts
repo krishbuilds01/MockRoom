@@ -287,11 +287,29 @@ export function summarizeDiff(prev: string, curr: string): string {
   return parts.join("; ");
 }
 
+function lineSimilarity(a: string, b: string): number {
+  const grams = (t: string) => {
+    const s = t.replace(/\s+/g, " ").trim().toLowerCase();
+    const set = new Set<string>();
+    for (let i = 0; i < s.length - 1; i++) set.add(s.slice(i, i + 2));
+    return set;
+  };
+  const ga = grams(a);
+  const gb = grams(b);
+  if (!ga.size || !gb.size) return 0;
+  let shared = 0;
+  ga.forEach((g) => {
+    if (gb.has(g)) shared++;
+  });
+  return shared / Math.max(ga.size, gb.size);
+}
+
 export function codeWatchQuestion(prev: string, curr: string, problem: Problem): string | null {
   const { added, removed } = diffLines(prev, curr);
   if (!added.length && !removed.length) return null;
-  if (removed.length >= 1 && removed[0].length > 3) {
-    return `Stop there. You removed this: "${removed[0].slice(0, 60)}". Why? Was it wrong, and what replaces it?`;
+  const pureRemovals = removed.filter((r) => !added.some((a) => lineSimilarity(a, r) >= 0.5));
+  if (pureRemovals.length >= 1 && pureRemovals[0].length > 3) {
+    return `Stop there. You removed this: "${pureRemovals[0].slice(0, 60)}". Why? Was it wrong, and what replaces it?`;
   }
   const joined = added.join("\n");
   if (/\b(for|while)\b/.test(joined)) return "You just added a loop. Justify it: what does it iterate over, and what total complexity does that give you now?";
@@ -350,8 +368,11 @@ export function nextCodeWatchQuestion(
   const p = normalizeCode(prev);
   const c = normalizeCode(curr);
   if (p === c) return null;
-  const { added, removed } = diffLines(p, c);
-  const charDelta = [...added, ...removed].reduce((sum, l) => sum + l.trim().length, 0);
+  let pre = 0;
+  while (pre < p.length && pre < c.length && p[pre] === c[pre]) pre++;
+  let suf = 0;
+  while (suf < p.length - pre && suf < c.length - pre && p[p.length - 1 - suf] === c[c.length - 1 - suf]) suf++;
+  const charDelta = p.length - pre - suf + (c.length - pre - suf);
   if (charDelta < 12) return null;
   const q = codeWatchQuestion(p, c, problem);
   if (!q) return null;
