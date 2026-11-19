@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getProblemById, langLabel, problems } from "@/lib/problems";
 import { overallScore, type SessionRecord } from "@/lib/interviewer";
-import { phaseNotes, recommendNext, weakAreas } from "@/lib/feedback";
+import { companyVerdict, phaseNotes, recommendNext, weakAreas } from "@/lib/feedback";
 
 function Score({ label, value }: { label: string; value: number }) {
   return (
@@ -64,6 +64,7 @@ export default function FeedbackPage() {
     rec.type === "technical"
       ? (getProblemById(rec.problemId) ?? problems.find((p) => p.title === rec.problemTitle))
       : undefined;
+  const verdict = companyVerdict(rec);
   const notes = phaseNotes(rec, techProblem);
   const weak = weakAreas(rec, techProblem);
   const next = recommendNext(rec, techProblem);
@@ -95,6 +96,8 @@ export default function FeedbackPage() {
       <div className="mt-4 flex shrink-0 flex-wrap items-center gap-2.5">
         <h1 className="font-display text-4xl font-semibold tracking-tight">Interview Feedback</h1>
         <span className={`badge ${rec.difficulty === "Easy" ? "badge-easy" : rec.difficulty === "Hard" ? "badge-hard" : "badge-mid"}`}>{rec.difficulty}</span>
+        {rec.companyName && <span className="badge badge-accent">{rec.companyName}</span>}
+        {rec.resumeInterview && <span className="badge">Resume interview</span>}
         {rec.incomplete && <span className="badge badge-mid">Incomplete session</span>}
       </div>
       <p className="mt-2 text-sm text-stone-600">
@@ -107,6 +110,12 @@ export default function FeedbackPage() {
       )}
       <p className="mt-3 text-xs leading-5 text-stone-600">{diffNote}</p>
       <p className="mt-1 text-xs leading-5 text-stone-600">{timeNote}</p>
+      {verdict && (
+        <div className="card card-pad mt-4">
+          <div className="text-xs font-semibold uppercase tracking-wider text-stone-600">Against the company bar</div>
+          <p className="mt-1.5 text-sm leading-6 text-stone-700">{verdict}</p>
+        </div>
+      )}
 
       <div className="card mt-4 flex shrink-0 flex-wrap items-center justify-between gap-4 p-5">
         <div>

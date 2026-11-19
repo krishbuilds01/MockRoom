@@ -1,5 +1,15 @@
 import { getProblemById, problems, progression, type Problem } from "./problems";
-import { truncateWords, wordCount, type SessionRecord } from "./interviewer";
+import { overallScore, truncateWords, wordCount, type SessionRecord } from "./interviewer";
+import { getCompany } from "./companies";
+
+export function companyVerdict(rec: SessionRecord): string | null {
+  if (!rec.companyId || rec.companyId === "any") return null;
+  const c = getCompany(rec.companyId);
+  const overall = overallScore(rec.scores);
+  if (overall >= 8) return `${c.barLine} At ${overall}/10, this performance is in competitive range for that loop. The weak areas below are still worth closing before the real thing.`;
+  if (overall >= 6) return `${c.barLine} At ${overall}/10, you are close but not through. The gaps below are exactly what this loop screens for.`;
+  return `${c.barLine} At ${overall}/10, this loop would end here. The fixes below are the shortest path back to competitive.`;
+}
 
 export interface NextStep {
   problemId: string;
@@ -201,7 +211,7 @@ export function phaseNotes(rec: SessionRecord, problem?: Problem): PhaseNote[] {
     return rec.qaPairs.slice(0, 5).map((pair, i) => {
       const words = pair.answer ? wordCount(pair.answer) : 0;
       return {
-        phase: `Question ${i + 1}`,
+        phase: pair.target ? `Question ${i + 1} · ${pair.target}` : `Question ${i + 1}`,
         did: pair.answer
           ? `You answered in ${words} words: "${truncateWords(pair.answer, 180)}"`
           : "No answer recorded for this question.",

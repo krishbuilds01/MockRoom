@@ -8,7 +8,6 @@ import {
   computeScores,
   generalFollowUp,
   generalOpeningText,
-  generalQuestions,
   generalSecondFollowUp,
   introReaction,
   isReadySignal,
@@ -21,6 +20,7 @@ import {
   type SessionRecord,
 } from "@/lib/interviewer";
 import { targetSecFor } from "@/lib/problems";
+import { companyContext, companyQuestions, getCompany } from "@/lib/companies";
 import { postInterview } from "@/lib/interviewApi";
 import { sanitizeAiText } from "@/lib/sanitize";
 import { useVoice } from "@/lib/useVoice";
@@ -43,9 +43,10 @@ function isBehavioural(q: string): boolean {
   return /(time you|describe a time|disagreed|weakest|a hard bug)/i.test(q);
 }
 
-function liveSystemInstruction(difficulty: string, targetMinutes: number, questions: string[]): string {
+function liveSystemInstruction(difficulty: string, targetMinutes: number, questions: string[], companyLine?: string): string {
   return [
     `You are ${INTERVIEWER_NAME}, a senior software engineer conducting a live voice interview. Speak naturally, warmly and professionally, in short turns, one question at a time.`,
+    ...(companyLine ? [companyLine] : []),
     `This is a ${difficulty} level interview of about ${targetMinutes} minutes. Run the whole interview yourself, in this exact order:`,
     `1. Introduce yourself as ${INTERVIEWER_NAME}, explain the format in two short sentences, and ask the candidate to introduce themselves in a few lines.`,
     `2. Then ask these ${questions.length} main questions, one at a time, in this order: ${questions.map((q, i) => `Question ${i + 1}: "${q}"`).join(" ")}`,
@@ -62,7 +63,8 @@ function GeneralRoom() {
   const params = useSearchParams();
   const difficulty = params.get("difficulty") || "Mid";
   const router = useRouter();
-  const questions = generalQuestions(difficulty);
+  const company = getCompany(params.get("company"));
+  const questions = companyQuestions(company.id, difficulty);
   const targetSec = targetSecFor("general", difficulty);
   const [transcript, setTranscript] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
@@ -207,7 +209,7 @@ function GeneralRoom() {
     setWaiting(true);
     const seq = ++seqRef.current;
     try {
-      const api = await postInterview(body);
+      const api = await postInterview({ ...body, companyContext: companyContext(company) });
       if (!mountedRef.current || seq !== seqRef.current) return null;
       return api;
     } finally {
@@ -221,7 +223,8 @@ function GeneralRoom() {
   useEffect(() => {
     if (startedRef.current) return;
     startedRef.current = true;
-    sayNow(generalOpeningText(difficulty, Math.round(targetSec / 60), questions.length));
+    const base = generalOpeningText(difficulty, Math.round(targetSec / 60), questions.length);
+    sayNow(company.openingLine ? base.replace("First, introduce yourself", `${company.openingLine} First, introduce yourself`) : base);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -390,7 +393,11 @@ function GeneralRoom() {
   });
 
   async function startLive() {
-    const ok = await live.connect(liveSystemInstruction(difficulty, Math.round(targetSec / 60), questions));
+    const companyLine =
+      company.id !== "any"
+        ? `This session mirrors a ${company.name} interview loop. Style: ${company.style} Strictness: ${company.strictnessNote} Open in that style.`
+        : undefined;
+    const ok = await live.connect(liveSystemInstruction(difficulty, Math.round(targetSec / 60), questions, companyLine));
     if (ok) {
       setLiveOn(true);
       liveIntroDoneRef.current = !!introRef.current;
@@ -438,6 +445,8 @@ function GeneralRoom() {
       id: String(Date.now()),
       type: "general",
       difficulty,
+      companyId: company.id,
+      companyName: company.id !== "any" ? company.name : undefined,
       date: new Date().toISOString(),
       timeSec,
       targetSec,
@@ -535,6 +544,7 @@ function GeneralRoom() {
             <div className="mt-1 flex flex-wrap items-center gap-2">
               <span className="text-[15px] font-semibold tracking-tight">Live AI Interview</span>
               <span className={`badge ${difficulty === "Easy" ? "badge-easy" : difficulty === "Hard" ? "badge-hard" : "badge-mid"}`}>{difficulty}</span>
+              {company.id !== "any" && <span className="badge badge-accent">{company.name}</span>}
               <span className="badge badge-accent">{PHASE_LABELS[phase]}</span>
               {liveActive && (
                 <span className="badge badge-live">

@@ -36,6 +36,7 @@ import {
   type SessionRecord,
 } from "@/lib/interviewer";
 import { postInterview, type InterviewApiResponse } from "@/lib/interviewApi";
+import { companyTechnicalContext, getCompany } from "@/lib/companies";
 import { sanitizeAiText } from "@/lib/sanitize";
 import { useVoice } from "@/lib/useVoice";
 import { useSpeaker } from "@/lib/useSpeaker";
@@ -77,6 +78,7 @@ const ackLines = [
 function TechnicalRoom() {
   const params = useSearchParams();
   const difficulty = params.get("difficulty") || "Mid";
+  const company = getCompany(params.get("company"));
   const topic = params.get("topic") || "HashMap";
   const router = useRouter();
   const [problem] = useState(() => getProblemById(params.get("problem")) || pickProblem(topic, difficulty));
@@ -245,7 +247,7 @@ function TechnicalRoom() {
     setWaiting(true);
     const seq = ++seqRef.current;
     try {
-      const api = await postInterview(body);
+      const api = await postInterview({ ...body, companyContext: companyTechnicalContext(company) });
       if (!mountedRef.current || seq !== seqRef.current) return null;
       return api;
     } finally {
@@ -262,7 +264,8 @@ function TechnicalRoom() {
     lastAiRef.current = Date.now();
     lastChangeRef.current = Date.now();
     lastProgressRef.current = Date.now();
-    commitAi(techOpeningText(problem, difficulty, Math.round(targetSec / 60)), true);
+    const openingBase = techOpeningText(problem, difficulty, Math.round(targetSec / 60));
+    commitAi(company.openingLine ? openingBase.replace("Before we start, introduce yourself", `${company.openingLine} Before we start, introduce yourself`) : openingBase, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -678,6 +681,8 @@ function TechnicalRoom() {
       id: String(Date.now()),
       type: "technical",
       difficulty,
+      companyId: company.id,
+      companyName: company.id !== "any" ? company.name : undefined,
       topic,
       problemTitle: problem.title,
       problemId: problem.id,
@@ -785,6 +790,7 @@ function TechnicalRoom() {
               <span className="text-[15px] font-semibold tracking-tight">Technical Interview</span>
               <span className="badge">{problem.title}</span>
               <span className={`badge ${problem.difficulty === "Easy" ? "badge-easy" : problem.difficulty === "Hard" ? "badge-hard" : "badge-mid"}`}>{problem.difficulty}</span>
+              {company.id !== "any" && <span className="badge badge-accent">{company.name}</span>}
               <span className="badge badge-accent">{PHASE_LABELS[phase]}</span>
             </div>
             <div className="tnum mt-1 text-xs text-stone-600">

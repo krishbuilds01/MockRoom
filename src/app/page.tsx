@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { topics } from "@/lib/problems";
+import { companies, getCompany } from "@/lib/companies";
 import { overallScore, type SessionRecord } from "@/lib/interviewer";
 
 const diffInfo: Record<string, string> = {
@@ -49,6 +50,7 @@ export default function Home() {
   const router = useRouter();
   const [type, setType] = useState<"general" | "technical">("technical");
   const [difficulty, setDifficulty] = useState("Mid");
+  const [companyId, setCompanyId] = useState("any");
   const [topic, setTopic] = useState("HashMap");
   const [history, setHistory] = useState<SessionRecord[]>([]);
 
@@ -60,12 +62,15 @@ export default function Home() {
   function start() {
     if (type === "technical") {
       const q = new URLSearchParams({ difficulty, topic });
+      if (companyId !== "any") q.set("company", companyId);
       router.push(`/interview/technical?${q}`);
     } else {
       const q = new URLSearchParams({ difficulty });
+      if (companyId !== "any") q.set("company", companyId);
       router.push(`/interview/general?${q}`);
     }
   }
+  const company = getCompany(companyId);
 
   const chronological = [...history].reverse();
   const latestOverall = history.length ? overallScore(history[0].scores) : null;
@@ -138,6 +143,16 @@ export default function Home() {
           </div>
           <p className="mt-2.5 text-xs leading-5 text-stone-600">{diffInfo[difficulty]}</p>
 
+          <div className="mt-5 text-[13px] font-medium text-stone-700">Company</div>
+          <select value={companyId} onChange={(e) => setCompanyId(e.target.value)} className="select mt-2.5 w-full" aria-label="Company">
+            {companies.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+          <p className="mt-2.5 text-xs leading-5 text-stone-600">
+            {company.id === "any" ? "A standard loop. Pick a company and Alex runs the session in that company's style, with its questions and its bar." : company.style}
+          </p>
+
           {type === "technical" && (
             <>
               <div className="mt-5 text-[13px] font-medium text-stone-700">Topic</div>
@@ -200,6 +215,8 @@ export default function Home() {
                   <div className="flex items-center gap-2 truncate font-medium">
                     <span className="truncate">{h.type === "technical" ? h.problemTitle || "Technical interview" : "Live AI Interview"}</span>
                     <span className={`badge ${h.difficulty === "Easy" ? "badge-easy" : h.difficulty === "Hard" ? "badge-hard" : "badge-mid"}`}>{h.difficulty}</span>
+                    {h.companyName && <span className="badge badge-accent">{h.companyName}</span>}
+                    {h.resumeInterview && <span className="badge">Resume</span>}
                     {h.incomplete && <span className="badge badge-mid">Incomplete</span>}
                   </div>
                   <div className="mt-0.5 text-xs text-stone-600">{`${new Date(h.date).toLocaleString()} · ${Math.round(h.timeSec / 60)} min${h.targetSec ? ` of ${Math.round(h.targetSec / 60)} target` : ""}`}</div>

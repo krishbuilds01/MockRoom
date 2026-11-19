@@ -607,6 +607,9 @@ export interface SessionRecord {
   id: string;
   type: "general" | "technical";
   difficulty: string;
+  companyId?: string;
+  companyName?: string;
+  resumeInterview?: boolean;
   topic?: string;
   problemTitle?: string;
   problemId?: string;
@@ -633,7 +636,7 @@ export interface SessionRecord {
   askedQuestionAtEnd?: boolean;
   incomplete?: boolean;
   codeChanged?: boolean;
-  qaPairs?: { question: string; answer?: string }[];
+  qaPairs?: { question: string; answer?: string; target?: string }[];
 }
 
 export function saveSession(rec: SessionRecord) {
