@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { topics } from "@/lib/problems";
 import { companies, getCompany } from "@/lib/companies";
 import { buildResumeQuestionsLocal, postResumeQuestions, RESUME_QUESTIONS_KEY, RESUME_STORAGE_KEY } from "@/lib/resume";
+import { loadHistory } from "@/lib/analytics";
 import { overallScore, type SessionRecord } from "@/lib/interviewer";
 
 const diffInfo: Record<string, string> = {
@@ -12,24 +13,6 @@ const diffInfo: Record<string, string> = {
   Mid: "Real interview level, deep follow-ups, hints only when asked and recorded, target about 30 min",
   Hard: "Very strict interviewer, no hints, brute force gets sent back, pushes on trade-offs and optimisation, target about 45 min",
 };
-
-function loadHistory(): SessionRecord[] {
-  try {
-    const parsed: unknown = JSON.parse(localStorage.getItem("interviewai-history") || "[]");
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (h): h is SessionRecord =>
-        !!h &&
-        typeof h === "object" &&
-        typeof (h as SessionRecord).date === "string" &&
-        !!(h as SessionRecord).scores &&
-        typeof (h as SessionRecord).scores.problemSolving === "number" &&
-        typeof (h as SessionRecord).scores.coding === "number"
-    );
-  } catch {
-    return [];
-  }
-}
 
 const features = [
   {
@@ -134,13 +117,14 @@ export default function Home() {
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col px-5">
-      <nav className="flex shrink-0 items-center justify-between border-b border-line py-3">
+      <nav className="flex h-16 shrink-0 items-center justify-between border-b border-line">
         <div className="flex items-center gap-2.5">
           <span className="avatar" style={{ width: "2rem", height: "2rem", fontSize: "0.8rem" }}>A</span>
           <span className="font-display text-lg font-semibold tracking-tight">InterviewAI</span>
         </div>
         <div className="flex items-center gap-5 text-sm text-stone-600">
           <a href="#progress" className="hidden hover:text-stone-900 sm:block">Your progress</a>
+          <Link href="/progress" className="hover:text-stone-900">Progress</Link>
           <Link href="/interview/feedback" className="hover:text-stone-900">Latest feedback</Link>
         </div>
       </nav>

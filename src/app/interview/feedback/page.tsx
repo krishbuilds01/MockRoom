@@ -85,7 +85,7 @@ export default function FeedbackPage() {
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-4xl flex-col px-5 py-5">
-      <nav className="flex shrink-0 items-center justify-between border-b border-line pb-3">
+      <nav className="flex h-16 shrink-0 items-center justify-between border-b border-line">
         <div className="flex items-center gap-2.5">
           <span className="avatar" style={{ width: "2rem", height: "2rem", fontSize: "0.8rem" }}>A</span>
           <span className="font-display text-lg font-semibold tracking-tight">InterviewAI</span>
