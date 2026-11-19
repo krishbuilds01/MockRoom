@@ -130,17 +130,17 @@ function GeneralRoom() {
   const live = useLiveSession({
     onAiTurn: (t) => liveAiRef.current(t),
     onUserTurn: (t) => passiveRef.current(t),
-    onSpeaking: (s) => setLiveSpeaking(s),
+    onSpeaking: (s) => {
+      setLiveSpeaking(s);
+      if (s) setLiveGated(true);
+    },
     onAboutToEnd: () => {
       live.setGated(false);
       setLiveGated(false);
     },
   });
   useEffect(() => {
-    if (liveSpeaking) {
-      live.setGated(true);
-      setLiveGated(true);
-    }
+    if (liveSpeaking) live.setGated(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liveSpeaking]);
   const liveAiRef = useRef<(text: string) => void>(() => {});

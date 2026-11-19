@@ -31,7 +31,9 @@ export function useSpeaker(callbacks?: SpeakerCallbacks) {
   const [speaking, setSpeaking] = useState(false);
   const tokenRef = useRef(0);
   const cbRef = useRef(callbacks);
-  cbRef.current = callbacks;
+  useEffect(() => {
+    cbRef.current = callbacks;
+  });
   const speakingRef = useRef(false);
   const aboutToEndFiredRef = useRef(false);
 
