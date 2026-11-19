@@ -73,7 +73,7 @@ export default function Home() {
   const trendDelta = latestOverall !== null && previousOverall !== null ? Math.round((latestOverall - previousOverall) * 10) / 10 : null;
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col px-5 lg:h-dvh lg:overflow-hidden">
+    <main className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col px-5">
       <nav className="flex shrink-0 items-center justify-between border-b border-line py-3">
         <div className="flex items-center gap-2.5">
           <span className="avatar" style={{ width: "2rem", height: "2rem", fontSize: "0.8rem" }}>A</span>
@@ -158,8 +158,8 @@ export default function Home() {
       <p className="mt-5 shrink-0 text-[13px] leading-5 text-zinc-500">How it works: set up in ten seconds, interview with Alex (introduction, questions, coding, your questions), then get scored feedback with a practice plan.</p>
 
       {history.length > 0 && (
-        <section id="progress" className="mt-6 flex min-h-0 flex-1 flex-col">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <section id="progress" className="mt-8">
+          <div className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between sm:gap-2">
             <h2 className="text-lg font-semibold tracking-tight">Your progress</h2>
             {latestOverall !== null && (
               <div className="text-xs text-zinc-400">
@@ -173,21 +173,27 @@ export default function Home() {
               </div>
             )}
           </div>
+          <p className="mt-1.5 text-xs text-zinc-500">
+            After a session, your feedback is ready here: <Link href="/interview/feedback" className="text-zinc-300 underline underline-offset-2 hover:text-zinc-100">open latest feedback</Link>
+          </p>
           {chronological.length > 1 && (
-            <div className="card mt-3 flex h-24 shrink-0 items-end gap-1.5 p-4">
-              {chronological.slice(-14).map((h) => {
-                const o = overallScore(h.scores);
-                const d = new Date(h.date);
-                return (
-                  <div key={h.id} className="flex min-w-2 flex-1 flex-col items-center justify-end gap-1 self-stretch" title={`${o}/10 on ${d.toLocaleDateString()}`}>
-                    <div className="w-full rounded-t bg-accent/80" style={{ height: `${Math.max(8, o * 10)}%` }} />
-                    <span className="text-[9px] font-medium leading-none text-zinc-400">{o}</span>
-                  </div>
-                );
-              })}
+            <div className="card mt-3 p-4">
+              <div className="flex h-28 items-end gap-1.5 border-b border-line pb-0">
+                {chronological.slice(-14).map((h) => {
+                  const o = overallScore(h.scores);
+                  const d = new Date(h.date);
+                  return (
+                    <div key={h.id} className="flex h-full min-w-2 flex-1 flex-col items-center justify-end gap-1" title={`${o}/10 on ${d.toLocaleDateString()}`}>
+                      <span className="text-[10px] font-semibold leading-none text-zinc-300">{o}</span>
+                      <div className="w-full rounded-t bg-accent/80" style={{ height: `${Math.max(6, o * 8)}%` }} />
+                      <span className="text-[9px] leading-none text-zinc-500">{`${d.getDate()}/${d.getMonth() + 1}`}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
-          <div className="card mt-3 max-h-80 min-h-0 flex-1 divide-y divide-line overflow-y-auto lg:max-h-none">
+          <div className="card mt-3 divide-y divide-line">
             {history.map((h) => (
               <div key={h.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 text-sm">
                 <div className="min-w-0">
@@ -213,9 +219,8 @@ export default function Home() {
         </section>
       )}
 
-      <footer className="mt-4 shrink-0 border-t border-line py-3 text-xs leading-5 text-zinc-500">
+      <footer className="mt-8 shrink-0 border-t border-line py-4 text-xs leading-5 text-zinc-500">
         InterviewAI, strict AI interview practice. Code runs via the Judge0 API. Interviews are led by the interview engine (Gemini, with a local engine as fallback) and spoken with a Gemini voice; Gemini Live conversation is an optional experimental mode in the Live AI Interview room.
-        <span className="mt-1 block">After a session, your feedback is ready here: <Link href="/interview/feedback" className="text-zinc-300 underline underline-offset-2 hover:text-zinc-100">open latest feedback</Link>.</span>
       </footer>
     </main>
   );

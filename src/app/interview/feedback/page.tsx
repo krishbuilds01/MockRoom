@@ -83,7 +83,7 @@ export default function FeedbackPage() {
         : "Mid mode: strict real interview expectations. Hints only when asked, and they are recorded.";
 
   return (
-    <main className="mx-auto flex h-dvh w-full max-w-4xl flex-col overflow-hidden px-5 py-5">
+    <main className="mx-auto flex min-h-dvh w-full max-w-4xl flex-col px-5 py-5">
       <nav className="flex shrink-0 items-center justify-between border-b border-line pb-3">
         <div className="flex items-center gap-2.5">
           <span className="avatar" style={{ width: "2rem", height: "2rem", fontSize: "0.8rem" }}>A</span>
@@ -149,7 +149,7 @@ export default function FeedbackPage() {
         </div>
       </div>
 
-      <div className="mt-4 min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
+      <div className="mt-4 space-y-4">
       {notes.length > 0 && (
         <div className="card p-5">
           <h2 className="text-sm font-semibold">What happened, phase by phase</h2>

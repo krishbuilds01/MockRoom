@@ -869,11 +869,11 @@ function TechnicalRoom() {
               </div>
             )}
           </div>
-          <div className="h-[340px] shrink-0 border border-line lg:h-auto lg:min-h-[170px] lg:flex-1">
+          <div className="h-[340px] shrink-0 border border-line lg:h-auto lg:min-h-[120px] lg:flex-1">
             <Editor height="100%" language={lang} value={code} onChange={onCodeChange} theme="vs-dark" options={{ minimap: { enabled: false }, fontSize: 14, scrollBeyondLastLine: false, wordWrap: "on" }} />
           </div>
 
-          <div className="max-h-[280px] shrink-0 overflow-y-auto rounded-b-2xl border border-line border-t-0 bg-panel p-4 lg:max-h-[34%]">
+          <div className="max-h-[280px] shrink-0 overflow-y-auto rounded-b-2xl border border-line border-t-0 bg-panel p-4 lg:max-h-[30%]">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h3 className="text-sm font-semibold">Test cases {lastKind === "submit" ? "(last submit)" : lastKind === "run" ? "(last run)" : ""}</h3>
               <span className="text-xs text-zinc-500">Run checks {visibleTests} visible cases. Submit checks all {problem.tests.length} cases including hidden, then starts the dry run.</span>
