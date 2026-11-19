@@ -6,12 +6,12 @@ A strict AI interview practice platform. Practice a live one on one interview wi
 
 - Home page with two interview types, difficulty selector (Easy / Mid / Hard) and topic selector
 - Live AI Interview: camera preview, voice input and voice output, follow-up questions, 5 questions per session
-- Technical Interview: LeetCode style layout with problem panel, Monaco editor (JavaScript and Python, code is kept per language when you switch), Run and Submit, visible and hidden test cases
+- Technical Interview: LeetCode style layout with problem panel, Monaco editor (JavaScript, Python and Java, code is kept per language when you switch), Run and Submit, visible and hidden test cases
 - Both rooms run like a real interview, with a phase indicator at the top:
   - Opening: the interviewer (Alex) introduces himself, explains the format, and asks you to introduce yourself
   - Clarifying: in the technical room, Alex presents the problem and asks for your clarifying questions first, and answers them from the problem data. Whether you asked any is recorded
   - Approach: he asks for your approach and judges it. No code runs before an approach is accepted
-  - Coding: he watches editor changes, notices new loops, hash maps, sorting, returns, deleted lines, long stretches without a run, and asks why, at most one question every 25 seconds
+  - Coding: he watches real editor content changes (cursor moves and no-op edits never trigger anything), notices new loops, hash maps, sorting, returns, deleted lines, and long stretches without a run, and asks why. At most one question is ever waiting for an answer, questions never repeat, and there is a minimum 45 second gap while you code
   - Dry run: after Submit passes to the review stage, Alex asks you to dry run one example input out loud, value by value, before complexity
   - Complexity: your stated time and space complexity is checked. If you already stated it correctly earlier, he confirms it instead of asking again
   - Your questions: Alex asks if you have questions for him and answers one briefly, then closes professionally
@@ -38,17 +38,22 @@ The feedback page is the point of the platform:
 - Model pointers, shown only after the interview ends: the intended pattern for the problem, the expected complexity, the key points, and the edge cases that matter
 - Weak areas: 2 to 4 concrete areas derived from your signals, like complexity analysis, edge cases, hint independence, or answer depth
 - Next steps: 2 to 3 recommended problems from the set with a reason for each (retry a failed problem first, rebuild the pattern, or move up the sequence), each with a link that starts that interview directly
-- Progress over time: the home page lists your sessions with date, problem, tests, hints, and overall score, shows the change versus your previous session, and draws a simple bar trend of your overall scores
+- Progress over time: the home page lists your sessions with date, problem, tests, hints, and overall score, shows the change versus your previous session, and draws a bar trend with each bar labeled by its overall score
 
-## Voice: live native audio first
+## Voice and interview architecture
 
-The voice layer has three levels, and the rooms always show which one is active:
+The interview is led by the engine, not by a free-running voice model. Both rooms run on one path: for every answer you give, the interview engine (Gemini over REST, or the local engine) computes exactly one reply. Replies are committed to the transcript in order through a single-flight queue (the send button waits, stale responses are ignored, nothing is ever committed twice), and a typing indicator shows while Alex is thinking. Every AI message also passes through a sanitizer before it can reach the transcript, the speaker, or your session record, so internal instruction text can never leak into the conversation.
 
-1. Gemini Live (primary). The server route `/api/live-token` uses your `GEMINI_API_KEY` to mint a short lived ephemeral token (the real key never reaches the browser) and locks the session setup into it: the native audio model (`gemini-2.5-flash-native-audio-preview-12-2025`, changeable with `GEMINI_LIVE_MODEL`), the Callirrhoe voice, and the Alex system instruction. The browser then opens a WebSocket to the Gemini Live constrained endpoint, streams your mic as 16kHz PCM, and plays the interviewer's 24kHz native audio through a gapless queue that flushes when you interrupt. The interview engine stays in charge of structure: it computes each reply exactly as before and hands it to the Live session as a director instruction, and the Live transcriptions (yours and Alex's) are what land in the transcript, so scoring and feedback work from what was actually said. Rooms show "Voice: Gemini Live" while connected, and there is a "Use text mode" button if you prefer typing.
-2. Gemini TTS (fallback). If Live cannot connect or drops, the interview continues with the text engine plus `/api/tts`: the Gemini TTS model (`gemini-2.5-flash-preview-tts`, voice Callirrhoe, with a natural spoken style direction prepended server side) returns WAV audio. The client fires all sentence chunk requests in parallel, merges short fragments so a typical reply is one or two calls, caches repeated lines for the session, and plays chunks in order through one reusable audio element. If the first chunk has not arrived within about 2.5 seconds, the browser voice starts that chunk so you are never left in silence. Rooms show "AI voice: Gemini voice".
-3. Browser voice (last resort). Improved speech synthesis: it picks the best available voice (Google US English, Natural, Neural, or Microsoft online voices first) at a natural rate. With no Gemini key at all, this is where the app starts, instantly, because the no-key responses are fast and latched.
+Voice on this main path:
 
-Voice input: with Gemini Live, the mic streams straight to the Live session and your speech is transcribed by Gemini. In fallback modes, voice input uses the Web Speech API (Chrome and Edge), with visible listening and error states. Typing always works.
+1. Gemini TTS (primary voice). `/api/tts` uses the Gemini TTS model (`gemini-2.5-flash-preview-tts`, voice Callirrhoe, with a natural spoken style direction prepended server side) and returns WAV audio. The client fires all sentence chunk requests in parallel, merges short fragments so a typical reply is one or two calls, caches repeated lines for the session, and plays chunks in order through one reusable audio element. If the first chunk has not arrived within about 2.5 seconds, the browser voice starts that chunk so you are never left in silence. Rooms show "Voice: Gemini voice".
+2. Browser voice (fallback). Improved speech synthesis: it picks the best available voice (Google US English, Natural, Neural, or Microsoft online voices first) at a natural rate. With no Gemini key at all, this is where the app starts, instantly, because the no-key responses are fast and latched.
+
+Mic gating: while Alex is speaking, your mic pauses automatically and the room shows "Mic paused while Alex speaks". It resumes just before he finishes (when the last chunk starts playing, or about 0.8 seconds from the end), so you can answer without a dead gap. It only auto-resumes if you had the mic on; if you muted yourself, you stay muted. Anything the recognizer hears while Alex speaks is discarded, and tapping the mic or the speaking indicator interrupts him and turns your mic straight back on. Muting Alex's voice is a separate control and does not change the mic.
+
+Gemini Live (experimental, opt-in, general room only). The Live AI Interview room has a "Live conversation (experimental)" button, off by default. In this mode the Gemini Live model leads the conversation itself from its system instruction (the Alex persona, the opening, the 5 questions for your difficulty, strict follow-ups, your questions, the close). The app never injects instructions into a Live session; it only listens, appending the Live transcriptions to the transcript and deriving progress passively, so end-of-interview scoring still works from what was actually said. The same mic gating applies: your mic frames stop going up while Alex's audio is playing and resume as his turn ends. A visible "End live and use standard mode" button switches back to the engine path at any point. The server route `/api/live-token` mints a short lived ephemeral token from your `GEMINI_API_KEY` (the real key never reaches the browser) for the native audio model (`gemini-2.5-flash-native-audio-preview-12-2025`, changeable with `GEMINI_LIVE_MODEL`) with the Callirrhoe voice. The technical room never uses Live: code watching needs exact engine control.
+
+Voice input on the main path uses the Web Speech API (Chrome and Edge), with visible listening, paused, and error states. In Live mode your mic streams to the Live session and Gemini transcribes it. Typing always works.
 
 ## How to run
 
@@ -63,9 +68,9 @@ No API key is needed to run it: the local engine and browser voice cover everyth
 
 ## How code running works
 
-Code runs through the free Judge0 CE public API at https://ce.judge0.com (language ids 63 for JavaScript, 71 for Python), with a 30 second timeout and per case results even when your code has a syntax error. This needs internet. Note: the public Piston execute API became whitelist only in Feb 2026, so Judge0 is the primary runner in `src/lib/runner.ts`.
+Code runs through the free Judge0 CE public API at https://ce.judge0.com (language ids 63 for JavaScript, 71 for Python, 62 for Java OpenJDK 13), with a 30 second timeout and per case results even when your code has a syntax or compile error. This needs internet. Note: the public Piston execute API became whitelist only in Feb 2026, so Judge0 is the primary runner in `src/lib/runner.ts`.
 
-Each problem in `src/lib/problems.ts` defines a solution function name, test cases as function calls, the intended pattern, key points, and edge cases. The runner appends a small driver that calls your function with each test case's arguments and compares the JSON output. Run checks visible cases only. Submit checks all cases including hidden ones. Group Anagrams uses a sorted comparison because group order does not matter.
+Each problem in `src/lib/problems.ts` defines a solution function name, test cases as function calls, the intended pattern, key points, and edge cases. The runner appends a small driver that calls your function with each test case's arguments and compares the JSON output. For Java you write a non-public `class Solution` with the problem's method; the runner adds the imports and a generated `Main` class that runs the cases and prints results in the same format (Group Anagrams groups are sorted inside and out before comparing). Run checks visible cases only. Submit checks all cases including hidden ones. Group Anagrams uses a sorted comparison because group order does not matter.
 
 ## How the AI interviewer works
 
@@ -79,7 +84,7 @@ The route handles these modes:
 - `approach` - reaction to the candidate's stated approach, plus one probing question
 - `codewatch` - one counter question about what the candidate just wrote or deleted. If there is nothing worth asking, the reply is empty and the room stays silent
 - `ask` - the candidate asks the AI something, like "give me a test case" (one concrete input and expected output), "hint" (difficulty rules apply, and it is recorded), or "what about empty input?"
-- `complexity` - asks for, or checks, the time and space complexity of the final code
+- `complexity` - asks for, or checks, the time and space complexity of the final code. When a complexity was already stated during coding, the room completes this step with an engine template that confirms or corrects what you said, instead of asking again
 - `feedback` - a short, honest spoken closing summary. The detailed scoring stays local
 - `intro` - reaction to the candidate's self introduction at the opening
 - `clarifying` - answers a clarifying question from the problem data (examples, constraints, edge case notes)
@@ -114,7 +119,9 @@ Never commit a real key. Without a key the app still runs fully on the local eng
 - `src/lib/runner.ts` - Judge0 code runner and driver builder
 - `src/lib/interviewer.ts` - local strict interviewer engine, code watching, complexity checking, scoring, session storage
 - `src/lib/feedback.ts` - weak areas, next problem recommendations, phase by phase notes
-- `src/lib/liveSession.ts` - Gemini Live session manager: WebSocket, mic streaming, gapless audio playout, transcriptions, soft fallback
+- `src/lib/liveSession.ts` - Gemini Live session manager for the opt-in experimental mode: WebSocket, mic streaming with playout gating, gapless audio playout, transcriptions
+- `src/lib/sanitize.ts` - shared sanitizer that strips internal instruction markers from any AI text before it is shown, spoken, or saved
+- `src/lib/voiceGate.ts` - the mic gating state machine shared by both rooms (pause while Alex speaks, resume just before he ends, interrupt, user mute wins)
 - `src/lib/useVoice.ts` - Web Speech API voice input hook
 - `src/lib/useSpeaker.ts` and `src/lib/voice.ts` - fallback voice output: Gemini TTS with parallel prefetch and caching first, improved browser voice after that
 - `src/components/Camera.tsx` - camera preview with graceful fallback
@@ -127,8 +134,8 @@ Never commit a real key. Without a key the app still runs fully on the local eng
 
 ## Known limits
 
-- Voice input in fallback modes (Web Speech API) works in Chrome and Edge, not in all browsers. Gemini Live voice input works wherever WebSockets and mic access work. Typing always works.
-- Gemini Live sessions are capped by Google (about 15 minutes of audio per session today). If a session drops, the room falls back to the text engine plus Gemini TTS automatically and offers a "Retry live voice" button.
+- Voice input on the main path (Web Speech API) works in Chrome and Edge, not in all browsers. Gemini Live voice input works wherever WebSockets and mic access work. Typing always works.
+- Gemini Live is experimental and opt-in, in the general room only. Sessions are capped by Google (about 15 minutes of audio per session today). If Live cannot connect, the room stays on the standard engine path and says so; the "End live and use standard mode" button returns you to it at any time.
 - Gemini Live, Gemini TTS and Gemini replies need a `GEMINI_API_KEY` and internet. Without them the app uses the local engine and browser voice, which are less human.
 - Code running needs internet for the Judge0 API, and the free public instance can rate limit under heavy use.
 - Session history lives in your browser localStorage only, so it does not follow you across devices.
