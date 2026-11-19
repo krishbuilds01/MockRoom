@@ -24,6 +24,9 @@ export interface Problem {
   extraTest: TestCase & { note: string };
   emptyInputNote: string;
   complexity: string;
+  pattern: string;
+  keyPoints: string[];
+  edgeCases: string[];
 }
 
 // Test cases are function calls: the runner appends a driver that calls
@@ -63,6 +66,9 @@ export const problems: Problem[] = [
     extraTest: { args: [[5, 5, 5], 10], expected: [0, 1], note: "nums = [5,5,5], target = 10 should return [0,1]. Your code must not reuse the same index." },
     emptyInputNote: "The constraints say nums has at least 2 elements, so empty input will not be tested. Still, returning an empty array for that case is a safe guard.",
     complexity: "Expected: O(n) time and O(n) space with a hash map. Brute force is O(n^2) time.",
+  pattern: "Hash map, one pass: store each value with its index, check the complement before inserting.",
+  keyPoints: ["Check the complement (target - x) before storing x, so you never reuse the same index", "A Map gives O(1) average lookup, which is what turns O(n^2) into O(n)", "Return indices, not the values"],
+  edgeCases: ["Duplicate values, like [3,3] with target 6", "Negative numbers and a negative target", "The pair can be at the very start or very end of the array"],
   },
   {
     id: "valid-parentheses",
@@ -102,6 +108,9 @@ export const problems: Problem[] = [
     extraTest: { args: ["{[()]}"], expected: true, note: "s = '{[()]}' is fully nested and should return true." },
     emptyInputNote: "An empty string has no unmatched brackets. Most solutions return true for it because the stack ends empty, but constraints say length is at least 1.",
     complexity: "Expected: O(n) time and O(n) space using a stack.",
+  pattern: "Stack: push openers, and on a closer pop and check the match. Empty stack at the end means valid.",
+  keyPoints: ["A closing bracket must match the most recent unmatched opener, which is exactly stack order", "A closer arriving on an empty stack is an automatic fail", "At the end the stack must be empty, not just free of mismatches"],
+  edgeCases: ["A single opening bracket", "A closing bracket first", "Interleaved types like ([)] which must fail"],
   },
   {
     id: "longest-substring",
@@ -140,6 +149,9 @@ export const problems: Problem[] = [
     extraTest: { args: ["tmmzuxt"], expected: 5, note: "s = 'tmmzuxt' should give 5 ('mzuxt'). It catches windows that restart from the wrong place." },
     emptyInputNote: "Empty string is a real test case here and the answer is 0. Make sure your code returns 0 instead of crashing.",
     complexity: "Expected: O(n) time, O(min(n, alphabet)) space with sliding window.",
+  pattern: "Sliding window with a map of last seen index: expand right, and when a repeat falls inside the window, jump the left edge past it.",
+  keyPoints: ["The left edge only moves forward, which is what keeps it O(n)", "Only move left when the repeated character is inside the current window", "Track the best length after each step, not just at the end"],
+  edgeCases: ["Empty string must return 0", "All same character, like bbbbb, must return 1", "Cases like abba and dvdf catch windows that restart from the wrong place"],
   },
   {
     id: "group-anagrams",
@@ -176,6 +188,9 @@ export const problems: Problem[] = [
     extraTest: { args: [["listen", "silent", "enlist", "hello"]], expected: [["listen", "silent", "enlist"], ["hello"]], note: "'listen', 'silent' and 'enlist' are one group, 'hello' is alone." },
     emptyInputNote: "An empty string is a valid word here and forms its own group. strs itself has at least 1 element by constraints.",
     complexity: "Expected: O(n * k log k) time where k is max word length, using sorting as the key.",
+  pattern: "Hash map with a canonical key: the sorted word (or a 26 letter count) is the same for every anagram in a group.",
+  keyPoints: ["The key must be identical for anagrams and different for non anagrams", "Sorting each word costs O(k log k); a letter count key costs O(k)", "Empty strings are valid words and group together"],
+  edgeCases: ["An empty string in the input", "All words identical", "Words with the same letters but different lengths must not group"],
   },
   {
     id: "merge-intervals",
@@ -212,6 +227,9 @@ export const problems: Problem[] = [
     extraTest: { args: [[[1, 4], [0, 0]]], expected: [[0, 0], [1, 4]], note: "intervals = [[1,4],[0,0]] is unsorted input and should return [[0,0],[1,4]]." },
     emptyInputNote: "Constraints say at least 1 interval, but returning an empty array for empty input is the safe behaviour and costs one check.",
     complexity: "Expected: O(n log n) time for sorting, O(n) space for the output.",
+  pattern: "Sort by start, then one pass: extend the last merged interval when the next one overlaps it, otherwise start a new one.",
+  keyPoints: ["After sorting by start, you only ever compare against the last output interval", "Overlap after sorting means current start <= last end", "Extending uses max of both ends, because one interval can sit fully inside another"],
+  edgeCases: ["Touching intervals like [1,4] and [4,5] count as overlapping", "One interval fully inside another", "Unsorted input, so never skip the sort"],
   },
   {
     id: "trapping-rain-water",
@@ -248,17 +266,47 @@ export const problems: Problem[] = [
     extraTest: { args: [[0, 2, 0]], expected: 0, note: "height = [0,2,0] traps 0 because there is no wall on the left of the dip." },
     emptyInputNote: "With fewer than 3 bars no water can be trapped, so the answer is 0. Two pointers handle this naturally if the loop condition is left < right.",
     complexity: "Expected: O(n) time and O(1) space with two pointers.",
+  pattern: "Two pointers with leftMax and rightMax: the smaller side limits the water, so resolve that side and move it inward.",
+  keyPoints: ["Water above a bar is min(left max, right max) minus the bar height", "You can decide a position as soon as one side's max is the smaller one", "The two pointer version needs O(1) extra space; precomputed max arrays cost O(n)"],
+  edgeCases: ["Fewer than 3 bars trap nothing", "Strictly rising or falling ground traps nothing", "A dip at the edge traps nothing without a wall outside it"],
   },
 ];
 
 export const topics = ["Arrays", "Strings", "HashMap", "Two Pointers", "Trees", "DP"];
 
+const diffRank: Record<string, number> = { Easy: 0, Mid: 1, Hard: 2 };
+
 export function pickProblem(topic: string, difficulty: string): Problem {
   const byTopic = problems.filter((p) => p.topic === topic);
   const exact = byTopic.find((p) => p.difficulty === difficulty);
   if (exact) return exact;
-  if (byTopic.length) return byTopic[0];
+  if (byTopic.length) {
+    const want = diffRank[difficulty] ?? 1;
+    return [...byTopic].sort(
+      (a, b) => Math.abs(diffRank[a.difficulty] - want) - Math.abs(diffRank[b.difficulty] - want)
+    )[0];
+  }
   const byDiff = problems.filter((p) => p.difficulty === difficulty);
   if (byDiff.length) return byDiff[0];
   return problems[0];
 }
+
+export function getProblemById(id: string | null | undefined): Problem | undefined {
+  if (!id) return undefined;
+  return problems.find((p) => p.id === id);
+}
+
+export function targetSecFor(type: "general" | "technical", difficulty: string, problem?: Problem): number {
+  if (type === "general") return difficulty === "Hard" ? 35 * 60 : difficulty === "Easy" ? 20 * 60 : 25 * 60;
+  const base = problem ? { Easy: 20, Mid: 30, Hard: 45 }[problem.difficulty] : 30;
+  return base * 60;
+}
+
+export const progression: string[] = [
+  "two-sum",
+  "valid-parentheses",
+  "longest-substring",
+  "group-anagrams",
+  "merge-intervals",
+  "trapping-rain-water",
+];

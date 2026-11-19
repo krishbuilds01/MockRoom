@@ -107,16 +107,30 @@ function parseOutput(problem: Problem, tests: TestCase[], stdout: string, stderr
 export async function runCode(problem: Problem, code: string, lang: Lang, includeHidden: boolean): Promise<RunOutput> {
   const tests = includeHidden ? problem.tests : problem.tests.filter((t) => !t.hidden);
   const source = buildSource(problem, code, lang, tests);
-  const res = await fetch("https://ce.judge0.com/submissions?base64_encoded=true&wait=true", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ source_code: toB64(source), language_id: lang === "python" ? 71 : 63 }),
-  });
-  if (!res.ok) throw new Error("Judge0 returned " + res.status);
-  const data = await res.json();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 30000);
+  let res: Response;
+  try {
+    res = await fetch("https://ce.judge0.com/submissions?base64_encoded=true&wait=true", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ source_code: toB64(source), language_id: lang === "python" ? 71 : 63 }),
+      signal: controller.signal,
+    });
+  } catch (e) {
+    if (e instanceof DOMException && e.name === "AbortError") {
+      throw new Error("Judge0 timed out after 30 seconds. Try running again.");
+    }
+    throw new Error("Could not reach the code runner. Check your internet connection and try again.");
+  } finally {
+    clearTimeout(timer);
+  }
+  if (res.status === 429) throw new Error("Judge0 is rate limiting right now. Wait a few seconds and run again.");
+  if (!res.ok) throw new Error("Judge0 returned " + res.status + ". Try running again in a moment.");
+  const data = await res.json().catch(() => null);
+  if (!data) throw new Error("Judge0 returned an unreadable response. Try running again.");
   const stdout = fromB64(data?.stdout);
   const stderr = [fromB64(data?.compile_output), fromB64(data?.stderr), data?.message || ""].filter(Boolean).join("\n");
-  if (!stdout && stderr) throw new Error(stderr.split("\n")[0] || "Execution failed");
   return parseOutput(problem, tests, stdout, stderr);
 }
 

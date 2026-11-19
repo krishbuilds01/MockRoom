@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Rec = {
   lang: string;
@@ -19,6 +19,15 @@ export function useVoice(onText: (text: string) => void) {
     return !!((window as unknown as Record<string, unknown>).SpeechRecognition || (window as unknown as Record<string, unknown>).webkitSpeechRecognition);
   });
   const recRef = useRef<Rec | null>(null);
+
+  useEffect(() => {
+    return () => {
+      try {
+        recRef.current?.stop();
+      } catch {}
+      recRef.current = null;
+    };
+  }, []);
 
   function start() {
     const w = window as unknown as Record<string, unknown>;

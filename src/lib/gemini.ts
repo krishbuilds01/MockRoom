@@ -18,13 +18,20 @@ async function callModel(model: string, key: string, prompt: string): Promise<st
       },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 300 },
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 800,
+          thinkingConfig: { thinkingBudget: 0 },
+        },
       }),
       signal: controller.signal,
     });
     if (!res.ok) return null;
     const data = await res.json().catch(() => null);
-    const parts = data?.candidates?.[0]?.content?.parts;
+    const candidate = data?.candidates?.[0];
+    if (!candidate) return null;
+    if (candidate.finishReason === "MAX_TOKENS") return null;
+    const parts = candidate?.content?.parts;
     if (!Array.isArray(parts)) return null;
     const text = parts
       .map((p: { text?: string }) => (typeof p?.text === "string" ? p.text : ""))

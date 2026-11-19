@@ -11,14 +11,19 @@ export default function Camera({ small }: { small?: boolean }) {
     let cancelled = false;
     async function start() {
       try {
+        if (!navigator.mediaDevices?.getUserMedia) throw new Error("unsupported");
         stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-        if (cancelled) return;
+        if (cancelled) {
+          stream?.getTracks().forEach((t) => t.stop());
+          stream = null;
+          return;
+        }
         if (ref.current) {
           ref.current.srcObject = stream;
           setOn(true);
         }
       } catch {
-        setError("Camera is off or permission was denied. You can still continue the interview.");
+        if (!cancelled) setError("Camera is off or permission was denied. You can still continue the interview.");
       }
     }
     start();
