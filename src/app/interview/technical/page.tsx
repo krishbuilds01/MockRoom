@@ -13,8 +13,10 @@ import {
   isCandidateQuestion,
   saveSession,
   speak,
+  summarizeDiff,
   type Msg,
 } from "@/lib/interviewer";
+import { postInterview } from "@/lib/interviewApi";
 import { useVoice } from "@/lib/useVoice";
 
 const Editor = dynamic(() => import("@monaco-editor/react"), { ssr: false, loading: () => <div className="flex h-full items-center justify-center text-sm text-neutral-500">Loading editor...</div> });
@@ -41,6 +43,7 @@ function TechnicalRoom() {
   const [answered, setAnswered] = useState(0);
   const [approachDone, setApproachDone] = useState(false);
   const [showAi, setShowAi] = useState(true);
+  const [engine, setEngine] = useState<"gemini" | "local">("local");
   const [elapsed, setElapsed] = useState(0);
   const [startedAt] = useState(() => Date.now());
 
@@ -80,17 +83,32 @@ function TechnicalRoom() {
   }, []);
 
   useEffect(() => {
-    const timer = setInterval(() => {
+    const timer = setInterval(async () => {
       if (phaseRef.current !== "coding") return;
       const now = Date.now();
       if (now - lastAiRef.current < 25000) return;
       const current = codeRef.current;
       if (current !== snapshotRef.current) {
-        const q = codeWatchQuestion(snapshotRef.current, current, problem);
+        const prevSnapshot = snapshotRef.current;
+        const localQ = codeWatchQuestion(prevSnapshot, current, problem);
         snapshotRef.current = current;
-        if (q) {
+        if (localQ) {
           lastAiRef.current = now;
-          setTranscript((prev) => [...prev, { role: "ai", text: q, ts: now }]);
+          const api = await postInterview({
+            mode: "codewatch",
+            difficulty,
+            topic,
+            problemTitle: problem.title,
+            problemStatement: problem.statement,
+            code: current,
+            diffSummary: summarizeDiff(prevSnapshot, current),
+          });
+          let q = localQ;
+          if (api) {
+            setEngine(api.engine);
+            if (api.reply) q = api.reply;
+          }
+          setTranscript((prev) => [...prev, { role: "ai", text: q, ts: Date.now() }]);
           speak(q, mutedRef.current);
         }
       } else if (now - lastChangeRef.current > 45000) {
@@ -102,7 +120,7 @@ function TechnicalRoom() {
       }
     }, 5000);
     return () => clearInterval(timer);
-  }, [problem]);
+  }, [problem, difficulty, topic]);
 
   function switchLang(next: Lang) {
     setLang(next);
@@ -123,33 +141,82 @@ function TechnicalRoom() {
     lastAiRef.current = Date.now();
   }
 
-  function submitPanel(raw?: string) {
+  async function submitPanel(raw?: string) {
     const text = (raw ?? input).trim();
     if (!text) return;
     setInput("");
     setTranscript((prev) => [...prev, { role: "user", text, ts: Date.now() }]);
 
     if (phase === "approach") {
-      const reply = analyzeApproach(problem, text, difficulty);
       setApproachDone(true);
       setPhase("coding");
-      setTimeout(() => aiSay(reply), 350);
+      const api = await postInterview({
+        mode: "approach",
+        difficulty,
+        topic,
+        problemTitle: problem.title,
+        problemStatement: problem.statement,
+        message: text,
+        transcript: transcript.slice(-6),
+      });
+      if (api && api.reply) {
+        setEngine(api.engine);
+        aiSay(api.reply);
+      } else {
+        setEngine("local");
+        aiSay(analyzeApproach(problem, text, difficulty));
+      }
       return;
     }
     if (phase === "review") {
       setAnswered((n) => n + 1);
-      const good = /o\(|log|n \^|n2|quadratic|linear/.test(text.toLowerCase());
-      const reply = good
-        ? `Noted. For reference: ${problem.complexity} Your session is complete. Click End Interview to see your full feedback.`
-        : `Thanks. For reference, the expected answer is: ${problem.complexity} Click End Interview to see your full feedback.`;
       setPhase("done");
-      setTimeout(() => aiSay(reply), 350);
+      const api = await postInterview({
+        mode: "complexity",
+        difficulty,
+        topic,
+        problemTitle: problem.title,
+        problemStatement: problem.statement,
+        code: codeRef.current,
+        message: text,
+        testsPassed: submitOut?.passed,
+        testsTotal: submitOut?.total,
+      });
+      if (api && api.reply) {
+        setEngine(api.engine);
+        aiSay(api.reply);
+      } else {
+        setEngine("local");
+        const good = /o\(|log|n \^|n2|quadratic|linear/.test(text.toLowerCase());
+        const reply = good
+          ? `Noted. For reference: ${problem.complexity} Your session is complete. Click End Interview to see your full feedback.`
+          : `Thanks. For reference, the expected answer is: ${problem.complexity} Click End Interview to see your full feedback.`;
+        aiSay(reply);
+      }
       return;
     }
-    const candidate = answerCandidateQuestion(problem, text, difficulty);
-    if (candidate && isCandidateQuestion(text)) {
-      setTimeout(() => aiSay(candidate), 350);
-      return;
+    if (isCandidateQuestion(text)) {
+      const api = await postInterview({
+        mode: "ask",
+        difficulty,
+        topic,
+        problemTitle: problem.title,
+        problemStatement: problem.statement,
+        code: codeRef.current,
+        message: text,
+        transcript: transcript.slice(-6),
+      });
+      if (api && api.reply) {
+        setEngine(api.engine);
+        aiSay(api.reply);
+        return;
+      }
+      setEngine("local");
+      const candidate = answerCandidateQuestion(problem, text, difficulty);
+      if (candidate) {
+        aiSay(candidate);
+        return;
+      }
     }
     setAnswered((n) => n + 1);
     setTimeout(() => aiSay("Thanks, that reasoning is noted and will count in your communication score. Keep coding, and run your code when you are ready."), 350);
@@ -166,7 +233,23 @@ function TechnicalRoom() {
         setRunOut(out);
         if (phase === "coding") {
           setPhase("review");
-          aiSay(`You submitted. Tests passed: ${out.passed} of ${out.total}. Final question before we close: what is the time and space complexity of your solution, and why?`);
+          const api = await postInterview({
+            mode: "complexity",
+            difficulty,
+            topic,
+            problemTitle: problem.title,
+            problemStatement: problem.statement,
+            code: codeRef.current,
+            testsPassed: out.passed,
+            testsTotal: out.total,
+          });
+          if (api && api.reply) {
+            setEngine(api.engine);
+            aiSay(api.reply);
+          } else {
+            setEngine("local");
+            aiSay(`You submitted. Tests passed: ${out.passed} of ${out.total}. Final question before we close: what is the time and space complexity of your solution, and why?`);
+          }
         }
       } else {
         setRunOut(out);
@@ -291,6 +374,7 @@ function TechnicalRoom() {
           <aside className="flex w-full shrink-0 flex-col rounded-2xl border border-neutral-800 lg:w-[330px]">
             <div className="border-b border-neutral-800 px-4 py-3">
               <div className="text-sm font-semibold">AI Interviewer</div>
+              <div className="text-[11px] text-neutral-500">AI: {engine === "gemini" ? "Gemini" : "local mode"}</div>
               <div className="text-[11px] text-neutral-500">
                 {phase === "approach" && "Phase 1 - Approach: explain your plan first"}
                 {phase === "coding" && "Phase 2 - Coding: I am watching your code and will ask counter questions"}

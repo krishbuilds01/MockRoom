@@ -104,6 +104,22 @@ export function diffLines(prev: string, curr: string): DiffInfo {
   return { added, removed };
 }
 
+export function summarizeDiff(prev: string, curr: string): string {
+  const { added, removed } = diffLines(prev, curr);
+  const parts: string[] = [];
+  if (removed.length) parts.push(`deleted ${removed.length} line(s), first deleted line: ${removed[0].slice(0, 80)}`);
+  if (added.length) {
+    const joined = added.join("\n");
+    if (/\b(for|while)\b/.test(joined)) parts.push("added a loop");
+    if (/new Map|new Set|\{\}|\bdict\b|\bset\(/.test(joined)) parts.push("added a Map or Set or hash structure");
+    if (/\.sort\(|sorted\(/.test(joined)) parts.push("added a sort call");
+    if (/\breturn\b/.test(joined)) parts.push("added a return statement");
+    if (/\.push\(|append\(/.test(joined)) parts.push("added code that appends to a result");
+    parts.push(`added ${added.length} line(s), first added line: ${added[0].slice(0, 80)}`);
+  }
+  return parts.join("; ");
+}
+
 export function codeWatchQuestion(prev: string, curr: string, problem: Problem): string | null {
   const { added, removed } = diffLines(prev, curr);
   if (!added.length && !removed.length) return null;

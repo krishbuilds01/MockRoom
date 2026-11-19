@@ -3,6 +3,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Camera from "@/components/Camera";
 import { generalFollowUp, generalQuestions, saveSession, computeScores, speak, type Msg } from "@/lib/interviewer";
+import { postInterview } from "@/lib/interviewApi";
 import { useVoice } from "@/lib/useVoice";
 
 function GeneralRoom() {
@@ -15,6 +16,7 @@ function GeneralRoom() {
   const [qIndex, setQIndex] = useState(0);
   const [followed, setFollowed] = useState(false);
   const [muted, setMuted] = useState(false);
+  const [engine, setEngine] = useState<"gemini" | "local">("local");
   const [startedAt] = useState(() => Date.now());
   const [elapsed, setElapsed] = useState(0);
   const startedRef = useRef(false);
@@ -38,18 +40,30 @@ function GeneralRoom() {
     setTranscript((prev) => [...prev, { role, text, ts: Date.now() }]);
   }
 
-  function submitAnswer(raw?: string) {
+  async function submitAnswer(raw?: string) {
     const answer = (raw ?? input).trim();
     if (!answer) return;
     setInput("");
     push("user", answer);
     if (!followed) {
-      const fu = generalFollowUp(answer, difficulty, qIndex);
       setFollowed(true);
-      setTimeout(() => {
-        push("ai", fu);
-        speak(fu, muted);
-      }, 400);
+      const api = await postInterview({
+        mode: "general",
+        difficulty,
+        message: answer,
+        qIndex,
+        transcript: transcript.slice(-6),
+      });
+      let fu: string;
+      if (api && api.reply) {
+        fu = api.reply;
+        setEngine(api.engine);
+      } else {
+        fu = generalFollowUp(answer, difficulty, qIndex);
+        setEngine("local");
+      }
+      push("ai", fu);
+      speak(fu, muted);
       return;
     }
     const next = qIndex + 1;
@@ -97,7 +111,7 @@ function GeneralRoom() {
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="font-semibold">Live AI Interview</div>
-          <div className="text-xs text-neutral-500">{difficulty} level - Question {Math.min(qIndex + 1, questions.length)} of {questions.length} - {Math.floor(elapsed / 60)}:{String(elapsed % 60).padStart(2, "0")}</div>
+          <div className="text-xs text-neutral-500">{difficulty} level - Question {Math.min(qIndex + 1, questions.length)} of {questions.length} - {Math.floor(elapsed / 60)}:{String(elapsed % 60).padStart(2, "0")} - AI: {engine === "gemini" ? "Gemini" : "local mode"}</div>
         </div>
         <div className="flex gap-2">
           <button onClick={() => setMuted(!muted)} className="rounded-lg border border-neutral-700 px-3 py-2 text-sm">{muted ? "Unmute AI voice" : "Mute AI voice"}</button>
