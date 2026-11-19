@@ -24,6 +24,7 @@ import {
 } from "@/lib/interviewer";
 import { targetSecFor } from "@/lib/problems";
 import { companyContext, companyQuestions, getCompany } from "@/lib/companies";
+import { buildResumeQuestionsLocal, RESUME_QUESTIONS_KEY, RESUME_STORAGE_KEY, type ResumeQuestion } from "@/lib/resume";
 import { postInterview } from "@/lib/interviewApi";
 import { sanitizeAiText } from "@/lib/sanitize";
 import { useVoice } from "@/lib/useVoice";
@@ -67,7 +68,28 @@ function GeneralRoom() {
   const difficulty = params.get("difficulty") || "Mid";
   const router = useRouter();
   const company = getCompany(params.get("company"));
-  const questions = companyQuestions(company.id, difficulty);
+  const resumeMode = params.get("resume") === "1";
+  const [qset] = useState<ResumeQuestion[]>(() => {
+    const fallback = () =>
+      companyQuestions(company.id, difficulty).map((q) => ({ question: q, target: company.id !== "any" ? company.name : "General" }));
+    if (!resumeMode) return fallback();
+    try {
+      const raw = sessionStorage.getItem(RESUME_QUESTIONS_KEY);
+      if (raw) {
+        const parsed: unknown = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          const qs = parsed.filter(
+            (q): q is ResumeQuestion => !!q && typeof q === "object" && typeof (q as ResumeQuestion).question === "string"
+          );
+          if (qs.length >= 3) return qs.slice(0, 8);
+        }
+      }
+      const saved = localStorage.getItem(RESUME_STORAGE_KEY);
+      if (saved && saved.trim().length >= 100) return buildResumeQuestionsLocal(saved);
+    } catch {}
+    return fallback();
+  });
+  const questions = qset.map((q) => q.question);
   const targetSec = targetSecFor("general", difficulty);
   const [transcript, setTranscript] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
@@ -83,7 +105,7 @@ function GeneralRoom() {
   const startedRef = useRef(false);
   const statsRef = useRef({ answers: 0, words: 0, thin: 0, followUpsAsked: 0, followUpsAnswered: 0, introPushes: 0, askedEnd: false });
   const introRef = useRef("");
-  const qaRef = useRef<{ question: string; answer?: string }[]>([]);
+  const qaRef = useRef<{ question: string; answer?: string; target?: string }[]>([]);
   const transcriptRef = useRef<Msg[]>([]);
   const mountedRef = useRef(true);
   const savedRef = useRef(false);
@@ -228,6 +250,15 @@ function GeneralRoom() {
     if (startedRef.current) return;
     startedRef.current = true;
     const base = generalOpeningText(difficulty, Math.round(targetSec / 60), questions.length);
+    if (resumeMode) {
+      sayNow(
+        base.replace(
+          "First, introduce yourself",
+          "I have your resume in front of me, and every question in this session comes from it: your projects, the skills you listed, and the choices you wrote down. First, introduce yourself"
+        )
+      );
+      return;
+    }
     sayNow(company.openingLine ? base.replace("First, introduce yourself", `${company.openingLine} First, introduce yourself`) : base);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -240,7 +271,7 @@ function GeneralRoom() {
   }
 
   function askQuestion(idx: number) {
-    qaRef.current[idx] = { question: questions[idx] };
+    qaRef.current[idx] = { question: questions[idx], target: qset[idx]?.target };
     sayNow(questionText(idx));
   }
 
@@ -286,7 +317,7 @@ function GeneralRoom() {
         reaction = wordCount(answer) < 8 ? "Right, let us get into it." : introReaction(answer, 2);
       }
       setPhase("main");
-      qaRef.current[0] = { question: questions[0] };
+      qaRef.current[0] = { question: questions[0], target: qset[0]?.target };
       sayNow(`${reaction} Let us start. ${questionText(0)}`);
       return;
     }
@@ -397,8 +428,9 @@ function GeneralRoom() {
   });
 
   async function startLive() {
-    const companyLine =
-      company.id !== "any"
+    const companyLine = resumeMode
+      ? "Every main question in this session was generated from the candidate's own resume: their projects, listed skills, and experience. Ask them exactly as written, in order, and dig hard where answers are thin."
+      : company.id !== "any"
         ? `This session mirrors a ${company.name} interview loop. Style: ${company.style} Strictness: ${company.strictnessNote} Open in that style.`
         : undefined;
     const ok = await live.connect(liveSystemInstruction(difficulty, Math.round(targetSec / 60), questions, companyLine));
@@ -420,7 +452,7 @@ function GeneralRoom() {
     setQIndex(idx);
     setStage(0);
     setPhase("main");
-    qaRef.current[idx] = { question: questions[idx] };
+    qaRef.current[idx] = { question: questions[idx], target: qset[idx]?.target };
     sayNow(`Back in standard mode. ${questionText(idx)}`);
   }
 
@@ -451,6 +483,7 @@ function GeneralRoom() {
       difficulty,
       companyId: company.id,
       companyName: company.id !== "any" ? company.name : undefined,
+      resumeInterview: resumeMode || undefined,
       date: new Date().toISOString(),
       timeSec,
       targetSec,
@@ -550,9 +583,10 @@ function GeneralRoom() {
           <div className="min-w-0">
             <Link href="/" onClick={onBackHome} className="text-xs text-stone-600 hover:text-stone-800">Back to home</Link>
             <div className="mt-1 flex flex-wrap items-center gap-2">
-              <span className="text-[15px] font-semibold tracking-tight">Live AI Interview</span>
+              <span className="text-[15px] font-semibold tracking-tight">{resumeMode ? "Resume Interview" : "Live AI Interview"}</span>
               <span className={`badge ${difficulty === "Easy" ? "badge-easy" : difficulty === "Hard" ? "badge-hard" : "badge-mid"}`}>{difficulty}</span>
               {company.id !== "any" && <span className="badge badge-accent">{company.name}</span>}
+              {resumeMode && <span className="badge badge-accent">Resume interview</span>}
               <span className="badge badge-accent">{PHASE_LABELS[phase]}</span>
               {liveActive && (
                 <span className="badge badge-live">

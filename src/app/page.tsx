@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { topics } from "@/lib/problems";
 import { companies, getCompany } from "@/lib/companies";
+import { buildResumeQuestionsLocal, postResumeQuestions, RESUME_QUESTIONS_KEY, RESUME_STORAGE_KEY } from "@/lib/resume";
 import { overallScore, type SessionRecord } from "@/lib/interviewer";
 
 const diffInfo: Record<string, string> = {
@@ -48,18 +49,33 @@ const features = [
 
 export default function Home() {
   const router = useRouter();
-  const [type, setType] = useState<"general" | "technical">("technical");
+  const [type, setType] = useState<"general" | "technical" | "resume">("technical");
   const [difficulty, setDifficulty] = useState("Mid");
   const [companyId, setCompanyId] = useState("any");
   const [topic, setTopic] = useState("HashMap");
   const [history, setHistory] = useState<SessionRecord[]>([]);
+  const [resumeText, setResumeText] = useState("");
+  const [resumeSaved, setResumeSaved] = useState(false);
+  const [resumeBusy, setResumeBusy] = useState(false);
+  const [resumeError, setResumeError] = useState("");
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setHistory(loadHistory());
+    try {
+      const saved = localStorage.getItem(RESUME_STORAGE_KEY);
+      if (saved) {
+        setResumeText(saved);
+        setResumeSaved(true);
+      }
+    } catch {}
   }, []);
 
   function start() {
+    if (type === "resume") {
+      void startResume();
+      return;
+    }
     if (type === "technical") {
       const q = new URLSearchParams({ difficulty, topic });
       if (companyId !== "any") q.set("company", companyId);
@@ -69,6 +85,45 @@ export default function Home() {
       if (companyId !== "any") q.set("company", companyId);
       router.push(`/interview/general?${q}`);
     }
+  }
+
+  async function startResume() {
+    const text = resumeText.trim();
+    if (text.length < 100) {
+      setResumeError("Paste a little more of your resume. A few lines about your projects and skills is enough to build real questions from.");
+      return;
+    }
+    setResumeError("");
+    setResumeBusy(true);
+    const result = (await postResumeQuestions(text)) || { questions: buildResumeQuestionsLocal(text), engine: "local" as const };
+    try {
+      sessionStorage.setItem(RESUME_QUESTIONS_KEY, JSON.stringify(result.questions));
+      localStorage.setItem(RESUME_STORAGE_KEY, text);
+    } catch {}
+    const q = new URLSearchParams({ difficulty, resume: "1" });
+    if (companyId !== "any") q.set("company", companyId);
+    router.push(`/interview/general?${q}`);
+  }
+
+  function deleteSavedResume() {
+    try {
+      localStorage.removeItem(RESUME_STORAGE_KEY);
+    } catch {}
+    setResumeText("");
+    setResumeSaved(false);
+  }
+
+  async function onResumeFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const text = await file.text().catch(() => "");
+    if (text) {
+      setResumeText(text);
+      setResumeError("");
+    } else {
+      setResumeError("That file could not be read. Paste the text instead.");
+    }
+    e.target.value = "";
   }
   const company = getCompany(companyId);
 
@@ -133,7 +188,41 @@ export default function Home() {
               </div>
               <p className="mt-1.5 text-[13px] leading-5 text-stone-600">Behavioural and conceptual questions, spoken answers, strict follow-ups when answers are thin.</p>
             </button>
+            <button type="button" onClick={() => setType("resume")} aria-pressed={type === "resume"} className={`rounded-xl border p-3.5 text-left transition ${type === "resume" ? "border-accent bg-accent-soft" : "border-line bg-panel2 hover:border-line2"}`}>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold">Interview on my resume</span>
+                <span className="badge">Your projects</span>
+              </div>
+              <p className="mt-1.5 text-[13px] leading-5 text-stone-600">Paste your resume and Alex interviews you on it: your projects, your listed skills, and the choices you wrote down.</p>
+            </button>
           </div>
+
+          {type === "resume" && (
+            <div className="mt-4">
+              <label htmlFor="resume-text" className="text-[13px] font-medium text-stone-700">Your resume text</label>
+              <textarea
+                id="resume-text"
+                value={resumeText}
+                onChange={(e) => setResumeText(e.target.value)}
+                rows={6}
+                placeholder="Paste your resume here: projects, skills, experience. Plain text works best."
+                className="input mt-2.5 resize-none leading-6"
+              />
+              <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                <label className="btn btn-ghost btn-sm cursor-pointer">
+                  Upload .txt or .md
+                  <input type="file" accept=".txt,.md,text/plain,text/markdown" onChange={onResumeFile} className="sr-only" />
+                </label>
+                {resumeSaved && (
+                  <button type="button" onClick={deleteSavedResume} className="btn btn-ghost btn-sm">Delete saved resume</button>
+                )}
+              </div>
+              {resumeError && <p className="mt-2.5 text-xs leading-5 text-red-600" role="alert">{resumeError}</p>}
+              <p className="mt-2.5 text-xs leading-5 text-stone-600">
+                Your resume stays in this browser. It is sent once, only to generate your questions, and it is stored only on this device. Delete it any time.
+              </p>
+            </div>
+          )}
 
           <div className="mt-5 text-[13px] font-medium text-stone-700">Difficulty</div>
           <div className="mt-2.5 flex flex-wrap gap-2" role="group" aria-label="Difficulty">
@@ -165,7 +254,9 @@ export default function Home() {
             </>
           )}
 
-          <button type="button" onClick={start} className="btn btn-accent mt-5 w-full py-3 text-[15px] font-semibold">Start Interview</button>
+          <button type="button" onClick={start} disabled={resumeBusy} className="btn btn-accent mt-5 w-full py-3 text-[15px] font-semibold">
+            {type === "resume" ? (resumeBusy ? "Building your questions..." : "Start resume interview") : "Start Interview"}
+          </button>
           <p className="mt-3 text-center text-xs text-stone-600">Works best in Chrome. Allow camera and mic when asked. No sign up needed.</p>
         </section>
       </section>
