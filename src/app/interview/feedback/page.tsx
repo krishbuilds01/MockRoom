@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getProblemById, langLabel, problems } from "@/lib/problems";
 import { overallScore, type SessionRecord } from "@/lib/interviewer";
 import { companyVerdict, phaseNotes, recommendNext, weakAreas } from "@/lib/feedback";
+import { deleteRecording, loadRecording } from "@/lib/recording";
 
 function Score({ label, value }: { label: string; value: number }) {
   return (
@@ -38,6 +39,7 @@ export default function FeedbackPage() {
   const [rec, setRec] = useState<SessionRecord | null>(null);
   const [showTranscript, setShowTranscript] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [recUrl, setRecUrl] = useState<string | null>(null);
 
   useEffect(() => {
     let raw: string | null = null;
@@ -48,6 +50,28 @@ export default function FeedbackPage() {
     setRec(validRecord(raw));
     setLoaded(true);
   }, []);
+
+  useEffect(() => {
+    if (!rec) return;
+    let alive = true;
+    loadRecording(rec.id).then((blob) => {
+      if (alive && blob) setRecUrl(URL.createObjectURL(blob));
+    });
+    return () => {
+      alive = false;
+    };
+  }, [rec]);
+
+  useEffect(() => {
+    return () => {
+      if (recUrl) URL.revokeObjectURL(recUrl);
+    };
+  }, [recUrl]);
+
+  async function removeRecording() {
+    if (rec) await deleteRecording(rec.id);
+    setRecUrl(null);
+  }
 
   if (!loaded) return <div className="p-8 text-sm text-stone-600">Loading feedback...</div>;
   if (!rec) {
@@ -146,6 +170,20 @@ export default function FeedbackPage() {
         <Score label="Communication" value={rec.scores.communication} />
         <Score label="Complexity Analysis" value={rec.scores.complexity} />
       </div>
+
+      {recUrl && (
+        <div className="card card-pad mt-4 shrink-0">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-sm font-semibold">Your session recording</h2>
+            <div className="flex gap-2">
+              <a href={recUrl} download={`interviewai-session-${rec.id}.webm`} className="btn btn-ghost btn-sm">Download</a>
+              <button type="button" onClick={removeRecording} className="btn btn-ghost btn-sm">Delete</button>
+            </div>
+          </div>
+          <video controls src={recUrl} className="mt-3 w-full rounded-lg border border-line bg-black" />
+          <p className="mt-2 text-xs leading-5 text-stone-600">Stored only in this browser. Nothing was uploaded. Watch your pauses and filler words, they are the fastest thing to fix.</p>
+        </div>
+      )}
 
       <div className="mt-4 grid shrink-0 gap-4 md:grid-cols-2">
         <div className="card card-pad">

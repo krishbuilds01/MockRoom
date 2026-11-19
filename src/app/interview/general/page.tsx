@@ -6,6 +6,7 @@ import Camera from "@/components/Camera";
 import LeaveModal from "@/components/LeaveModal";
 import SpeakingWave from "@/components/SpeakingWave";
 import { useMicOpenSound } from "@/lib/useMicOpenSound";
+import { recorderSupported, saveRecording, SessionRecorder } from "@/lib/recording";
 import {
   candidateQuestionAnswer,
   computeScores,
@@ -100,6 +101,13 @@ function GeneralRoom() {
   const [engine, setEngine] = useState<"gemini" | "local" | null>(null);
   const [waiting, setWaiting] = useState(false);
   const [liveOn, setLiveOn] = useState(false);
+  const [sessionId] = useState(() => String(Date.now()));
+  const [recorder] = useState(() => new SessionRecorder());
+  const [canRecord] = useState(recorderSupported);
+  const [recordOn, setRecordOn] = useState(false);
+  const [hasStream, setHasStream] = useState(false);
+  const streamRef = useRef<MediaStream | null>(null);
+  const pendingBlobRef = useRef<Blob | null>(null);
   const [startedAt] = useState(() => Date.now());
   const [elapsed, setElapsed] = useState(0);
   const startedRef = useRef(false);
@@ -478,7 +486,7 @@ function GeneralRoom() {
     };
     const scores = computeScores(signals);
     return {
-      id: String(Date.now()),
+      id: sessionId,
       type: "general",
       difficulty,
       companyId: company.id,
@@ -503,11 +511,35 @@ function GeneralRoom() {
     };
   }
 
+  function onCameraStream(s: MediaStream | null) {
+    streamRef.current = s;
+    setHasStream(!!s);
+  }
+
+  function toggleRecord() {
+    if (recordOn) {
+      void recorder.stop().then((b) => {
+        if (b) pendingBlobRef.current = b;
+      });
+      setRecordOn(false);
+      return;
+    }
+    if (streamRef.current && recorder.start(streamRef.current)) setRecordOn(true);
+  }
+
+  async function finalizeRecording() {
+    let blob = pendingBlobRef.current;
+    if (recorder.active) blob = (await recorder.stop()) || blob;
+    pendingBlobRef.current = null;
+    if (blob) await saveRecording(sessionId, blob);
+  }
+
   function savePartial() {
     if (savedRef.current || endedRef.current) return;
     const elapsedSec = Math.floor((Date.now() - startedAt) / 1000);
     if (!shouldAutosavePartial({ elapsedSec, codeChanged: false, hasAnyMessage: transcriptRef.current.length > 0 })) return;
     savedRef.current = true;
+    void finalizeRecording();
     try {
       saveSession(buildRecord(true));
     } catch {}
@@ -542,12 +574,13 @@ function GeneralRoom() {
     router.push("/");
   }
 
-  function endInterview() {
+  async function endInterview() {
     speaker.stop();
     voice.stop();
     live.close();
     endedRef.current = true;
     savedRef.current = true;
+    await finalizeRecording();
     saveSession(buildRecord(false));
     router.push("/interview/feedback");
   }
@@ -648,8 +681,28 @@ function GeneralRoom() {
       <div className="mt-4 grid min-h-0 flex-1 gap-4 overflow-y-auto lg:grid-cols-[320px_1fr] lg:overflow-hidden">
         <div className="space-y-4 lg:h-full lg:overflow-y-auto">
           <div>
-            <Camera />
+            <Camera audio onStream={onCameraStream} recording={recordOn} />
           </div>
+          {canRecord && (
+            <div className="card card-pad flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-sm font-semibold">Record my session</div>
+                <p className="mt-0.5 text-xs leading-5 text-stone-600">
+                  {recordOn ? "Recording now. Watch it back on the feedback page." : hasStream ? "For self-review afterwards. The video never leaves this browser." : "Allow camera access first, then you can record."}
+                </p>
+              </div>
+              <button type="button" onClick={toggleRecord} disabled={!hasStream && !recordOn} aria-pressed={recordOn} className={`btn btn-sm shrink-0 ${recordOn ? "border-red-400 bg-red-50 text-red-700" : "btn-ghost"}`}>
+                {recordOn ? (
+                  <>
+                    <span className="dot dot-pulse bg-red-500" />
+                    Recording
+                  </>
+                ) : (
+                  "Record"
+                )}
+              </button>
+            </div>
+          )}
           <div className="card card-pad text-xs leading-5 text-stone-600">
             Speak your answer with the mic, or type it. After the opening and your introduction, expect one follow-up per question, and a second one if your follow-up answer is still thin. Thin answers are scored down. The interview ends with your questions for Alex.
             {liveActive && <div className="mt-2 font-medium text-emerald-700">Live conversation is on: Alex leads and listens continuously. Use the button above to end live and return to standard mode at any time.</div>}

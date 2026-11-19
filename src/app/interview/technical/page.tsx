@@ -7,6 +7,7 @@ import Camera from "@/components/Camera";
 import LeaveModal from "@/components/LeaveModal";
 import SpeakingWave from "@/components/SpeakingWave";
 import { useMicOpenSound } from "@/lib/useMicOpenSound";
+import { recorderSupported, saveRecording, SessionRecorder } from "@/lib/recording";
 import { getProblemById, LANGS, pickProblem, targetSecFor, type Lang } from "@/lib/problems";
 import { runCode, type RunOutput } from "@/lib/runner";
 import {
@@ -106,6 +107,13 @@ function TechnicalRoom() {
   const [engine, setEngine] = useState<"gemini" | "local" | null>(null);
   const [waiting, setWaiting] = useState(false);
   const [elapsed, setElapsed] = useState(0);
+  const [sessionId] = useState(() => String(Date.now()));
+  const [recorder] = useState(() => new SessionRecorder());
+  const [canRecord] = useState(recorderSupported);
+  const [recordOn, setRecordOn] = useState(false);
+  const [hasStream, setHasStream] = useState(false);
+  const streamRef = useRef<MediaStream | null>(null);
+  const pendingBlobRef = useRef<Blob | null>(null);
   const [startedAt] = useState(() => Date.now());
 
   const codeRef = useRef(code);
@@ -680,7 +688,7 @@ function TechnicalRoom() {
     };
     const scores = computeScores(signals);
     return {
-      id: String(Date.now()),
+      id: sessionId,
       type: "technical",
       difficulty,
       companyId: company.id,
@@ -713,11 +721,35 @@ function TechnicalRoom() {
     };
   }
 
+  function onCameraStream(s: MediaStream | null) {
+    streamRef.current = s;
+    setHasStream(!!s);
+  }
+
+  function toggleRecord() {
+    if (recordOn) {
+      void recorder.stop().then((b) => {
+        if (b) pendingBlobRef.current = b;
+      });
+      setRecordOn(false);
+      return;
+    }
+    if (streamRef.current && recorder.start(streamRef.current)) setRecordOn(true);
+  }
+
+  async function finalizeRecording() {
+    let blob = pendingBlobRef.current;
+    if (recorder.active) blob = (await recorder.stop()) || blob;
+    pendingBlobRef.current = null;
+    if (blob) await saveRecording(sessionId, blob);
+  }
+
   function savePartial() {
     if (savedRef.current || endedRef.current) return;
     const elapsedSec = Math.floor((Date.now() - startedAt) / 1000);
     if (!shouldAutosavePartial({ elapsedSec, codeChanged: codeChangedNow(), hasAnyMessage: transcriptRef.current.length > 0 })) return;
     savedRef.current = true;
+    void finalizeRecording();
     try {
       saveSession(buildRecord(true));
     } catch {}
@@ -752,11 +784,12 @@ function TechnicalRoom() {
     router.push("/");
   }
 
-  function endInterview() {
+  async function endInterview() {
     speaker.stop();
     voice.stop();
     endedRef.current = true;
     savedRef.current = true;
+    await finalizeRecording();
     saveSession(buildRecord(false));
     router.push("/interview/feedback");
   }
@@ -858,8 +891,26 @@ function TechnicalRoom() {
             {problem.constraints.map((c) => <li key={c}>{c}</li>)}
           </ul>
           <div className="mt-5">
-            <Camera small />
+            <Camera small audio onStream={onCameraStream} recording={recordOn} />
           </div>
+          {canRecord && (
+            <div className="mt-4 flex items-center justify-between gap-3 rounded-lg border border-line bg-panel2 px-3 py-2.5">
+              <div className="min-w-0">
+                <div className="text-xs font-semibold">Record my session</div>
+                <p className="mt-0.5 text-xs leading-4 text-stone-600">{recordOn ? "Recording. Watch it back on the feedback page." : "Self-review video, stored only in this browser."}</p>
+              </div>
+              <button type="button" onClick={toggleRecord} disabled={!hasStream && !recordOn} aria-pressed={recordOn} className={`btn btn-sm shrink-0 ${recordOn ? "border-red-400 bg-red-50 text-red-700" : "btn-ghost"}`}>
+                {recordOn ? (
+                  <>
+                    <span className="dot dot-pulse bg-red-500" />
+                    Recording
+                  </>
+                ) : (
+                  "Record"
+                )}
+              </button>
+            </div>
+          )}
         </section>
 
         <section className="flex min-w-0 flex-1 flex-col lg:h-full lg:min-h-0">
