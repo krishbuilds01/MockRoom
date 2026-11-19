@@ -654,7 +654,7 @@ function TechnicalRoom() {
         runOutRef.current = out;
         setLastKind("run");
       }
-    } catch (e) {
+    } catch {
       setRunError("Could not reach the code runner. Check your connection and try again.");
     } finally {
       setRunning(false);
