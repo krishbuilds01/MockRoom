@@ -3,32 +3,62 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { topics } from "@/lib/problems";
-import { companies, getCompany } from "@/lib/companies";
+import { companies } from "@/lib/companies";
 import { buildResumeQuestionsLocal, postResumeQuestions, RESUME_QUESTIONS_KEY, RESUME_STORAGE_KEY } from "@/lib/resume";
 import { loadHistory } from "@/lib/analytics";
 import { overallScore, type SessionRecord } from "@/lib/interviewer";
+import Logo from "@/components/Logo";
+import Footer from "@/components/Footer";
 
-const diffInfo: Record<string, string> = {
-  Easy: "Foundations, strict about specifics, one small hint allowed, target about 20 min",
-  Mid: "Real interview level, deep follow-ups, hints only when asked and recorded, target about 30 min",
-  Hard: "Very strict interviewer, no hints, brute force gets sent back, pushes on trade-offs and optimisation, target about 45 min",
-};
+function FeatureIcon({ name }: { name: string }) {
+  const common = {
+    width: 20,
+    height: 20,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.8,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true,
+  };
+  if (name === "mic")
+    return (
+      <svg {...common}>
+        <path d="M12 3a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3Z" />
+        <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+      </svg>
+    );
+  if (name === "code")
+    return (
+      <svg {...common}>
+        <path d="m8 8-4 4 4 4M16 8l4 4-4 4" />
+      </svg>
+    );
+  return (
+    <svg {...common}>
+      <path d="M5 20v-6M11 20V6M17 20v-9M3 20h18" />
+    </svg>
+  );
+}
 
 const features = [
   {
+    icon: "mic",
     title: "Live voice interview",
-    text: "Alex, your interviewer, speaks with a natural Gemini voice and listens while you answer. A Gemini Live conversation mode is there too, marked experimental.",
+    text: "Alex speaks and listens like a person, and pushes back when an answer is thin.",
   },
   {
-    title: "Code watching AI",
-    text: "In the technical room the interviewer reads your code as you write it, including deletions, and stops you to explain the lines it picks.",
+    icon: "code",
+    title: "Alex watches your code",
+    text: "In the coding room Alex reads your code as you write it, deletions included, and asks about the lines that matter.",
   },
   {
-    title: "Strict, honest feedback",
-    text: "Thin answers get pushed back in the room. After it, you get scores, phase by phase notes, weak areas and the exact problems to do next.",
+    icon: "chart",
+    title: "Feedback that teaches",
+    text: "Scores, phase by phase notes, your weak areas, and the exact problems to practise next.",
   },
 ];
-
 
 export default function Home() {
   const router = useRouter();
@@ -108,20 +138,15 @@ export default function Home() {
     }
     e.target.value = "";
   }
-  const company = getCompany(companyId);
-
   const chronological = [...history].reverse();
   const latestOverall = history.length ? overallScore(history[0].scores) : null;
   const previousOverall = history.length > 1 ? overallScore(history[1].scores) : null;
   const trendDelta = latestOverall !== null && previousOverall !== null ? Math.round((latestOverall - previousOverall) * 10) / 10 : null;
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col px-5">
+    <main className="mx-auto flex min-h-dvh w-full max-w-[1120px] flex-col px-5">
       <nav className="flex h-16 shrink-0 items-center justify-between border-b border-line">
-        <div className="flex items-center gap-2.5">
-          <span className="avatar" style={{ width: "2rem", height: "2rem", fontSize: "0.8rem" }}>A</span>
-          <span className="font-display text-lg font-semibold tracking-tight">InterviewAI</span>
-        </div>
+        <Logo />
         <div className="flex items-center gap-5 text-sm text-stone-600">
           <a href="#progress" className="hidden hover:text-stone-900 sm:block">Your progress</a>
           <Link href="/progress" className="hover:text-stone-900">Progress</Link>
@@ -129,130 +154,133 @@ export default function Home() {
         </div>
       </nav>
 
-      <section className="grid shrink-0 items-start gap-6 pt-6 lg:grid-cols-[1.1fr_1fr] lg:pt-8">
-        <div>
-          <span className="badge badge-live">
-            <span className="dot dot-pulse bg-emerald-600" />
-            Live voice interview practice
-          </span>
-          <h1 className="mt-4 font-display text-display font-semibold">
-            Practice a real interview.
-            <br />
-            <span className="text-stone-600">With an AI that pushes back.</span>
-          </h1>
-          <p className="mt-4 max-w-xl text-[15px] leading-6 text-stone-600">
-            One on one with Alex, a strict AI interviewer who talks and listens like a person, watches your code as you write it,
-            challenges vague answers, and records every hint. Every session ends with feedback that teaches: phase by phase notes,
-            your weak areas, and the exact problems to do next.
-          </p>
-          <div className="mt-6 grid gap-3 sm:grid-cols-3">
-            {features.map((f) => (
-              <div key={f.title} className="card card-pad">
-                <div className="text-sm font-semibold">{f.title}</div>
-                <p className="mt-1.5 text-[13px] leading-5 text-stone-600">{f.text}</p>
-              </div>
-            ))}
+      <section className="grid gap-8 pt-8 lg:grid-cols-[640px_400px] lg:justify-between">
+        <div className="flex h-full flex-col">
+          <div>
+            <span className="badge badge-live">
+              <span className="dot dot-pulse bg-emerald-600" />
+              Live voice interview practice
+            </span>
+            <h1 className="mt-4 font-display text-display font-semibold text-stone-900">
+              Practice a real interview.
+              <br />
+              With an AI that pushes back.
+            </h1>
+            <p className="mt-4 max-w-xl text-[15px] leading-6 text-stone-600">
+              One on one with Alex, a strict AI interviewer who talks and listens like a person, watches your code as you write it,
+              challenges vague answers, and records every hint. Every session ends with feedback that teaches: phase by phase notes,
+              your weak areas, and the exact problems to do next.
+            </p>
+          </div>
+          <div className="mt-auto pt-8">
+            <p className="border-t border-line pt-4 text-sm text-stone-600">
+              {history.length > 0 && latestOverall !== null ? (
+                <>
+                  Latest session <span className="tnum font-semibold text-stone-900">{latestOverall}/10</span>
+                  {` · ${history.length} session${history.length === 1 ? "" : "s"} on this device · `}
+                  <Link href="/progress" className="font-medium text-stone-900 underline underline-offset-2">See your progress</Link>
+                </>
+              ) : (
+                "Scored on problem solving, coding, communication and complexity, with a plan for what to fix next."
+              )}
+            </p>
           </div>
         </div>
 
-        <section className="card card-hero card-pad" aria-label="Start an interview">
-          <div className="text-sm font-semibold">Start an interview</div>
-          <div className="mt-4 grid gap-3">
-            <button type="button" onClick={() => setType("technical")} aria-pressed={type === "technical"} className={`rounded-xl border p-3.5 text-left transition ${type === "technical" ? "border-accent bg-accent-soft" : "border-line bg-panel2 hover:border-line2"}`}>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold">Technical / Coding</span>
-                <span className="badge">Monaco editor</span>
+        <div>
+          <section className="card card-hero card-pad" aria-label="Start an interview">
+            <div className="text-sm font-semibold">Start an interview</div>
+            <div className="mt-4 space-y-4">
+              <div>
+                <div className="text-[13px] font-medium text-stone-700">Mode</div>
+                <div className="mt-2 grid grid-cols-3 gap-2" role="group" aria-label="Interview mode">
+                  <button type="button" onClick={() => setType("technical")} aria-pressed={type === "technical"} className={type === "technical" ? "btn btn-primary btn-sm w-full" : "btn btn-ghost btn-sm w-full"}>Technical</button>
+                  <button type="button" onClick={() => setType("general")} aria-pressed={type === "general"} className={type === "general" ? "btn btn-primary btn-sm w-full" : "btn btn-ghost btn-sm w-full"}>Live voice</button>
+                  <button type="button" onClick={() => setType("resume")} aria-pressed={type === "resume"} className={type === "resume" ? "btn btn-primary btn-sm w-full" : "btn btn-ghost btn-sm w-full"}>My resume</button>
+                </div>
               </div>
-              <p className="mt-1.5 text-[13px] leading-5 text-stone-600">LeetCode style room. Run and submit against real tests while Alex watches your code live.</p>
-            </button>
-            <button type="button" onClick={() => setType("general")} aria-pressed={type === "general"} className={`rounded-xl border p-3.5 text-left transition ${type === "general" ? "border-accent bg-accent-soft" : "border-line bg-panel2 hover:border-line2"}`}>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold">Live AI Interview</span>
-                <span className="badge">Voice first</span>
+              <div>
+                <div className="text-[13px] font-medium text-stone-700">Difficulty</div>
+                <div className="mt-2 grid grid-cols-3 gap-2" role="group" aria-label="Difficulty">
+                  {["Easy", "Mid", "Hard"].map((d) => (
+                    <button type="button" key={d} onClick={() => setDifficulty(d)} aria-pressed={difficulty === d} className={difficulty === d ? "btn btn-primary btn-sm w-full" : "btn btn-ghost btn-sm w-full"}>{d}</button>
+                  ))}
+                </div>
               </div>
-              <p className="mt-1.5 text-[13px] leading-5 text-stone-600">Behavioural and conceptual questions, spoken answers, strict follow-ups when answers are thin.</p>
-            </button>
-            <button type="button" onClick={() => setType("resume")} aria-pressed={type === "resume"} className={`rounded-xl border p-3.5 text-left transition ${type === "resume" ? "border-accent bg-accent-soft" : "border-line bg-panel2 hover:border-line2"}`}>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold">Interview on my resume</span>
-                <span className="badge">Your projects</span>
+              <div>
+                <label htmlFor="company-select" className="text-[13px] font-medium text-stone-700">Company</label>
+                <select id="company-select" value={companyId} onChange={(e) => setCompanyId(e.target.value)} className="select mt-2 w-full" aria-label="Company">
+                  {companies.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
               </div>
-              <p className="mt-1.5 text-[13px] leading-5 text-stone-600">Paste your resume and Alex interviews you on it: your projects, your listed skills, and the choices you wrote down.</p>
-            </button>
-            <Link href="/system-design" className="block rounded-xl border border-line bg-panel2 p-3.5 text-left transition hover:border-line2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold">System Design</span>
-                <span className="badge badge-mid">Coming soon</span>
-              </div>
-              <p className="mt-1.5 text-[13px] leading-5 text-stone-600">Design a URL shortener, a chat system, a news feed. The room is being built. See what it will cover.</p>
-            </Link>
-          </div>
-
-          {type === "resume" && (
-            <div className="mt-4">
-              <label htmlFor="resume-text" className="text-[13px] font-medium text-stone-700">Your resume text</label>
-              <textarea
-                id="resume-text"
-                value={resumeText}
-                onChange={(e) => setResumeText(e.target.value)}
-                rows={6}
-                placeholder="Paste your resume here: projects, skills, experience. Plain text works best."
-                className="input mt-2.5 resize-none leading-6"
-              />
-              <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                <label className="btn btn-ghost btn-sm cursor-pointer">
-                  Upload .txt or .md
-                  <input type="file" accept=".txt,.md,text/plain,text/markdown" onChange={onResumeFile} className="sr-only" />
-                </label>
-                {resumeSaved && (
-                  <button type="button" onClick={deleteSavedResume} className="btn btn-ghost btn-sm">Delete saved resume</button>
-                )}
-              </div>
-              {resumeError && <p className="mt-2.5 text-xs leading-5 text-red-600" role="alert">{resumeError}</p>}
-              <p className="mt-2.5 text-xs leading-5 text-stone-600">
-                Your resume stays in this browser. It is sent once, only to generate your questions, and it is stored only on this device. Delete it any time.
-              </p>
+              {type === "technical" && (
+                <div>
+                  <div className="text-[13px] font-medium text-stone-700">Topic</div>
+                  <div className="mt-2 grid grid-cols-3 gap-2" role="group" aria-label="Topic">
+                    {topics.map((t) => (
+                      <button type="button" key={t} onClick={() => setTopic(t)} aria-pressed={topic === t} className={topic === t ? "btn btn-primary btn-sm w-full" : "btn btn-ghost btn-sm w-full"}>{t}</button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {type === "resume" && (
+                <div>
+                  <label htmlFor="resume-text" className="text-[13px] font-medium text-stone-700">Your resume</label>
+                  <textarea
+                    id="resume-text"
+                    value={resumeText}
+                    onChange={(e) => setResumeText(e.target.value)}
+                    rows={6}
+                    placeholder="Paste your resume here: projects, skills, experience. Plain text works best."
+                    className="input mt-2 resize-none leading-6"
+                  />
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <label className="btn btn-ghost btn-sm cursor-pointer">
+                      Upload .txt or .md
+                      <input type="file" accept=".txt,.md,text/plain,text/markdown" onChange={onResumeFile} className="sr-only" />
+                    </label>
+                    {resumeSaved && (
+                      <button type="button" onClick={deleteSavedResume} className="btn btn-ghost btn-sm">Delete saved resume</button>
+                    )}
+                  </div>
+                  {resumeError && <p className="mt-2 text-xs leading-5 text-red-600" role="alert">{resumeError}</p>}
+                </div>
+              )}
             </div>
-          )}
 
-          <div className="mt-5 text-[13px] font-medium text-stone-700">Difficulty</div>
-          <div className="mt-2.5 flex flex-wrap gap-2" role="group" aria-label="Difficulty">
-            {["Easy", "Mid", "Hard"].map((d) => (
-              <button type="button" key={d} onClick={() => setDifficulty(d)} aria-pressed={difficulty === d} className={difficulty === d ? "btn btn-primary btn-sm" : "btn btn-ghost btn-sm"}>{d}</button>
-            ))}
-          </div>
-          <p className="mt-2.5 text-xs leading-5 text-stone-600">{diffInfo[difficulty]}</p>
+            <button type="button" onClick={start} disabled={resumeBusy} className="btn btn-accent mt-4 h-[52px] w-full rounded-xl text-[15px] font-semibold">
+              {type === "resume" ? (resumeBusy ? "Building your questions..." : "Start resume interview") : "Start interview"}
+            </button>
+            <p className="mt-4 border-t border-line pt-3 text-[13px] leading-5 text-stone-600">
+              {type === "resume"
+                ? "Your resume stays in this browser, stored only on this device. It is sent once, only to generate your questions."
+                : "Works best in Chrome. Allow camera and mic when asked. No account needed."}
+            </p>
+          </section>
 
-          <div className="mt-5 text-[13px] font-medium text-stone-700">Company</div>
-          <select value={companyId} onChange={(e) => setCompanyId(e.target.value)} className="select mt-2.5 w-full" aria-label="Company">
-            {companies.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
-          <p className="mt-2.5 text-xs leading-5 text-stone-600">
-            {company.id === "any" ? "A standard loop. Pick a company and Alex runs the session in that company's style, with its questions and its bar." : company.style}
-          </p>
-
-          {type === "technical" && (
-            <>
-              <div className="mt-5 text-[13px] font-medium text-stone-700">Topic</div>
-              <div className="mt-2.5 flex flex-wrap gap-2" role="group" aria-label="Topic">
-                {topics.map((t) => (
-                  <button type="button" key={t} onClick={() => setTopic(t)} aria-pressed={topic === t} className={topic === t ? "btn btn-primary btn-sm" : "btn btn-ghost btn-sm"}>{t}</button>
-                ))}
-              </div>
-              <p className="mt-2.5 text-xs leading-5 text-stone-600">If a topic has no problem at your difficulty yet, the room serves the closest one and says so.</p>
-            </>
-          )}
-
-          <button type="button" onClick={start} disabled={resumeBusy} className="btn btn-accent mt-5 w-full py-3 text-[15px] font-semibold">
-            {type === "resume" ? (resumeBusy ? "Building your questions..." : "Start resume interview") : "Start Interview"}
-          </button>
-          <p className="mt-3 text-center text-xs text-stone-600">Works best in Chrome. Allow camera and mic when asked. No sign up needed.</p>
-        </section>
+          <Link href="/system-design" className="card card-pad mt-4 flex items-center justify-between gap-3 transition hover:border-line2">
+            <span>
+              <span className="block text-sm font-semibold">System design</span>
+              <span className="mt-0.5 block text-[13px] text-stone-600">URL shortener, chat system, news feed. See what the room will cover.</span>
+            </span>
+            <span className="badge badge-mid shrink-0">Coming soon</span>
+          </Link>
+        </div>
       </section>
 
-      <p className="mt-5 shrink-0 text-[13px] leading-5 text-stone-600">How it works: set up in ten seconds, interview with Alex (introduction, questions, coding, your questions), then get scored feedback with a practice plan.</p>
+      <p className="mt-8 text-[13px] leading-5 text-stone-600">How it works: set up in ten seconds, interview with Alex (introduction, questions, coding, your questions), then get scored feedback with a practice plan.</p>
+
+      <div className="mt-6 grid gap-4 sm:grid-cols-3">
+        {features.map((f) => (
+          <div key={f.title} className="card card-pad">
+            <span className="text-accent"><FeatureIcon name={f.icon} /></span>
+            <div className="mt-3 text-sm font-semibold">{f.title}</div>
+            <p className="mt-1.5 text-[13px] leading-5 text-stone-600">{f.text}</p>
+          </div>
+        ))}
+      </div>
 
       {history.length > 0 && (
         <section id="progress" className="mt-8">
@@ -261,7 +289,7 @@ export default function Home() {
             {latestOverall !== null && (
               <div className="text-xs text-stone-600">
                 {`Latest overall: `}
-                <span className="font-semibold text-stone-900">{latestOverall}/10</span>
+                <span className="tnum font-semibold text-stone-900">{latestOverall}/10</span>
                 {trendDelta !== null && (
                   <span className={trendDelta >= 0 ? "ml-2 font-medium text-emerald-700" : "ml-2 font-medium text-red-600"}>
                     {`${trendDelta >= 0 ? "+" : ""}${trendDelta} vs previous session`}
@@ -275,16 +303,24 @@ export default function Home() {
           </p>
           {chronological.length > 1 && (
             <div className="card mt-3 p-4">
-              <div className="flex h-28 items-end gap-1.5 border-b border-line pb-0">
+              <div className="flex gap-2 border-b border-line2">
                 {chronological.slice(-14).map((h) => {
                   const o = overallScore(h.scores);
+                  return (
+                    <div key={h.id} className="flex flex-1 flex-col items-center gap-2" title={`${o}/10`}>
+                      <span className="tnum text-xs font-semibold leading-none text-stone-700">{o}</span>
+                      <div className="relative h-24 w-full rounded-t bg-panel2">
+                        <div className="absolute inset-x-0 bottom-0 rounded-t bg-accent" style={{ height: `${o * 10}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="mt-2 flex gap-2">
+                {chronological.slice(-14).map((h) => {
                   const d = new Date(h.date);
                   return (
-                    <div key={h.id} className="flex h-full min-w-2 flex-1 flex-col items-center justify-end gap-1" title={`${o}/10 on ${d.toLocaleDateString()}`}>
-                      <span className="text-xs font-semibold leading-none text-stone-700">{o}</span>
-                      <div className="w-full rounded-t bg-accent/80" style={{ height: `${Math.max(6, o * 8)}%` }} />
-                      <span className="text-xs leading-none text-stone-600">{`${d.getDate()}/${d.getMonth() + 1}`}</span>
-                    </div>
+                    <span key={h.id} className="flex-1 text-center text-xs leading-none text-stone-600">{`${d.getDate()}/${d.getMonth() + 1}`}</span>
                   );
                 })}
               </div>
@@ -305,22 +341,20 @@ export default function Home() {
                 </div>
                 <div className="flex items-center gap-4 text-xs text-stone-600">
                   {h.type === "technical" && (
-                    <span>Tests <span className="font-semibold text-stone-900">{h.testsPassed}/{h.totalTests}</span></span>
+                    <span>Tests <span className="tnum font-semibold text-stone-900">{h.testsPassed}/{h.totalTests}</span></span>
                   )}
-                  {(h.hintsUsed ?? 0) > 0 && <span>Hints <span className="font-semibold text-stone-900">{h.hintsUsed}</span></span>}
-                  <span>Problem Solving <span className="font-semibold text-stone-900">{h.scores.problemSolving}/10</span></span>
-                  <span>Overall <span className="font-semibold text-stone-900">{overallScore(h.scores)}/10</span></span>
+                  {(h.hintsUsed ?? 0) > 0 && <span>Hints <span className="tnum font-semibold text-stone-900">{h.hintsUsed}</span></span>}
+                  <span>Problem Solving <span className="tnum font-semibold text-stone-900">{h.scores.problemSolving}/10</span></span>
+                  <span>Overall <span className="tnum font-semibold text-stone-900">{overallScore(h.scores)}/10</span></span>
                 </div>
               </div>
             ))}
           </div>
-          <p className="mt-2 shrink-0 text-xs text-stone-600">Bars show overall score per session, oldest to newest. History is stored only in this browser.</p>
+          <p className="mt-2 text-xs text-stone-600">Bars show overall score per session out of 10, oldest to newest. History is stored only in this browser.</p>
         </section>
       )}
 
-      <footer className="mt-8 shrink-0 border-t border-line py-4 text-xs leading-5 text-stone-600">
-        InterviewAI, strict AI interview practice. Code runs via the Judge0 API. Interviews are led by the interview engine (Gemini, with a local engine as fallback) and spoken with a Gemini voice; Gemini Live conversation is an optional experimental mode in the Live AI Interview room.
-      </footer>
+      <Footer />
     </main>
   );
 }

@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { computeAnalytics, loadHistory, type Analytics } from "@/lib/analytics";
+import Logo from "@/components/Logo";
+import Footer from "@/components/Footer";
 
 function StatCard({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
@@ -84,10 +86,7 @@ export default function ProgressPage() {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col px-5">
       <nav className="flex h-16 shrink-0 items-center justify-between border-b border-line">
-        <div className="flex items-center gap-2.5">
-          <span className="avatar" style={{ width: "2rem", height: "2rem", fontSize: "0.8rem" }}>A</span>
-          <span className="font-display text-lg font-semibold tracking-tight">InterviewAI</span>
-        </div>
+        <Logo />
         <div className="flex items-center gap-5 text-sm text-stone-600">
           <Link href="/" className="hover:text-stone-900">Home</Link>
           <Link href="/interview/feedback" className="hover:text-stone-900">Latest feedback</Link>
@@ -180,6 +179,9 @@ export default function ProgressPage() {
           </div>
         </>
       )}
+      <div className="mt-auto">
+        <Footer />
+      </div>
     </main>
   );
 }

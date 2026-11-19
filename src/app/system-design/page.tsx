@@ -1,4 +1,6 @@
 import Link from "next/link";
+import Logo from "@/components/Logo";
+import Footer from "@/components/Footer";
 
 const topics = [
   { name: "URL shortener", note: "Short links, redirects, and what happens when one link goes viral." },
@@ -18,10 +20,7 @@ export default function SystemDesignPage() {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col px-5">
       <nav className="flex h-16 shrink-0 items-center justify-between border-b border-line">
-        <div className="flex items-center gap-2.5">
-          <span className="avatar" style={{ width: "2rem", height: "2rem", fontSize: "0.8rem" }}>A</span>
-          <span className="font-display text-lg font-semibold tracking-tight">InterviewAI</span>
-        </div>
+        <Logo />
         <div className="flex items-center gap-5 text-sm text-stone-600">
           <Link href="/" className="hover:text-stone-900">Home</Link>
           <Link href="/progress" className="hover:text-stone-900">Progress</Link>
@@ -71,6 +70,9 @@ export default function SystemDesignPage() {
           </div>
         </div>
       </section>
+      <div className="mt-auto">
+        <Footer />
+      </div>
     </main>
   );
 }
