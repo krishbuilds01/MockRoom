@@ -18,6 +18,7 @@ import {
   computeScores,
   dryRunReaction,
   hasComplexityStatement,
+  INTERVIEWER_NAME,
   introReaction,
   isBruteForceApproach,
   isCandidateQuestion,
@@ -34,6 +35,7 @@ import {
 } from "@/lib/interviewer";
 import { postInterview } from "@/lib/interviewApi";
 import { useVoice } from "@/lib/useVoice";
+import { useLiveSession } from "@/lib/liveSession";
 import { useSpeaker } from "@/lib/useSpeaker";
 
 const Editor = dynamic(() => import("@monaco-editor/react"), { ssr: false, loading: () => <div className="flex h-full items-center justify-center text-sm text-neutral-500">Loading editor...</div> });
@@ -68,6 +70,21 @@ const ackLines = [
   "I have that recorded. Now show me it works.",
   "Keep going. I am watching the code, not just the chat.",
 ];
+
+function liveSystemInstruction(
+  problem: ReturnType<typeof pickProblem>,
+  difficulty: string,
+  targetMinutes: number,
+): string {
+  return [
+    `You are ${INTERVIEWER_NAME}, a senior software engineer conducting a live technical interview. You speak with a natural, warm, professional voice, at a relaxed conversational pace.`,
+    `This is a ${difficulty} level interview of about ${targetMinutes} minutes. The problem is "${problem.title}": ${problem.statement}`,
+    `Examples: ${problem.examples.map((e) => `input ${e.input} gives output ${e.output}`).join("; ")}. Constraints: ${problem.constraints.join("; ")}.`,
+    "You are being directed by an interviewer engine. Messages that start with [Director] are instructions for exactly what to say or do next: follow them immediately and precisely, keep every fact and question they contain, and do not add extra questions of your own.",
+    "When the candidate speaks, listen. Do not answer their questions or react at length on your own: a [Director] instruction follows shortly and tells you what to say. A very brief acknowledgement (two or three words) is fine while you wait.",
+    "Be strict and professional, like a real interviewer at a top company. Never write code for the candidate, never give away the solution, never mention scores, marks or feedback during the interview. Speak in short turns, one question at a time.",
+  ].join("\n");
+}
 
 function TechnicalRoom() {
   const params = useSearchParams();
@@ -130,6 +147,27 @@ function TechnicalRoom() {
   const ackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const speaker = useSpeaker();
   const voice = useVoice((text) => setInput(text));
+  const [liveDisabled, setLiveDisabled] = useState(false);
+  const [liveSpeaking, setLiveSpeaking] = useState(false);
+  const live = useLiveSession({
+    onAiTurn: (t) => aiTurnRef.current(t),
+    onUserTurn: (t) => submitRef.current?.(t),
+    onSpeaking: (s) => setLiveSpeaking(s),
+  });
+  const liveActiveRef = useRef(false);
+  const liveDisabledRef = useRef(false);
+  const submitRef = useRef<((text: string) => void) | null>(null);
+  const aiTurnRef = useRef<(text: string) => void>(() => {});
+  useEffect(() => {
+    liveActiveRef.current = live.status === "live";
+  }, [live.status]);
+  useEffect(() => {
+    aiTurnRef.current = (text: string) => {
+      if (!mountedRef.current) return;
+      setTranscript((prev) => [...prev, { role: "ai", text, ts: Date.now() }]);
+      lastAiRef.current = Date.now();
+    };
+  });
 
   const problemData = [
     "Examples: " + problem.examples.map((e) => `input ${e.input} -> output ${e.output}`).join("; "),
@@ -169,7 +207,10 @@ function TechnicalRoom() {
   }, [startedAt]);
 
   useEffect(() => {
-    const h = () => speaker.unlock();
+    const h = () => {
+      speaker.unlock();
+      live.unlock();
+    };
     window.addEventListener("pointerdown", h, { once: true });
     window.addEventListener("keydown", h, { once: true });
     return () => {
@@ -185,18 +226,43 @@ function TechnicalRoom() {
     lastAiRef.current = Date.now();
     lastChangeRef.current = Date.now();
     lastProgressRef.current = Date.now();
-    const intro = techOpeningText(problem, difficulty, Math.round(targetSec / 60));
-    setTranscript([{ role: "ai", text: intro, ts: Date.now() }]);
-    speaker.speak(intro, false);
+    let cancelled = false;
+    (async () => {
+      if (!liveDisabledRef.current) {
+        const ok = await live.connect(
+          liveSystemInstruction(problem, difficulty, Math.round(targetSec / 60)),
+        );
+        if (cancelled) return;
+        if (ok) {
+          live.sendText(
+            `[Director] The candidate just joined. Introduce yourself as Alex, explain in two short sentences how this interview runs (a problem, discussion first, then coding, then a short review, about ${Math.round(targetSec / 60)} minutes), present the problem in one or two sentences, and ask the candidate to introduce themselves in a few lines.`,
+          );
+          return;
+        }
+      }
+      if (cancelled) return;
+      const intro = techOpeningText(problem, difficulty, Math.round(targetSec / 60));
+      setTranscript([{ role: "ai", text: intro, ts: Date.now() }]);
+      speaker.speak(intro, false);
+    })();
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function aiSay(text: string, countsAsQuestion = false) {
     if (!mountedRef.current) return;
-    setTranscript((prev) => [...prev, { role: "ai", text, ts: Date.now() }]);
-    speaker.speak(text, mutedRef.current);
     lastAiRef.current = Date.now();
     if (countsAsQuestion) statsRef.current.asked += 1;
+    if (liveActiveRef.current) {
+      live.sendText(
+        `[Director] Say this to the candidate now, in your own natural words, keeping every fact, number and question in it, and do not add new questions: ${text}`,
+      );
+      return;
+    }
+    setTranscript((prev) => [...prev, { role: "ai", text, ts: Date.now() }]);
+    speaker.speak(text, mutedRef.current);
   }
 
   useEffect(() => {
@@ -305,10 +371,13 @@ function TechnicalRoom() {
     aiSay(reply, true);
   }
 
-  async function submitPanel() {
-    const text = input.trim();
+  async function submitPanel(preset?: string) {
+    const text = (preset ?? input).trim();
     if (!text) return;
-    setInput("");
+    if (!preset) setInput("");
+    if (liveActiveRef.current && !preset) {
+      live.sendText(`[The candidate typed this message]: ${text}`);
+    }
     setTranscript((prev) => [...prev, { role: "user", text, ts: Date.now() }]);
 
     if (phase === "opening") {
@@ -522,6 +591,12 @@ function TechnicalRoom() {
     ackTimeoutRef.current = setTimeout(() => aiSay(ack), 350);
   }
 
+  useEffect(() => {
+    submitRef.current = (t: string) => {
+      void submitPanel(t);
+    };
+  });
+
   async function doRun(includeHidden: boolean) {
     if (running) return;
     if (phase === "opening" || phase === "clarifying" || phase === "approach") {
@@ -673,14 +748,50 @@ function TechnicalRoom() {
     if (ackTimeoutRef.current) clearTimeout(ackTimeoutRef.current);
     speaker.stop();
     voice.stop();
+    live.close();
     savedRef.current = true;
     saveSession(buildRecord(false));
     router.push("/interview/feedback");
   }
 
+  async function retryLive() {
+    liveDisabledRef.current = false;
+    setLiveDisabled(false);
+    const ok = await live.connect(
+      liveSystemInstruction(problem, difficulty, Math.round(targetSec / 60)),
+    );
+    if (ok) {
+      live.sendText(
+        `[Director] We reconnected mid-interview after a drop. Current phase: ${PHASE_LABELS[phaseRef.current]}. Problem: ${problem.title}. Continue naturally from this phase in one or two short sentences.`,
+      );
+    }
+  }
+
+  function useTextMode() {
+    liveDisabledRef.current = true;
+    setLiveDisabled(true);
+    live.close();
+  }
+
   const visibleTests = problem.tests.filter((t) => !t.hidden).length;
-  const voiceLabel = speaker.voiceSource === "gemini" ? "Gemini voice" : speaker.voiceSource === "browser" ? "browser voice" : "connecting";
-  const engineLabel = engine === "gemini" ? "Gemini" : engine === "local" ? "local mode" : "connecting";
+  const voiceLabel =
+    live.status === "live"
+      ? "Gemini Live"
+      : live.status === "connecting"
+        ? "connecting"
+        : speaker.voiceSource === "gemini"
+          ? "Gemini voice"
+          : speaker.voiceSource === "browser"
+            ? "browser voice"
+            : "connecting";
+  const engineLabel =
+    live.status === "live"
+      ? "Gemini Live"
+      : engine === "gemini"
+        ? "Gemini"
+        : engine === "local"
+          ? "local mode"
+          : "connecting";
   const fallbackNotice =
     problem.difficulty !== difficulty || problem.topic !== topic
       ? `No ${difficulty} problem for ${topic} is ready yet, so your problem is ${problem.title}, ${aOrAn(problem.difficulty)} ${problem.difficulty} ${problem.topic} problem. It is set and scored at that level.`
@@ -709,7 +820,13 @@ function TechnicalRoom() {
         </div>
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={() => setShowAi(!showAi)} className="rounded-lg border border-neutral-700 px-3 py-2 text-sm lg:hidden">{showAi ? "Hide AI panel" : "Show AI panel"}</button>
-          <button type="button" onClick={() => { setMuted(!muted); if (!muted) speaker.stop(); }} aria-label="Toggle AI voice" className="rounded-lg border border-neutral-700 px-3 py-2 text-sm">{muted ? "Unmute AI" : "Mute AI"}</button>
+          <button type="button" onClick={() => { const next = !muted; setMuted(next); live.setMuted(next); if (next) speaker.stop(); }} aria-label="Toggle AI voice" className="rounded-lg border border-neutral-700 px-3 py-2 text-sm">{muted ? "Unmute AI" : "Mute AI"}</button>
+          {(live.status === "live" || live.status === "connecting") && (
+            <button type="button" onClick={useTextMode} className="rounded-lg border border-neutral-700 px-3 py-2 text-sm">Use text mode</button>
+          )}
+          {live.status === "fallback" && !liveDisabled && (
+            <button type="button" onClick={retryLive} className="rounded-lg border border-neutral-700 px-3 py-2 text-sm">Retry live voice</button>
+          )}
           <button type="button" onClick={endInterview} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white">End Interview</button>
         </div>
       </header>
@@ -804,7 +921,7 @@ function TechnicalRoom() {
             <div className="border-b border-neutral-800 px-4 py-3">
               <div className="text-sm font-semibold">AI Interviewer - Alex</div>
               <div className="text-[11px] text-neutral-500">AI: {engineLabel} - Voice: {voiceLabel}</div>
-              {speaker.speaking && (
+              {(speaker.speaking || liveSpeaking) && (
                 <div className="mt-1 flex items-center gap-1.5 text-[11px] text-emerald-400" role="status">
                   <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
                   Interviewer is speaking
@@ -842,8 +959,15 @@ function TechnicalRoom() {
               <div className="flex gap-2">
                 <label htmlFor="tech-panel-input" className="sr-only">Message to the interviewer</label>
                 <input id="tech-panel-input" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submitPanel()} placeholder={inputPlaceholder[phase]} className="min-w-0 flex-1 rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2.5 text-sm outline-none" />
-                <button type="button" onClick={() => (voice.listening ? voice.stop() : voice.start())} disabled={!voice.supported} aria-label="Toggle microphone input" className={`rounded-lg border px-3 text-xs disabled:opacity-40 ${voice.listening ? "border-red-500 bg-red-950/50 text-red-300" : "border-neutral-700"}`}>{voice.listening ? "Listening..." : "Mic"}</button>
-                <button type="button" onClick={submitPanel} className="rounded-lg bg-white px-4 text-sm font-semibold text-black">Send</button>
+                {live.status === "live" ? (
+                  <span className="flex items-center gap-1.5 rounded-lg border border-emerald-800 bg-emerald-950/40 px-3 text-xs text-emerald-300" role="status">
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+                    Live mic on
+                  </span>
+                ) : (
+                  <button type="button" onClick={() => (voice.listening ? voice.stop() : voice.start())} disabled={!voice.supported} aria-label="Toggle microphone input" className={`rounded-lg border px-3 text-xs disabled:opacity-40 ${voice.listening ? "border-red-500 bg-red-950/50 text-red-300" : "border-neutral-700"}`}>{voice.listening ? "Listening..." : "Mic"}</button>
+                )}
+                <button type="button" onClick={() => submitPanel()} className="rounded-lg bg-white px-4 text-sm font-semibold text-black">Send</button>
               </div>
             </div>
           </aside>
