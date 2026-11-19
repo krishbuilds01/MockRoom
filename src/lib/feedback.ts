@@ -1,5 +1,5 @@
 import { getProblemById, problems, progression, type Problem } from "./problems";
-import { wordCount, type SessionRecord } from "./interviewer";
+import { truncateWords, wordCount, type SessionRecord } from "./interviewer";
 
 export interface NextStep {
   problemId: string;
@@ -136,7 +136,7 @@ export function phaseNotes(rec: SessionRecord, problem?: Problem): PhaseNote[] {
     notes.push({
       phase: "Approach",
       did: rec.approachText
-        ? `You said: "${rec.approachText.slice(0, 220)}"`
+        ? `You said: "${truncateWords(rec.approachText, 220)}"`
         : noCodeNoPlan
           ? "The session ended before any approach or code. The editor still holds the starter code."
           : "No approach was recorded.",
@@ -164,7 +164,7 @@ export function phaseNotes(rec: SessionRecord, problem?: Problem): PhaseNote[] {
             ? "Passing the examples is not passing the problem. The edge cases below are where the hidden tests live."
             : rec.runs === 0
               ? "You passed without running, which will not survive a harder problem. Run as you go."
-              : "Solid testing habit. Keep tracing one failing style case by hand whenever a run surprises you.",
+              : "Solid testing habit. When a run surprises you, trace that exact case by hand before changing code.",
       strong: `Key points for ${problem.title}: ${problem.keyPoints[0]} ${problem.keyPoints[1] || ""}`.trim(),
       flag: rec.codeChanged === false || rec.testsPassed < rec.totalTests,
     });
@@ -184,7 +184,7 @@ export function phaseNotes(rec: SessionRecord, problem?: Problem): PhaseNote[] {
     notes.push({
       phase: "Complexity and communication",
       did: rec.complexityAnswer
-        ? `You answered: "${rec.complexityAnswer.slice(0, 160)}". Interviewer questions answered: ${rec.aiAnswered ?? 0} of ${rec.aiAsked ?? 0}.${rec.askedQuestionAtEnd ? " You asked a question at the end." : ""}`
+        ? `You answered: "${truncateWords(rec.complexityAnswer, 160)}". Interviewer questions answered: ${rec.aiAnswered ?? 0} of ${rec.aiAsked ?? 0}.${rec.askedQuestionAtEnd ? " You asked a question at the end." : ""}`
         : `You never answered the complexity question. Interviewer questions answered: ${rec.aiAnswered ?? 0} of ${rec.aiAsked ?? 0}.`,
       weak:
         rec.complexityCorrect === false
@@ -192,10 +192,30 @@ export function phaseNotes(rec: SessionRecord, problem?: Problem): PhaseNote[] {
           : rec.complexityCorrect == null
             ? "Skipping the complexity round leaves free marks on the table."
             : "Complexity was right. Next level: justify it from the code structure, not from memory of the problem.",
-      strong: `Expected: ${problem.complexity}`,
+      strong: problem.complexity,
       flag: rec.complexityCorrect !== true,
     });
     return notes;
+  }
+  if (rec.qaPairs && rec.qaPairs.length) {
+    return rec.qaPairs.slice(0, 5).map((pair, i) => {
+      const words = pair.answer ? wordCount(pair.answer) : 0;
+      return {
+        phase: `Question ${i + 1}`,
+        did: pair.answer
+          ? `You answered in ${words} words: "${truncateWords(pair.answer, 180)}"`
+          : "No answer recorded for this question.",
+        weak: !pair.answer
+          ? "Unanswered questions end the conversation on that topic. Always attempt a structured partial answer."
+          : words < 20
+            ? "Too thin. This answer would not survive a follow-up in a real interview."
+            : words < 45
+              ? "Some substance, but it needs a trade-off or a failure case to sound senior."
+              : "Good depth. This is the length and specificity interviewers reward.",
+        strong: "A strong answer here covers: a direct claim, one concrete example, the trade-off you accepted, and the result or number that proves it.",
+        flag: !pair.answer || words < 45,
+      };
+    });
   }
   const pairs: PhaseNote[] = [];
   const msgs = rec.transcript || [];
@@ -204,9 +224,17 @@ export function phaseNotes(rec: SessionRecord, problem?: Problem): PhaseNote[] {
   for (let i = 0; i < msgs.length; i++) {
     if (msgs[i].role !== "ai") continue;
     const text = msgs[i].text;
-    if (text.includes("introduce yourself") || text.includes("I am Alex") || text.includes("Do you have any questions for me")) continue;
-    const isQuestionLike = text.includes("?") || q === 0;
-    if (!isQuestionLike) continue;
+    const lower = text.toLowerCase();
+    if (
+      lower.includes("introduce yourself") ||
+      lower.includes("introduction") ||
+      lower.includes("i am alex") ||
+      lower.includes("i'm alex") ||
+      lower.includes("questions for me") ||
+      lower.includes("that covers my questions") ||
+      lower.includes("end of the interview")
+    ) continue;
+    if (!text.includes("?")) continue;
     q += 1;
     if (q > 5) break;
     let nextUser: (typeof msgs)[number] | undefined;
@@ -220,7 +248,7 @@ export function phaseNotes(rec: SessionRecord, problem?: Problem): PhaseNote[] {
     const words = nextUser ? wordCount(nextUser.text) : 0;
     pairs.push({
       phase: `Question ${q}`,
-      did: nextUser ? `You answered in ${words} words: "${nextUser.text.slice(0, 180)}"` : "No answer recorded for this question.",
+      did: nextUser ? `You answered in ${words} words: "${truncateWords(nextUser.text, 180)}"` : "No answer recorded for this question.",
       weak: !nextUser
         ? "Unanswered questions end the conversation on that topic. Always attempt a structured partial answer."
         : words < 20

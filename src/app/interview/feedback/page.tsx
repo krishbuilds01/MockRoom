@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getProblemById, problems } from "@/lib/problems";
+import { getProblemById, langLabel, problems } from "@/lib/problems";
 import { overallScore, type SessionRecord } from "@/lib/interviewer";
 import { phaseNotes, recommendNext, weakAreas } from "@/lib/feedback";
 
@@ -36,6 +36,7 @@ function validRecord(raw: string | null): SessionRecord | null {
 
 export default function FeedbackPage() {
   const [rec, setRec] = useState<SessionRecord | null>(null);
+  const [showTranscript, setShowTranscript] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -82,8 +83,8 @@ export default function FeedbackPage() {
         : "Mid mode: strict real interview expectations. Hints only when asked, and they are recorded.";
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-4xl px-5 py-10">
-      <nav className="flex items-center justify-between border-b border-line pb-4">
+    <main className="mx-auto flex h-dvh w-full max-w-4xl flex-col overflow-hidden px-5 py-5">
+      <nav className="flex shrink-0 items-center justify-between border-b border-line pb-3">
         <div className="flex items-center gap-2.5">
           <span className="avatar" style={{ width: "2rem", height: "2rem", fontSize: "0.8rem" }}>A</span>
           <span className="text-base font-semibold tracking-tight">InterviewAI</span>
@@ -91,7 +92,7 @@ export default function FeedbackPage() {
         <Link href="/" className="text-sm text-zinc-400 hover:text-zinc-100">Home</Link>
       </nav>
 
-      <div className="mt-8 flex flex-wrap items-center gap-2.5">
+      <div className="mt-4 flex shrink-0 flex-wrap items-center gap-2.5">
         <h1 className="text-3xl font-bold tracking-tight">Interview Feedback</h1>
         <span className={`badge ${rec.difficulty === "Easy" ? "badge-easy" : rec.difficulty === "Hard" ? "badge-hard" : "badge-mid"}`}>{rec.difficulty}</span>
         {rec.incomplete && <span className="badge badge-mid">Incomplete session</span>}
@@ -107,7 +108,7 @@ export default function FeedbackPage() {
       <p className="mt-3 text-xs leading-5 text-zinc-500">{diffNote}</p>
       <p className="mt-1 text-xs leading-5 text-zinc-500">{timeNote}</p>
 
-      <div className="card mt-6 flex flex-wrap items-center justify-between gap-4 p-6">
+      <div className="card mt-4 flex shrink-0 flex-wrap items-center justify-between gap-4 p-5">
         <div>
           <div className="text-xs font-medium text-zinc-400">Overall score</div>
           <div className="mt-1 text-5xl font-bold leading-none tracking-tight">
@@ -123,21 +124,21 @@ export default function FeedbackPage() {
             <div className="text-zinc-500">Code runs</div>
             <div className="text-right font-semibold">{rec.runs}</div>
             <div className="text-zinc-500">Language</div>
-            <div className="text-right font-semibold">{rec.language || "javascript"}</div>
+            <div className="text-right font-semibold">{langLabel(rec.language)}</div>
             <div className="text-zinc-500">Hints used</div>
             <div className="text-right font-semibold">{rec.hintsUsed ?? 0}</div>
           </div>
         )}
       </div>
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-4 grid shrink-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Score label="Problem Solving" value={rec.scores.problemSolving} />
         <Score label={rec.type === "technical" ? "Coding" : "Technical Depth"} value={rec.scores.coding} />
         <Score label="Communication" value={rec.scores.communication} />
         <Score label="Complexity Analysis" value={rec.scores.complexity} />
       </div>
 
-      <div className="mt-4 grid gap-4 md:grid-cols-2">
+      <div className="mt-4 grid shrink-0 gap-4 md:grid-cols-2">
         <div className="card p-5">
           <h2 className="text-sm font-semibold">Strengths</h2>
           {rec.scores.strengths.length ? <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-zinc-300">{rec.scores.strengths.map((s) => <li key={s}>{s}</li>)}</ul> : <p className="mt-3 text-sm leading-6 text-zinc-400">No clear strengths recorded this session. That is the honest read: rebuild from the phase notes below.</p>}
@@ -148,8 +149,9 @@ export default function FeedbackPage() {
         </div>
       </div>
 
+      <div className="mt-4 min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
       {notes.length > 0 && (
-        <div className="card mt-4 p-5">
+        <div className="card p-5">
           <h2 className="text-sm font-semibold">What happened, phase by phase</h2>
           <div className="mt-4 space-y-5">
             {notes.map((n) => (
@@ -165,11 +167,11 @@ export default function FeedbackPage() {
       )}
 
       {techProblem && (
-        <div className="card mt-4 p-5">
+        <div className="card p-5">
           <h2 className="text-sm font-semibold">Model pointers for {techProblem.title} <span className="font-normal text-zinc-500">(shown only after the interview)</span></h2>
           <p className="mt-3 text-sm leading-6 text-zinc-300"><span className="text-zinc-500">Intended pattern: </span>{techProblem.pattern}</p>
           <p className="mt-2 text-sm leading-6 text-zinc-300"><span className="text-zinc-500">Complexity: </span>{techProblem.complexity}</p>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <div className="mt-4 grid shrink-0 gap-4 md:grid-cols-2">
             <div>
               <div className="text-sm font-medium">Key points</div>
               <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm leading-6 text-zinc-300">{techProblem.keyPoints.map((k) => <li key={k}>{k}</li>)}</ul>
@@ -182,7 +184,7 @@ export default function FeedbackPage() {
         </div>
       )}
 
-      <div className="card mt-4 p-5">
+      <div className="card p-5">
         <h2 className="text-sm font-semibold">Your weak areas</h2>
         {weak.length ? (
           <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-zinc-300">{weak.map((w) => <li key={w}>{w}</li>)}</ul>
@@ -190,30 +192,31 @@ export default function FeedbackPage() {
           <p className="mt-3 text-sm leading-6 text-zinc-400">No weak area stood out in the recorded signals. Raise the difficulty and go again.</p>
         )}
         <h3 className="mt-6 text-sm font-semibold">Do these next</h3>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <div className="mt-3 space-y-2">
           {next.map((n) => (
-            <div key={n.problemId + n.reason} className="flex flex-col rounded-xl border border-line bg-panel2 p-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm font-semibold">{n.title}</span>
-                <span className={`badge ${n.difficulty === "Easy" ? "badge-easy" : n.difficulty === "Hard" ? "badge-hard" : "badge-mid"}`}>{n.difficulty}</span>
-                <span className="badge">{n.topic}</span>
-              </div>
-              <p className="mt-2 flex-1 text-sm leading-6 text-zinc-400">{n.reason}</p>
-              <Link href={n.href} className="btn btn-primary btn-sm mt-3 self-start">Start this interview</Link>
+            <div key={n.problemId + n.reason} className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-line bg-panel2 px-4 py-3">
+              <span className="text-sm font-semibold">{n.title}</span>
+              <span className={`badge ${n.difficulty === "Easy" ? "badge-easy" : n.difficulty === "Hard" ? "badge-hard" : "badge-mid"}`}>{n.difficulty}</span>
+              <span className="min-w-0 flex-1 text-sm leading-5 text-zinc-400">{n.reason}</span>
+              <Link href={n.href} className="btn btn-primary btn-sm">Start</Link>
             </div>
           ))}
         </div>
       </div>
 
       {rec.code && (
-        <div className="card mt-4 p-5">
+        <div className="card p-5">
           <h2 className="text-sm font-semibold">Your final code</h2>
           <pre className="mt-3 max-h-80 overflow-auto rounded-lg border border-line bg-panel2 p-4 font-mono text-xs leading-5">{rec.code}</pre>
         </div>
       )}
 
-      <div className="card mt-4 p-5">
-        <h2 className="text-sm font-semibold">Transcript</h2>
+      <div className="card p-5">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold">Transcript</h2>
+          <button type="button" onClick={() => setShowTranscript((v) => !v)} className="btn btn-ghost btn-sm" aria-expanded={showTranscript}>{showTranscript ? "Hide transcript" : "View transcript"}</button>
+        </div>
+        {showTranscript && (
         <div className="mt-4 max-h-96 space-y-2.5 overflow-y-auto">
           {rec.transcript.slice(-20).map((m, i) => (
             <div key={i} className={`max-w-[85%] break-words rounded-xl px-3.5 py-2.5 text-sm leading-6 ${m.role === "ai" ? "border border-line bg-panel2 text-zinc-100" : "ml-auto bg-zinc-100 text-zinc-900"}`}>
@@ -223,9 +226,11 @@ export default function FeedbackPage() {
           ))}
           {rec.transcript.length === 0 && <p className="text-sm text-zinc-400">No transcript recorded.</p>}
         </div>
+        )}
+      </div>
       </div>
 
-      <div className="mt-8 flex flex-wrap gap-3 pb-4">
+      <div className="mt-4 flex shrink-0 flex-wrap gap-3">
         <Link href="/" className="btn btn-accent">Practice again</Link>
         <Link href="/" className="btn btn-ghost">See your progress on home</Link>
       </div>
