@@ -32,7 +32,7 @@ function loadHistory(): SessionRecord[] {
 const features = [
   {
     title: "Live voice interview",
-    text: "Alex, your interviewer, speaks with a natural Gemini Live voice and listens while you answer. No typing your way through a voice round.",
+    text: "Alex, your interviewer, speaks with a natural Gemini voice and listens while you answer. A Gemini Live conversation mode is there too, marked experimental.",
   },
   {
     title: "Code watching AI",
@@ -44,11 +44,6 @@ const features = [
   },
 ];
 
-const steps = [
-  { n: "1", title: "Set up", text: "Pick a room, a difficulty and a topic. Allow camera and mic." },
-  { n: "2", title: "Interview", text: "Introduction, clarifying questions, approach, coding, dry run, complexity, then your questions." },
-  { n: "3", title: "Feedback", text: "Scores with reasons, weak areas, and a practice plan you can act on the same day." },
-];
 
 export default function Home() {
   const router = useRouter();
@@ -78,38 +73,37 @@ export default function Home() {
   const trendDelta = latestOverall !== null && previousOverall !== null ? Math.round((latestOverall - previousOverall) * 10) / 10 : null;
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-6xl px-5">
-      <nav className="flex items-center justify-between border-b border-line py-4">
+    <main className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col px-5 lg:h-dvh lg:overflow-hidden">
+      <nav className="flex shrink-0 items-center justify-between border-b border-line py-3">
         <div className="flex items-center gap-2.5">
           <span className="avatar" style={{ width: "2rem", height: "2rem", fontSize: "0.8rem" }}>A</span>
           <span className="text-base font-semibold tracking-tight">InterviewAI</span>
         </div>
         <div className="flex items-center gap-5 text-sm text-zinc-400">
-          <a href="#how" className="hidden hover:text-zinc-100 sm:block">How it works</a>
           <a href="#progress" className="hidden hover:text-zinc-100 sm:block">Your progress</a>
           <Link href="/interview/feedback" className="hover:text-zinc-100">Latest feedback</Link>
         </div>
       </nav>
 
-      <section className="grid items-start gap-10 pb-4 pt-14 lg:grid-cols-[1.1fr_1fr]">
+      <section className="grid shrink-0 items-start gap-6 pt-6 lg:grid-cols-[1.1fr_1fr] lg:pt-8">
         <div>
           <span className="badge badge-live">
             <span className="dot dot-pulse bg-emerald-400" />
-            Live voice, powered by Gemini Live
+            Live voice interview practice
           </span>
-          <h1 className="mt-5 text-4xl font-bold leading-[1.12] tracking-tight sm:text-5xl">
+          <h1 className="mt-4 text-4xl font-bold leading-[1.12] tracking-tight">
             Practice a real interview.
             <br />
             <span className="text-zinc-400">With an AI that pushes back.</span>
           </h1>
-          <p className="mt-5 max-w-xl text-[15px] leading-7 text-zinc-400">
+          <p className="mt-4 max-w-xl text-[15px] leading-6 text-zinc-400">
             One on one with Alex, a strict AI interviewer who talks and listens like a person, watches your code as you write it,
             challenges vague answers, and records every hint. Every session ends with feedback that teaches: phase by phase notes,
             your weak areas, and the exact problems to do next.
           </p>
-          <div className="mt-8 grid gap-3 sm:grid-cols-3">
+          <div className="mt-6 grid gap-3 sm:grid-cols-3">
             {features.map((f) => (
-              <div key={f.title} className="card p-4">
+              <div key={f.title} className="card p-3.5">
                 <div className="text-sm font-semibold">{f.title}</div>
                 <p className="mt-1.5 text-[13px] leading-5 text-zinc-400">{f.text}</p>
               </div>
@@ -117,17 +111,17 @@ export default function Home() {
           </div>
         </div>
 
-        <section className="card p-6 shadow-2xl shadow-black/40" aria-label="Start an interview">
+        <section className="card p-5 shadow-2xl shadow-black/40" aria-label="Start an interview">
           <div className="text-sm font-semibold">Start an interview</div>
           <div className="mt-4 grid gap-3">
-            <button type="button" onClick={() => setType("technical")} aria-pressed={type === "technical"} className={`rounded-xl border p-4 text-left transition ${type === "technical" ? "border-accent bg-accent-soft" : "border-line bg-panel2 hover:border-line2"}`}>
+            <button type="button" onClick={() => setType("technical")} aria-pressed={type === "technical"} className={`rounded-xl border p-3.5 text-left transition ${type === "technical" ? "border-accent bg-accent-soft" : "border-line bg-panel2 hover:border-line2"}`}>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold">Technical / Coding</span>
                 <span className="badge">Monaco editor</span>
               </div>
               <p className="mt-1.5 text-[13px] leading-5 text-zinc-400">LeetCode style room. Run and submit against real tests while Alex watches your code live.</p>
             </button>
-            <button type="button" onClick={() => setType("general")} aria-pressed={type === "general"} className={`rounded-xl border p-4 text-left transition ${type === "general" ? "border-accent bg-accent-soft" : "border-line bg-panel2 hover:border-line2"}`}>
+            <button type="button" onClick={() => setType("general")} aria-pressed={type === "general"} className={`rounded-xl border p-3.5 text-left transition ${type === "general" ? "border-accent bg-accent-soft" : "border-line bg-panel2 hover:border-line2"}`}>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold">Live AI Interview</span>
                 <span className="badge">Voice first</span>
@@ -136,7 +130,7 @@ export default function Home() {
             </button>
           </div>
 
-          <div className="mt-6 text-[13px] font-medium text-zinc-300">Difficulty</div>
+          <div className="mt-5 text-[13px] font-medium text-zinc-300">Difficulty</div>
           <div className="mt-2.5 flex flex-wrap gap-2" role="group" aria-label="Difficulty">
             {["Easy", "Mid", "Hard"].map((d) => (
               <button type="button" key={d} onClick={() => setDifficulty(d)} aria-pressed={difficulty === d} className={difficulty === d ? "btn btn-primary btn-sm" : "btn btn-ghost btn-sm"}>{d}</button>
@@ -146,36 +140,25 @@ export default function Home() {
 
           {type === "technical" && (
             <>
-              <div className="mt-6 text-[13px] font-medium text-zinc-300">Topic</div>
+              <div className="mt-5 text-[13px] font-medium text-zinc-300">Topic</div>
               <div className="mt-2.5 flex flex-wrap gap-2" role="group" aria-label="Topic">
                 {topics.map((t) => (
                   <button type="button" key={t} onClick={() => setTopic(t)} aria-pressed={topic === t} className={topic === t ? "btn btn-primary btn-sm" : "btn btn-ghost btn-sm"}>{t}</button>
                 ))}
               </div>
-              <p className="mt-2.5 text-xs leading-5 text-zinc-500">If a topic has no problem at your exact difficulty yet, the room tells you clearly at the top and serves the closest one, scored at its real level.</p>
+              <p className="mt-2.5 text-xs leading-5 text-zinc-500">If a topic has no problem at your difficulty yet, the room serves the closest one and says so.</p>
             </>
           )}
 
-          <button type="button" onClick={start} className="btn btn-accent mt-7 w-full py-3 text-[15px] font-semibold">Start Interview</button>
+          <button type="button" onClick={start} className="btn btn-accent mt-5 w-full py-3 text-[15px] font-semibold">Start Interview</button>
           <p className="mt-3 text-center text-xs text-zinc-500">Works best in Chrome. Allow camera and mic when asked. No sign up needed.</p>
         </section>
       </section>
 
-      <section id="how" className="mt-14">
-        <h2 className="text-lg font-semibold tracking-tight">How it works</h2>
-        <div className="mt-4 grid gap-3 sm:grid-cols-3">
-          {steps.map((s) => (
-            <div key={s.n} className="card p-5">
-              <span className="badge badge-accent">Step {s.n}</span>
-              <div className="mt-3 text-sm font-semibold">{s.title}</div>
-              <p className="mt-1.5 text-[13px] leading-5 text-zinc-400">{s.text}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      <p className="mt-5 shrink-0 text-[13px] leading-5 text-zinc-500">How it works: set up in ten seconds, interview with Alex (introduction, questions, coding, your questions), then get scored feedback with a practice plan.</p>
 
       {history.length > 0 && (
-        <section id="progress" className="mt-14">
+        <section id="progress" className="mt-6 flex min-h-0 flex-1 flex-col">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="text-lg font-semibold tracking-tight">Your progress</h2>
             {latestOverall !== null && (
@@ -191,14 +174,20 @@ export default function Home() {
             )}
           </div>
           {chronological.length > 1 && (
-            <div className="card mt-4 flex h-24 items-end gap-1.5 p-4" aria-hidden="true">
+            <div className="card mt-3 flex h-24 shrink-0 items-end gap-1.5 p-4">
               {chronological.slice(-14).map((h) => {
                 const o = overallScore(h.scores);
-                return <div key={h.id} title={`${o}/10`} className="min-w-2 flex-1 rounded-t bg-accent/80" style={{ height: `${Math.max(8, o * 10)}%` }} />;
+                const d = new Date(h.date);
+                return (
+                  <div key={h.id} className="flex min-w-2 flex-1 flex-col items-center justify-end gap-1 self-stretch" title={`${o}/10 on ${d.toLocaleDateString()}`}>
+                    <div className="w-full rounded-t bg-accent/80" style={{ height: `${Math.max(8, o * 10)}%` }} />
+                    <span className="text-[9px] font-medium leading-none text-zinc-400">{o}</span>
+                  </div>
+                );
               })}
             </div>
           )}
-          <div className="card mt-4 divide-y divide-line">
+          <div className="card mt-3 max-h-80 min-h-0 flex-1 divide-y divide-line overflow-y-auto lg:max-h-none">
             {history.map((h) => (
               <div key={h.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 text-sm">
                 <div className="min-w-0">
@@ -220,14 +209,13 @@ export default function Home() {
               </div>
             ))}
           </div>
-          <p className="mt-3 text-xs text-zinc-500">History is stored only in this browser.</p>
+          <p className="mt-2 shrink-0 text-xs text-zinc-500">Bars show overall score per session, oldest to newest. History is stored only in this browser.</p>
         </section>
       )}
 
-      <footer className="mb-10 mt-16 border-t border-line pt-6 text-xs leading-5 text-zinc-500">
-        InterviewAI, strict AI interview practice. Code runs via the Judge0 API. The interviewer speaks with Gemini Live when available,
-        with Gemini text replies, a Gemini voice and a local engine as fallbacks.
-        <span className="mt-2 block">After a session, your feedback is ready here: <Link href="/interview/feedback" className="text-zinc-300 underline underline-offset-2 hover:text-zinc-100">open latest feedback</Link>.</span>
+      <footer className="mt-4 shrink-0 border-t border-line py-3 text-xs leading-5 text-zinc-500">
+        InterviewAI, strict AI interview practice. Code runs via the Judge0 API. Interviews are led by the interview engine (Gemini, with a local engine as fallback) and spoken with a Gemini voice; Gemini Live conversation is an optional experimental mode in the Live AI Interview room.
+        <span className="mt-1 block">After a session, your feedback is ready here: <Link href="/interview/feedback" className="text-zinc-300 underline underline-offset-2 hover:text-zinc-100">open latest feedback</Link>.</span>
       </footer>
     </main>
   );
