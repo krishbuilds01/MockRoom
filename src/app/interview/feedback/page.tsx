@@ -5,6 +5,8 @@ import { getProblemById, langLabel, problems } from "@/lib/problems";
 import { overallScore, type SessionRecord } from "@/lib/interviewer";
 import { companyVerdict, phaseNotes, recommendNext, weakAreas } from "@/lib/feedback";
 import { deleteRecording, loadRecording } from "@/lib/recording";
+import { loadHistory } from "@/lib/analytics";
+import { scoreBarClass } from "@/lib/scoreColor";
 import Logo from "@/components/Logo";
 
 function Score({ label, value }: { label: string; value: number }) {
@@ -16,7 +18,7 @@ function Score({ label, value }: { label: string; value: number }) {
         <span className="text-sm font-medium text-stone-600">/10</span>
       </div>
       <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-line">
-        <div className={`h-full rounded-full ${value >= 7 ? "bg-emerald-600" : value >= 4 ? "bg-accent" : "bg-red-600"}`} style={{ width: `${value * 10}%` }} />
+        <div className={`h-full rounded-full ${scoreBarClass(value)}`} style={{ width: `${value * 10}%` }} />
       </div>
     </div>
   );
@@ -47,8 +49,13 @@ export default function FeedbackPage() {
     try {
       raw = sessionStorage.getItem("interviewai-last");
     } catch {}
+    let record = validRecord(raw);
+    if (!record) {
+      const history = loadHistory();
+      if (history.length) record = validRecord(JSON.stringify(history[0]));
+    }
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setRec(validRecord(raw));
+    setRec(record);
     setLoaded(true);
   }, []);
 
@@ -95,11 +102,14 @@ export default function FeedbackPage() {
   const next = recommendNext(rec, techProblem);
   const overall = overallScore(rec.scores);
   const target = rec.targetSec;
-  const timeNote = target
-    ? rec.timeSec <= target
-      ? `You finished in ${Math.floor(rec.timeSec / 60)} min ${rec.timeSec % 60} sec, inside the ${Math.round(target / 60)} min target for this level.`
-      : `You took ${Math.floor(rec.timeSec / 60)} min ${rec.timeSec % 60} sec against a ${Math.round(target / 60)} min target. Overruns cost marks in real interviews, where the clock is shared with other questions.`
-    : `Session length: ${Math.floor(rec.timeSec / 60)} min ${rec.timeSec % 60} sec.`;
+  const duration = `${Math.floor(rec.timeSec / 60)} min ${rec.timeSec % 60} sec`;
+  const timeNote = rec.incomplete
+    ? `Session ended early, after ${duration}.`
+    : target
+      ? rec.timeSec <= target
+        ? `You finished in ${duration}, inside the ${Math.round(target / 60)} min target for this level.`
+        : `You took ${duration} against a ${Math.round(target / 60)} min target. Overruns cost marks in real interviews, where the clock is shared with other questions.`
+      : `Session length: ${duration}.`;
 
   const diffNote =
     rec.difficulty === "Hard"

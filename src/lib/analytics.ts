@@ -131,14 +131,17 @@ export function computeAnalytics(history: SessionRecord[], now: Date = new Date(
 
   const plan: PlanItem[] = [];
   const weakTopics = [...topicAverages].sort((a, b) => a.average - b.average);
-  for (const t of weakTopics.slice(0, 2)) {
+  weakTopics.slice(0, 2).forEach((t, i) => {
     const difficulty = t.average < 5 ? "Easy" : "Mid";
     plan.push({
       title: `${t.name} session at ${difficulty}`,
-      reason: `${t.name} is your weakest topic at ${t.average}/10 across ${t.count} session${t.count === 1 ? "" : "s"}. One focused ${difficulty} round is worth more than another strong topic.`,
+      reason:
+        i === 0
+          ? `${t.name} is your weakest topic at ${t.average}/10 across ${t.count} session${t.count === 1 ? "" : "s"}. One focused ${difficulty} round is worth more than another strong topic.`
+          : `${t.name} is also worth a session: it sits at ${t.average}/10 across ${t.count} session${t.count === 1 ? "" : "s"}, below your stronger topics.`,
       href: techHref(t.name, difficulty),
     });
-  }
+  });
   const weakAxis = [...axisAverages].sort((a, b) => a.average - b.average)[0];
   if (weakAxis && plan.length < 3) {
     if (weakAxis.name === "Communication" || weakAxis.name === "Complexity Analysis") {

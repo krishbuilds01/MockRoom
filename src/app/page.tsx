@@ -3,12 +3,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { topics } from "@/lib/problems";
-import { companies } from "@/lib/companies";
 import { buildResumeQuestionsLocal, postResumeQuestions, RESUME_QUESTIONS_KEY, RESUME_STORAGE_KEY } from "@/lib/resume";
 import { loadHistory } from "@/lib/analytics";
 import { markFreshStart } from "@/lib/activeSession";
+import { scoreBarClass } from "@/lib/scoreColor";
 import { overallScore, type SessionRecord } from "@/lib/interviewer";
 import Logo from "@/components/Logo";
+import CompanySelect from "@/components/CompanySelect";
 import Footer from "@/components/Footer";
 
 function FeatureIcon({ name }: { name: string }) {
@@ -152,7 +153,6 @@ export default function Home() {
       <nav className="flex h-16 shrink-0 items-center justify-between border-b border-line">
         <Logo />
         <div className="flex items-center gap-5 text-sm text-stone-600">
-          <a href="#progress" className="hidden hover:text-stone-900 sm:block">Your progress</a>
           <Link href="/progress" className="hover:text-stone-900">Progress</Link>
           <Link href="/interview/feedback" className="hover:text-stone-900">Latest feedback</Link>
         </div>
@@ -176,6 +176,18 @@ export default function Home() {
               your weak areas, and the exact problems to do next.
             </p>
           </div>
+          <ol className="mt-8 space-y-3.5">
+            {[
+              "Set up in ten seconds: mode, difficulty, company and topic.",
+              "Interview with Alex: introduction, questions, live coding, then your questions for him.",
+              "Get scored feedback with phase by phase notes and a plan for what to fix next.",
+            ].map((step, i) => (
+              <li key={step} className="flex items-baseline gap-3 text-sm leading-6 text-stone-600">
+                <span className="tnum flex h-5 w-5 shrink-0 translate-y-0.5 items-center justify-center rounded-full border border-line2 text-[11px] font-semibold text-stone-700">{i + 1}</span>
+                <span>{step}</span>
+              </li>
+            ))}
+          </ol>
           <div className="mt-auto pt-8">
             <p className="border-t border-line pt-4 text-sm text-stone-600">
               {history.length > 0 && latestOverall !== null ? (
@@ -212,12 +224,10 @@ export default function Home() {
                 </div>
               </div>
               <div>
-                <label htmlFor="company-select" className="text-[13px] font-medium text-stone-700">Company</label>
-                <select id="company-select" value={companyId} onChange={(e) => setCompanyId(e.target.value)} className="select mt-2 w-full" aria-label="Company">
-                  {companies.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
+                <div id="company-label" className="text-[13px] font-medium text-stone-700">Company</div>
+                <div aria-labelledby="company-label">
+                  <CompanySelect value={companyId} onChange={setCompanyId} />
+                </div>
               </div>
               {type === "technical" && (
                 <div>
@@ -274,9 +284,7 @@ export default function Home() {
         </div>
       </section>
 
-      <p className="mt-8 text-[13px] leading-5 text-stone-600">How it works: set up in ten seconds, interview with Alex (introduction, questions, coding, your questions), then get scored feedback with a practice plan.</p>
-
-      <div className="mt-6 grid gap-4 sm:grid-cols-3">
+      <div className="mt-8 grid gap-4 sm:grid-cols-3">
         {features.map((f) => (
           <div key={f.title} className="card card-pad">
             <span className="text-accent"><FeatureIcon name={f.icon} /></span>
@@ -314,7 +322,7 @@ export default function Home() {
                     <div key={h.id} className="flex flex-1 flex-col items-center gap-2" title={`${o}/10`}>
                       <span className="tnum text-xs font-semibold leading-none text-stone-700">{o}</span>
                       <div className="relative h-24 w-full rounded-t bg-panel2">
-                        <div className="absolute inset-x-0 bottom-0 rounded-t bg-accent" style={{ height: `${o * 10}%` }} />
+                        <div className={`absolute inset-x-0 bottom-0 rounded-t ${scoreBarClass(o)}`} style={{ height: `${o * 10}%` }} />
                       </div>
                     </div>
                   );

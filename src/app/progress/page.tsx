@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { computeAnalytics, loadHistory, type Analytics } from "@/lib/analytics";
+import { scoreBarClass } from "@/lib/scoreColor";
 import Logo from "@/components/Logo";
 import Footer from "@/components/Footer";
 
@@ -21,12 +22,12 @@ function TrendChart({ analytics }: { analytics: Analytics }) {
   const H = 220;
   const padL = 36;
   const padR = 16;
-  const padT = 24;
+  const padT = 38;
   const padB = 32;
   const iw = W - padL - padR;
   const ih = H - padT - padB;
   const x = (i: number) => padL + (pts.length === 1 ? iw / 2 : (i / (pts.length - 1)) * iw);
-  const y = (v: number) => padT + ih - (v / 10) * ih;
+  const y = (v: number) => padT + ih - (v / 11) * ih;
   const line = pts.map((p, i) => `${x(i)},${y(p.overall)}`).join(" ");
   return (
     <div className="card card-pad">
@@ -65,7 +66,7 @@ function AverageRow({ name, average, count }: { name: string; average: number; c
     <div className="flex items-center gap-3 py-2">
       <span className="w-40 shrink-0 truncate text-sm text-stone-700">{name}</span>
       <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-line">
-        <div className={`h-full rounded-full ${average >= 7 ? "bg-emerald-600" : average >= 4.5 ? "bg-accent" : "bg-red-600"}`} style={{ width: `${average * 10}%` }} />
+        <div className={`h-full rounded-full ${scoreBarClass(average)}`} style={{ width: `${average * 10}%` }} />
       </div>
       <span className="tnum w-14 shrink-0 text-right text-sm font-semibold">{average}/10</span>
       <span className="w-16 shrink-0 text-right text-xs text-stone-600">{count} session{count === 1 ? "" : "s"}</span>
