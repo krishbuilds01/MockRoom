@@ -34,46 +34,83 @@ export function generalQuestions(difficulty: string): string[] {
   return generalBank[difficulty] || generalBank.Mid;
 }
 
+export function wordCount(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+export function isThinAnswer(text: string, difficulty: string): boolean {
+  const min = difficulty === "Easy" ? 12 : 20;
+  return wordCount(text) < min;
+}
+
+const acks = ["Right.", "Okay.", "Got it.", "Fair enough.", "Hmm, okay.", "Noted."];
+
+export function pickAck(seed: number): string {
+  return acks[Math.abs(seed) % acks.length];
+}
+
 export function generalFollowUp(answer: string, difficulty: string, qIndex: number): string {
   const a = answer.toLowerCase();
-  const short = answer.trim().split(/\s+/).length < 12;
-  if (short && difficulty !== "Hard") return "Can you add a bit more detail? Give me one concrete example from your own work.";
-  if (short && difficulty === "Hard") return "That is too short for this level. I need specifics, numbers, and trade-offs. Please expand.";
-  if (a.includes("example") || a.includes("project") || a.includes("built")) {
-    return difficulty === "Hard"
-      ? "Good. Now the hard part: what was the trade-off in that choice, and what would break first at 10x scale?"
-      : "Nice example. Why did you pick that approach over the simpler option?";
+  const ack = pickAck(qIndex * 7 + wordCount(answer));
+  if (isThinAnswer(answer, difficulty)) {
+    if (difficulty === "Easy") {
+      return `${ack} That is too thin, even for Easy. Give me specifics: one concrete example, the exact steps, or a number. A small push: name the thing, then say why it works.`;
+    }
+    return `${ack} That is too vague, and I am not moving on yet. Give me a concrete example, exact steps, or numbers. No general statements.`;
   }
   if (a.includes("trade") || a.includes("because") || a.includes("so that")) {
-    return "Fair reasoning. What would you do differently if you had to do it again?";
+    return difficulty === "Hard"
+      ? `${ack} You gave a reason. Now defend it: what alternative did you reject, and what evidence would change your mind?`
+      : `${ack} Fair reasoning. What would you do differently if you had to do it again, and why?`;
   }
-  if (difficulty === "Easy") return "Good start. Here is a small hint to go deeper: think of one real example and say why it worked.";
-  if (difficulty === "Hard") return "You gave the what, not the why. Justify it: what alternative did you reject and on what evidence?";
-  return `Follow-up on question ${qIndex + 1}: can you give a concrete example and explain why you chose that approach?`;
+  if (a.includes("example") || a.includes("project") || a.includes("built") || a.includes("work")) {
+    return difficulty === "Hard"
+      ? `${ack} Now the hard part: what was the trade-off in that choice, and what breaks first at ten times the scale? Be specific.`
+      : `${ack} Good, a real example. Why did you pick that approach over the simpler option? What did it cost you?`;
+  }
+  if (difficulty === "Easy") return `${ack} Decent start, but I need one layer deeper: give me one real example and say exactly why it worked.`;
+  if (difficulty === "Hard") return `${ack} You gave me the what, not the why. Justify it: name the alternative you rejected and the evidence behind the choice.`;
+  return `${ack} That is surface level. Give me one concrete example and explain why you chose that approach over the alternatives.`;
+}
+
+export function generalSecondFollowUp(answer: string, difficulty: string): string {
+  if (isThinAnswer(answer, difficulty)) {
+    return "Still too thin. I am recording that this question was not answered in enough depth. One last chance on it: give me the example, the steps, and the reason, in that order.";
+  }
+  return difficulty === "Hard"
+    ? "Better. Last probe on this one: what is the failure case of what you just described, and how would you detect it in production?"
+    : "Better, that has substance now. One more probe: what is a case where what you described would fail or be the wrong choice?";
+}
+
+export function isBruteForceApproach(text: string): boolean {
+  const a = text.toLowerCase();
+  return a.includes("brute") || a.includes("nested loop") || a.includes("two loop") || a.includes("double loop") || a.includes("n squared") || a.includes("o(n^2)") || a.includes("o(n2)") || a.includes("check every pair") || a.includes("check all pairs");
 }
 
 export function analyzeApproach(problem: Problem, answer: string, difficulty: string): string {
   const a = answer.toLowerCase();
   const parts: string[] = [];
-  if (a.includes("hash") || a.includes("map") || a.includes("dict") || a.includes("set")) {
-    parts.push(`A hash based approach fits ${problem.title} well.`);
-    parts.push("What will you store as the key, and what as the value?");
-  } else if (a.includes("brute") || a.includes("nested") || a.includes("two loop") || a.includes("double loop")) {
-    if (difficulty === "Hard") parts.push("Brute force will not pass at this level. Before you code, find the faster approach first.");
-    else if (difficulty === "Mid") parts.push("Brute force works but is slow. Can you cut one of those loops with extra space?");
-    else parts.push("Brute force is a fine starting point. Code it, and we will look at speeding it up after.");
+  if (isBruteForceApproach(answer)) {
+    if (difficulty === "Hard") parts.push(`Brute force is not acceptable at Hard level for ${problem.title}. I am not letting you code that. Find the faster approach first, then state it.`);
+    else if (difficulty === "Mid") parts.push("Brute force will be scored down at Mid level. Before you code, tell me how you cut one of those loops, even if it costs extra space.");
+    else parts.push("Brute force is a start, but state its exact complexity and one concrete idea to improve it. I will ask about that improvement after you code.");
+  } else if (a.includes("hash") || a.includes("map") || a.includes("dict") || a.includes("set")) {
+    parts.push(`A hash based approach fits ${problem.title}.`);
+    parts.push("Be precise: what exactly is the key, what is the value, and when do you check before you store?");
   } else if (a.includes("sort")) {
-    parts.push("Sorting first is a solid plan here. What does sorting cost you, and what does it make easier after?");
+    parts.push("Sorting first can work here. State the cost of the sort and what it makes simpler afterwards. If you cannot state the cost, that is a gap.");
   } else if (a.includes("stack")) {
-    parts.push("A stack fits the last-in first-out structure of this problem. What do you push, and when do you pop?");
+    parts.push("A stack fits the last in, first out structure here. What do you push, when do you pop, and what do you do when a closer meets an empty stack?");
   } else if (a.includes("two pointer") || a.includes("pointer") || a.includes("sliding") || a.includes("window")) {
-    parts.push("That is the intended direction for this problem. When exactly do you move each pointer?");
-  } else if (answer.trim().length < 8) {
-    parts.push("I need more than that. In 2-3 lines: what data structure, what is the main loop, and what do you return?");
+    parts.push("That is the intended direction. Now be exact: when does each pointer move, and what invariant does the window hold at all times?");
+  } else if (wordCount(answer) < 8) {
+    parts.push("That is not an approach, that is a guess. I need three things: the data structure, the main loop or pass, and what you return. State them.");
   } else {
-    parts.push("Okay, I follow the broad idea. Before coding, state your expected time complexity and one edge case you will handle.");
+    parts.push("I follow the broad idea, but it is not precise yet. State your expected time and space complexity and one edge case you will handle, before you touch the code.");
   }
-  parts.push("Start coding now. I will watch and ask questions as you go.");
+  if (!(difficulty === "Hard" && isBruteForceApproach(answer))) {
+    parts.push("Start coding. I will watch, and I will stop you to explain lines I pick.");
+  }
   return parts.join(" ");
 }
 
@@ -124,42 +161,66 @@ export function codeWatchQuestion(prev: string, curr: string, problem: Problem):
   const { added, removed } = diffLines(prev, curr);
   if (!added.length && !removed.length) return null;
   if (removed.length >= 1 && removed[0].length > 3) {
-    return `I saw you removed this: "${removed[0].slice(0, 60)}" - why did you remove it? Was it wrong, or are you replacing it with something better?`;
+    return `Stop there. You removed this: "${removed[0].slice(0, 60)}". Why? Was it wrong, and what replaces it?`;
   }
   const joined = added.join("\n");
-  if (/\b(for|while)\b/.test(joined)) return "You just added a loop. Why this loop, and what is the time complexity it adds?";
-  if (/new Map|new Set|\{\}|\bdict\b|\bset\(/.test(joined)) return "You brought in a hash structure here. Why a Map or Set at this point - what lookup are you speeding up?";
-  if (/\.sort\(|sorted\(/.test(joined)) return "You are sorting here. What does sorting buy you, and what does it cost in time?";
+  if (/\b(for|while)\b/.test(joined)) return "You just added a loop. Justify it: what does it iterate over, and what total complexity does that give you now?";
+  if (/new Map|new Set|\{\}|\bdict\b|\bset\(/.test(joined)) return "You brought in a hash structure. Exactly what is stored in it, and which lookup does it make O(1)?";
+  if (/\.sort\(|sorted\(/.test(joined)) return "You are sorting. State the cost of that sort and what it buys you. If you cannot, that is a problem.";
   if (/\breturn\b/.test(joined)) {
     const t = problem.tests[0];
-    return `You added a return. Walk me through it for this case: input ${JSON.stringify(t.args)} - what should come out, and does your return give that?`;
+    return `You added a return. Trace it for this input: ${JSON.stringify(t.args)}. Walk me through the values, step by step, until that return fires.`;
   }
-  if (/\.push\(|append\(/.test(joined)) return "You are building up a result there. At what point is that result complete and ready to return?";
-  if (added.length >= 3) return "You wrote a block of code quickly. Explain the plan for those lines in one or two sentences before you continue.";
+  if (/\.push\(|append\(/.test(joined)) return "You are building a result there. At what exact point is it complete, and what guarantees nothing is missing?";
+  if (added.length >= 3) return "You wrote a block of code without explaining any of it. Explain the plan for those lines now, before you write more.";
   return null;
+}
+
+export function codeWatchProgressQuestion(code: string, runs: number, problem: Problem): string | null {
+  const lines = code.split("\n").filter((l) => l.trim() && !l.trim().startsWith("//")).length;
+  const starterLines = problem.starter.javascript.split("\n").filter((l) => l.trim()).length;
+  if (lines > starterLines + 14 && runs === 0) {
+    return "You have written a lot of code and run none of it. In a real interview that reads as guessing. Run it now and tell me what you expect to see.";
+  }
+  if (lines > 45) {
+    return `This solution is getting long for ${problem.title}. Long code usually means a missed simplification. What is the shortest version of your idea?`;
+  }
+  return null;
+}
+
+export function isHintRequest(text: string): boolean {
+  const t = text.toLowerCase();
+  return t.includes("hint") || t.includes("stuck") || t.includes("help me") || t.trim() === "help";
+}
+
+export function isTestCaseRequest(text: string): boolean {
+  const t = text.toLowerCase();
+  return t.includes("test case") || t.includes("example case") || t.includes("give me a case");
 }
 
 export function answerCandidateQuestion(problem: Problem, qRaw: string, difficulty: string): string | null {
   const q = qRaw.toLowerCase();
-  if (q.includes("test case") || q.includes("example case") || q.includes("give me a case")) {
-    return `Here is an extra test case for ${problem.title}: ${problem.extraTest.note} Expected output: ${JSON.stringify(problem.extraTest.expected)}. Try it with Run after you code.`;
+  if (isTestCaseRequest(qRaw)) {
+    return `One extra test case for ${problem.title}: ${problem.extraTest.note} Expected output: ${JSON.stringify(problem.extraTest.expected)}. Run it before you submit.`;
   }
   if (q.includes("hint")) {
-    return "Hint: " + (problem.hints[difficulty as Difficulty] || problem.hints.Mid);
+    if (difficulty === "Hard") return "No hints at Hard level. Tell me exactly where you are stuck: the data structure, the loop, or an edge case. That answer itself is scored.";
+    const note = difficulty === "Mid" ? "This hint is recorded and will lower your score slightly. " : "";
+    return note + "Hint: " + problem.hints[difficulty as Difficulty];
   }
   if (q.includes("empty") || q.includes("null") || q.includes("edge")) {
     return problem.emptyInputNote;
   }
   if (q.includes("complexity") || q.includes("big o")) {
-    return problem.complexity + " I will ask you to state yours at the end, so keep it in mind while coding.";
+    return "I am not handing you the complexity, that is part of what is scored. Tell me your current estimate and I will react to it.";
   }
   if (q.includes("can i use") || q.includes("allowed")) {
-    return "Yes, you can, but you need to justify the extra space or time it costs. In a real interview that justification is what gets scored.";
+    return "You can, but only if you can justify the extra space or time it costs. That justification is exactly what gets scored, so make it now.";
   }
   if (q.includes("stuck") || q.includes("help")) {
     return difficulty === "Hard"
-      ? "I will not give the solution at Hard level. Tell me where exactly you are stuck - the data structure, the loop, or an edge case?"
-      : "No problem. Hint: " + (problem.hints[difficulty as Difficulty] || problem.hints.Mid);
+      ? "No walkthrough at Hard level. Tell me exactly where you are stuck: the data structure, the loop, or an edge case."
+      : "Being stuck is fine, being vague is not. Tell me exactly where: the data structure, the loop, or an edge case. Then I will give you one nudge, and it will be recorded as a hint.";
   }
   return null;
 }
@@ -178,6 +239,49 @@ export function isCandidateQuestion(text: string): boolean {
   );
 }
 
+function normComplexityToken(raw: string): string | null {
+  const s = raw.toLowerCase().replace(/\s+/g, "");
+  if (s.includes("nlogn") || s.includes("n*logn")) return "nlogn";
+  if (s.includes("2^n") || s.includes("exponential")) return "2^n";
+  if (s.includes("n^2") || s.includes("n2") || s.includes("quadratic")) return "n^2";
+  if (s.includes("n*k") || s.includes("nklogk")) return "nklogk";
+  if (s.includes("logn") || s.includes("logarithmic")) return "logn";
+  if (s.includes("o(n)") || s.includes("linear") || s === "n") return "n";
+  if (s.includes("o(1)") || s.includes("constant")) return "1";
+  if (s.includes("min(n")) return "n";
+  return null;
+}
+
+export function expectedComplexity(problem: Problem): { time: string | null; space: string | null } {
+  const matches = [...problem.complexity.matchAll(/O\(([^)]+)\)/g)].map((m) => normComplexityToken(m[1]));
+  const time = matches[0] ?? null;
+  let space = matches.length > 1 ? matches[matches.length - 1] : null;
+  if (problem.id === "group-anagrams") space = null;
+  return { time, space };
+}
+
+export function checkComplexity(problem: Problem, answer: string): { correct: boolean; timeCorrect: boolean; note: string } {
+  const expected = expectedComplexity(problem);
+  const tokens: string[] = [];
+  const re = /(o\([^)]+\)|quadratic|linear|constant|logarithmic|exponential)/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(answer.toLowerCase())) !== null) {
+    const tok = normComplexityToken(m[1]);
+    if (tok && tokens[tokens.length - 1] !== tok) tokens.push(tok);
+  }
+  const timeCorrect = expected.time !== null && tokens.length > 0 && tokens[0] === expected.time;
+  let spaceCorrect = true;
+  if (expected.space !== null) {
+    if (tokens.length > 1) spaceCorrect = tokens[1] === expected.space;
+    else spaceCorrect = expected.space === expected.time;
+  }
+  const correct = timeCorrect && spaceCorrect;
+  const note = correct
+    ? `Complexity stated correctly. ${problem.complexity}`
+    : `Complexity was ${timeCorrect ? "partly right" : "wrong or missing"}. ${problem.complexity}`;
+  return { correct, timeCorrect, note };
+}
+
 export interface ScoreSignals {
   testsPassed: number;
   totalTests: number;
@@ -187,38 +291,104 @@ export interface ScoreSignals {
   timeSec: number;
   isTechnical: boolean;
   transcriptCount: number;
+  hintsUsed?: number;
+  aiAsked?: number;
+  complexityCorrect?: boolean | null;
+  thinApproach?: boolean;
+  userAnswers?: number;
+  totalUserWords?: number;
+  thinAnswers?: number;
+  questionsTotal?: number;
+}
+
+function clampScore(n: number): number {
+  return Math.max(1, Math.min(10, Math.round(n)));
 }
 
 export function computeScores(s: ScoreSignals) {
-  const ratio = s.totalTests > 0 ? s.testsPassed / s.totalTests : 0;
-  const coding = s.isTechnical ? Math.round(2 + ratio * 8) : 6;
-  const problemSolving = s.isTechnical
-    ? Math.min(10, Math.round(2 + ratio * 6 + (s.approachExplained ? 2 : 0)))
-    : Math.min(10, 4 + Math.min(4, Math.floor(s.transcriptCount / 2)));
-  const communication = Math.min(10, 3 + (s.approachExplained ? 3 : 0) + Math.min(3, s.aiQuestionsAnswered));
-  const complexity = s.isTechnical
-    ? Math.min(10, Math.round(3 + ratio * 4 + (s.aiQuestionsAnswered >= 2 ? 3 : s.aiQuestionsAnswered)))
-    : 6;
+  const hints = s.hintsUsed ?? 0;
+  const asked = s.aiAsked ?? s.aiQuestionsAnswered;
+  const unanswered = Math.max(0, asked - s.aiQuestionsAnswered);
   const strengths: string[] = [];
   const improvements: string[] = [];
-  if (ratio === 1 && s.isTechnical) strengths.push("All test cases passed, including hidden cases.");
-  if (ratio > 0 && ratio < 1) improvements.push(`Only ${s.testsPassed} of ${s.totalTests} tests passed. Debug failing cases with Run before submitting.`);
-  if (s.isTechnical && ratio === 0) improvements.push("No tests passed yet. Start from the examples and trace them by hand.");
-  if (s.approachExplained) strengths.push("You explained your approach before or during coding.");
-  else improvements.push("Explain your approach out loud before coding. Interviewers score this heavily.");
-  if (s.aiQuestionsAnswered >= 2) strengths.push("You answered the interviewer follow-up questions.");
-  else improvements.push("Answer the AI counter-questions as they come. Silence reads as guessing in a real interview.");
-  if (s.runs === 0 && s.isTechnical) improvements.push("You never ran your code. Run early and often.");
-  if (s.runs >= 2) strengths.push("You tested your code with multiple runs.");
-  if (s.timeSec > 0 && s.timeSec < 60) improvements.push("The session was very short. Spend more time checking edge cases.");
+  let problemSolving: number;
+  let coding: number;
+  let communication: number;
+  let complexity: number;
+
+  if (s.isTechnical) {
+    const ratio = s.totalTests > 0 ? s.testsPassed / s.totalTests : 0;
+    coding = ratio * 7 + (s.runs > 0 ? 1 : 0) + (s.runs >= 3 ? 0.5 : 0) - Math.min(2, hints * 0.75);
+    if (s.complexityCorrect === true) coding += ratio === 1 ? 1.5 : 0.5;
+    if (ratio < 1) coding = Math.min(coding, 7.5);
+    if (ratio === 1 && s.complexityCorrect === false) coding = Math.min(coding, 8);
+    problemSolving =
+      ratio * 5 +
+      (s.approachExplained ? (s.thinApproach ? 0.5 : 2) : 0) +
+      Math.min(1, s.aiQuestionsAnswered * 0.5) +
+      (s.complexityCorrect === true ? 1 : 0) -
+      Math.min(1.5, hints * 0.5);
+    if (ratio === 1 && s.complexityCorrect === true && hints === 0 && s.aiQuestionsAnswered >= 3) problemSolving += 1;
+    if (ratio === 0) problemSolving = Math.min(problemSolving, 4);
+    else if (ratio < 0.5) problemSolving = Math.min(problemSolving, 6);
+    communication =
+      2.5 +
+      (s.approachExplained ? (s.thinApproach ? 1 : 3) : 0) +
+      Math.min(3.5, s.aiQuestionsAnswered * 0.9) -
+      Math.min(2, unanswered * 0.5);
+    complexity =
+      s.complexityCorrect === true
+        ? 7 + ratio * 3 - Math.min(1, hints * 0.5)
+        : s.complexityCorrect === false
+          ? 3
+          : 3.5 + ratio * 1.5;
+
+    if (ratio === 1) strengths.push("All test cases passed, including the hidden cases. That is the baseline, not the whole score.");
+    if (ratio > 0 && ratio < 1) improvements.push(`Only ${s.testsPassed} of ${s.totalTests} tests passed. The failing cases are listed in your session; debug those exact inputs.`);
+    if (ratio === 0) improvements.push("No tests passed. Passing tests is necessary before anything else in your performance counts.");
+    if (s.complexityCorrect === true) strengths.push("You stated the time and space complexity correctly.");
+    if (s.complexityCorrect === false) improvements.push("Your complexity answer was wrong or missing. Complexity is a scored part of the interview, not an afterthought.");
+    if (s.complexityCorrect == null && s.isTechnical) improvements.push("You never completed the complexity round. Always close with time and space complexity.");
+  } else {
+    const answers = s.userAnswers ?? s.aiQuestionsAnswered;
+    const total = s.questionsTotal ?? 5;
+    const words = s.totalUserWords ?? 0;
+    const thin = s.thinAnswers ?? 0;
+    const answeredRatio = total > 0 ? answers / total : 0;
+    problemSolving = 2 + answeredRatio * 4 + Math.min(2, words / 90) - Math.min(2, thin * 0.6);
+    coding = 2 + Math.min(5, words / 45) - Math.min(2, thin * 0.5);
+    coding = Math.min(coding, 8);
+    communication = 2.5 + Math.min(4, words / 50) + Math.min(2, s.aiQuestionsAnswered * 0.5) - Math.min(2.5, thin * 0.7);
+    complexity = 3 + Math.min(3.5, words / 70) - Math.min(2, thin * 0.6);
+    complexity = Math.min(complexity, 7.5);
+    if (thin === 0 && answers >= total) strengths.push("You answered every question with real depth, not one line answers.");
+    if (thin > 0) improvements.push(`${thin} of your answers were too thin. Interviewers read short, vague answers as not knowing the topic.`);
+    if (answers < total) improvements.push(`You ended early with ${answers} of ${total} questions answered. Finishing the set matters.`);
+  }
+
+  if (s.approachExplained && !s.thinApproach && s.isTechnical) strengths.push("You explained your approach before coding, in enough detail to be judged.");
+  if (s.isTechnical && !s.approachExplained) improvements.push("You never explained an approach. Interviewers score the approach separately from the code.");
+  if (s.isTechnical && s.thinApproach) improvements.push("Your approach explanation was too thin to judge. State the data structure, the pass, and the return value.");
+  if (s.aiQuestionsAnswered >= 2) strengths.push("You engaged with the interviewer follow-up questions instead of ignoring them.");
+  if (unanswered >= 2) improvements.push(`You left ${unanswered} interviewer questions unanswered. Silence reads as guessing in a real interview.`);
+  if (hints > 0) improvements.push(`You used ${hints} hint${hints > 1 ? "s" : ""}. Hints are recorded and pull scores down; on Mid and Hard, try to earn the idea yourself first.`);
+  if (s.isTechnical && s.runs === 0) improvements.push("You never ran your code. Run early and often; untested code is a red flag.");
+  if (s.isTechnical && s.runs >= 2) strengths.push("You tested your code with multiple runs.");
+  if (s.timeSec > 0 && s.timeSec < 60) improvements.push("The session was under a minute of real work. That is not enough time to demonstrate anything.");
+
   return {
-    problemSolving: Math.max(1, Math.min(10, problemSolving)),
-    coding: Math.max(1, Math.min(10, coding)),
-    communication: Math.max(1, Math.min(10, communication)),
-    complexity: Math.max(1, Math.min(10, complexity)),
+    problemSolving: clampScore(problemSolving),
+    coding: clampScore(coding),
+    communication: clampScore(communication),
+    complexity: clampScore(complexity),
     strengths,
     improvements,
   };
+}
+
+export function overallScore(scores: ReturnType<typeof computeScores>): number {
+  const avg = (scores.problemSolving + scores.coding + scores.communication + scores.complexity) / 4;
+  return Math.round(avg * 10) / 10;
 }
 
 export interface SessionRecord {
@@ -227,8 +397,10 @@ export interface SessionRecord {
   difficulty: string;
   topic?: string;
   problemTitle?: string;
+  problemId?: string;
   date: string;
   timeSec: number;
+  targetSec?: number;
   testsPassed: number;
   totalTests: number;
   runs: number;
@@ -236,23 +408,26 @@ export interface SessionRecord {
   language?: string;
   transcript: Msg[];
   scores: ReturnType<typeof computeScores>;
+  hintsUsed?: number;
+  aiAsked?: number;
+  aiAnswered?: number;
+  approachText?: string;
+  complexityAnswer?: string;
+  complexityCorrect?: boolean | null;
+  thinAnswers?: number;
 }
 
 export function saveSession(rec: SessionRecord) {
   try {
     sessionStorage.setItem("interviewai-last", JSON.stringify(rec));
     const key = "interviewai-history";
-    const old = JSON.parse(localStorage.getItem(key) || "[]");
-    localStorage.setItem(key, JSON.stringify([rec, ...old].slice(0, 20)));
-  } catch {}
-}
-
-export function speak(text: string, muted: boolean) {
-  if (muted || typeof window === "undefined" || !("speechSynthesis" in window)) return;
-  try {
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.rate = 1.02;
-    window.speechSynthesis.speak(u);
+    let old: unknown = [];
+    try {
+      old = JSON.parse(localStorage.getItem(key) || "[]");
+    } catch {
+      old = [];
+    }
+    const arr = Array.isArray(old) ? old : [];
+    localStorage.setItem(key, JSON.stringify([rec, ...arr].slice(0, 20)));
   } catch {}
 }
