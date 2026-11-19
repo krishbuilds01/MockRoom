@@ -812,22 +812,33 @@ function TechnicalRoom() {
     <main className="mx-auto min-h-screen w-full max-w-[1500px] px-3 py-4">
       <header className="flex flex-wrap items-center justify-between gap-3 px-1">
         <div>
-          <Link href="/" onClick={onBackHome} className="text-xs text-neutral-500 hover:text-neutral-300">Back to home</Link>
-          <div className="mt-1 font-semibold">Technical Interview - {problem.title}</div>
-          <div className="text-xs text-neutral-500">
-            {`${difficulty} mode · Problem difficulty ${problem.difficulty} · ${problem.topic} · Phase: ${PHASE_LABELS[phase]} · ${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, "0")} of about ${Math.round(targetSec / 60)} min target · AI voice: ${voiceLabel}`}
+          <Link href="/" onClick={onBackHome} className="text-xs text-zinc-500 hover:text-zinc-200">Back to home</Link>
+          <div className="mt-1.5 flex flex-wrap items-center gap-2.5">
+            <span className="text-[15px] font-semibold tracking-tight">Technical Interview</span>
+            <span className="badge">{problem.title}</span>
+            <span className={`badge ${problem.difficulty === "Easy" ? "badge-easy" : problem.difficulty === "Hard" ? "badge-hard" : "badge-mid"}`}>{problem.difficulty}</span>
+            <span className="badge badge-accent">{PHASE_LABELS[phase]}</span>
+            {live.status === "live" && (
+              <span className="badge badge-live">
+                <span className="dot dot-pulse bg-emerald-400" />
+                Gemini Live
+              </span>
+            )}
+          </div>
+          <div className="mt-1 text-xs text-zinc-500">
+            {`${difficulty} mode · ${problem.topic} · ${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, "0")} of about ${Math.round(targetSec / 60)} min target · AI: ${engineLabel} · Voice: ${voiceLabel}`}
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={() => setShowAi(!showAi)} className="rounded-lg border border-neutral-700 px-3 py-2 text-sm lg:hidden">{showAi ? "Hide AI panel" : "Show AI panel"}</button>
-          <button type="button" onClick={() => { const next = !muted; setMuted(next); live.setMuted(next); if (next) speaker.stop(); }} aria-label="Toggle AI voice" className="rounded-lg border border-neutral-700 px-3 py-2 text-sm">{muted ? "Unmute AI" : "Mute AI"}</button>
+          <button type="button" onClick={() => setShowAi(!showAi)} className="btn btn-ghost btn-sm lg:hidden">{showAi ? "Hide AI panel" : "Show AI panel"}</button>
+          <button type="button" onClick={() => { const next = !muted; setMuted(next); live.setMuted(next); if (next) speaker.stop(); }} aria-label="Toggle AI voice" className="btn btn-ghost btn-sm">{muted ? "Unmute AI" : "Mute AI"}</button>
           {(live.status === "live" || live.status === "connecting") && (
-            <button type="button" onClick={useTextMode} className="rounded-lg border border-neutral-700 px-3 py-2 text-sm">Use text mode</button>
+            <button type="button" onClick={useTextMode} className="btn btn-ghost btn-sm">Use text mode</button>
           )}
           {live.status === "fallback" && !liveDisabled && (
-            <button type="button" onClick={retryLive} className="rounded-lg border border-neutral-700 px-3 py-2 text-sm">Retry live voice</button>
+            <button type="button" onClick={retryLive} className="btn btn-ghost btn-sm">Retry live voice</button>
           )}
-          <button type="button" onClick={endInterview} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white">End Interview</button>
+          <button type="button" onClick={endInterview} className="btn btn-danger btn-sm">End Interview</button>
         </div>
       </header>
 
@@ -838,23 +849,23 @@ function TechnicalRoom() {
       )}
 
       <div className="mt-4 flex flex-col gap-4 lg:flex-row">
-        <section className="w-full shrink-0 overflow-y-auto rounded-2xl border border-neutral-800 p-5 lg:sticky lg:top-4 lg:max-h-[calc(100vh-120px)] lg:w-[330px]">
+        <section className="card w-full shrink-0 overflow-y-auto p-5 lg:sticky lg:top-4 lg:max-h-[calc(100vh-120px)] lg:w-[330px]">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-lg font-semibold">{problem.title}</h1>
-            <span className="rounded-full border border-neutral-700 px-2 py-0.5 text-[11px]">{problem.difficulty}</span>
-            <span className="rounded-full border border-neutral-700 px-2 py-0.5 text-[11px]">{problem.topic}</span>
+            <h1 className="text-lg font-semibold tracking-tight">{problem.title}</h1>
+            <span className={`badge ${problem.difficulty === "Easy" ? "badge-easy" : problem.difficulty === "Hard" ? "badge-hard" : "badge-mid"}`}>{problem.difficulty}</span>
+            <span className="badge">{problem.topic}</span>
           </div>
-          <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-neutral-300">{problem.statement}</p>
+          <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-zinc-300">{problem.statement}</p>
           <h3 className="mt-5 text-sm font-semibold">Examples</h3>
           {problem.examples.map((ex, i) => (
-            <div key={i} className="mt-2 break-words rounded-lg bg-neutral-900 p-3 font-mono text-xs leading-5">
+            <div key={i} className="mt-2 break-words rounded-lg border border-line bg-panel2 p-3 font-mono text-xs leading-5">
               <div>Input: {ex.input}</div>
               <div>Output: {ex.output}</div>
-              {ex.explanation && <div className="text-neutral-400">{ex.explanation}</div>}
+              {ex.explanation && <div className="text-zinc-400">{ex.explanation}</div>}
             </div>
           ))}
           <h3 className="mt-5 text-sm font-semibold">Constraints</h3>
-          <ul className="mt-2 list-disc pl-5 text-xs leading-5 text-neutral-400">
+          <ul className="mt-2 list-disc pl-5 text-xs leading-5 text-zinc-400">
             {problem.constraints.map((c) => <li key={c}>{c}</li>)}
           </ul>
           <div className="mt-5">
@@ -863,111 +874,122 @@ function TechnicalRoom() {
         </section>
 
         <section className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-t-2xl border border-neutral-800 border-b-0 px-4 py-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-t-2xl border border-line border-b-0 bg-panel px-4 py-2.5">
             <div className="flex gap-2" role="group" aria-label="Language">
               {(["javascript", "python"] as Lang[]).map((l) => (
-                <button type="button" key={l} onClick={() => switchLang(l)} disabled={phaseIdx >= 4} title={phaseIdx >= 4 ? "Language is locked after you submit" : undefined} className={`rounded-md px-3 py-1.5 text-xs disabled:opacity-40 ${lang === l ? "bg-white text-black" : "border border-neutral-700"}`}>{l === "javascript" ? "JavaScript" : "Python"}</button>
+                <button type="button" key={l} onClick={() => switchLang(l)} disabled={phaseIdx >= 4} title={phaseIdx >= 4 ? "Language is locked after you submit" : undefined} className={`btn btn-sm ${lang === l ? "btn-primary" : "btn-ghost"} disabled:opacity-40`}>{l === "javascript" ? "JavaScript" : "Python"}</button>
               ))}
             </div>
-            <span className="hidden text-[11px] text-neutral-500 xl:block">Switching language keeps the code you wrote in each language, and clears the last run results.</span>
+            <span className="hidden text-[11px] text-zinc-500 xl:block">Switching language keeps the code you wrote in each language, and clears the last run results.</span>
             <div className="flex gap-2">
-              <button type="button" onClick={() => doRun(false)} disabled={running || phase !== "coding"} className="rounded-lg border border-neutral-600 px-4 py-2 text-sm disabled:opacity-50">{running ? "Running..." : "Run Code"}</button>
-              <button type="button" onClick={() => doRun(true)} disabled={running || phase !== "coding"} className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">Submit</button>
+              <button type="button" onClick={() => doRun(false)} disabled={running || phase !== "coding"} className="btn btn-secondary btn-sm">{running ? "Running..." : "Run Code"}</button>
+              <button type="button" onClick={() => doRun(true)} disabled={running || phase !== "coding"} className="btn btn-success btn-sm">Submit</button>
             </div>
             {phase !== "coding" && (
-              <div className="w-full text-[11px] text-neutral-500">
+              <div className="w-full text-[11px] text-zinc-500">
                 {phaseIdx < 3
                   ? "Run and Submit unlock once your approach is accepted and the coding phase starts."
                   : "Already submitted. Run and Submit are closed, finish the remaining steps with Alex on the right."}
               </div>
             )}
           </div>
-          <div className="h-[380px] border border-neutral-800 sm:h-[420px]">
+          <div className="h-[380px] border border-line sm:h-[420px]">
             <Editor height="100%" language={lang} value={code} onChange={onCodeChange} theme="vs-dark" options={{ minimap: { enabled: false }, fontSize: 14, scrollBeyondLastLine: false, wordWrap: "on" }} />
           </div>
 
-          <div className="rounded-b-2xl border border-neutral-800 border-t-0 p-4">
+          <div className="rounded-b-2xl border border-line border-t-0 bg-panel p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h3 className="text-sm font-semibold">Test cases {lastKind === "submit" ? "(last submit)" : lastKind === "run" ? "(last run)" : ""}</h3>
-              <span className="text-xs text-neutral-500">Run checks {visibleTests} visible cases. Submit checks all {problem.tests.length} cases including hidden, then starts the dry run.</span>
+              <span className="text-xs text-zinc-500">Run checks {visibleTests} visible cases. Submit checks all {problem.tests.length} cases including hidden, then starts the dry run.</span>
             </div>
             {runError && (
-              <div className="mt-3 flex items-start justify-between gap-3 rounded-lg border border-red-900 bg-red-950/30 p-3 text-sm text-red-300" role="alert">
+              <div className="mt-3 flex items-start justify-between gap-3 rounded-lg border border-red-900/70 bg-red-950/30 p-3 text-sm text-red-300" role="alert">
                 <span>{runError}</span>
                 <button type="button" onClick={() => setRunError("")} aria-label="Dismiss error" className="shrink-0 text-red-200">x</button>
               </div>
             )}
-            {!runOut && !runError && <p className="mt-3 text-xs text-neutral-500">No runs yet. We start with your introduction and clarifying questions, then your approach, then code.</p>}
+            {!runOut && !runError && <p className="mt-3 text-xs text-zinc-500">No runs yet. We start with your introduction and clarifying questions, then your approach, then code.</p>}
             {runOut && (
               <div className="mt-3 space-y-2">
-                <div className={`text-sm font-medium ${runOut.passed === runOut.total ? "text-green-400" : "text-amber-400"}`}>{runOut.passed} / {runOut.total} passed</div>
+                <div className={`text-sm font-semibold ${runOut.passed === runOut.total ? "text-emerald-400" : "text-amber-400"}`}>{runOut.passed} / {runOut.total} passed</div>
                 {runOut.results.map((r) => (
-                  <div key={r.index} className={`break-words rounded-lg border p-3 font-mono text-xs leading-5 ${r.passed ? "border-green-900 bg-green-950/30" : "border-red-900 bg-red-950/30"}`}>
-                    <div>{r.passed ? "PASS" : "FAIL"} - Case {r.index + 1}{r.hidden ? " (hidden)" : ""}</div>
-                    <div className="text-neutral-400">Input args: {JSON.stringify(r.args)}</div>
-                    <div className="text-neutral-400">Expected: {JSON.stringify(r.expected)}</div>
+                  <div key={r.index} className="break-words rounded-lg border border-line bg-panel2 p-3 font-mono text-xs leading-5">
+                    <div className="flex items-center gap-2">
+                      <span className={`chip ${r.passed ? "chip-pass" : "chip-fail"}`}>{r.passed ? "PASS" : "FAIL"}</span>
+                      <span className="text-zinc-300">Case {r.index + 1}{r.hidden ? " (hidden)" : ""}</span>
+                    </div>
+                    <div className="mt-1.5 text-zinc-400">Input args: {JSON.stringify(r.args)}</div>
+                    <div className="text-zinc-400">Expected: {JSON.stringify(r.expected)}</div>
                     <div>Got: {JSON.stringify(r.got)}</div>
                     {r.error && <div className="text-red-300">Error: {r.error}</div>}
                   </div>
                 ))}
-                {runOut.stderr && <pre className="max-h-28 overflow-auto whitespace-pre-wrap rounded-lg bg-neutral-900 p-3 text-xs text-red-300">{runOut.stderr}</pre>}
+                {runOut.stderr && <pre className="max-h-28 overflow-auto whitespace-pre-wrap rounded-lg bg-panel2 p-3 text-xs text-red-300">{runOut.stderr}</pre>}
               </div>
             )}
           </div>
         </section>
 
         {showAi && (
-          <aside className="flex w-full shrink-0 flex-col rounded-2xl border border-neutral-800 lg:sticky lg:top-4 lg:max-h-[calc(100vh-120px)] lg:w-[330px]">
-            <div className="border-b border-neutral-800 px-4 py-3">
-              <div className="text-sm font-semibold">AI Interviewer - Alex</div>
-              <div className="text-[11px] text-neutral-500">AI: {engineLabel} - Voice: {voiceLabel}</div>
-              {(speaker.speaking || liveSpeaking) && (
-                <div className="mt-1 flex items-center gap-1.5 text-[11px] text-emerald-400" role="status">
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
-                  Interviewer is speaking
+          <aside className="card flex w-full shrink-0 flex-col overflow-hidden lg:sticky lg:top-4 lg:max-h-[calc(100vh-120px)] lg:w-[340px]">
+            <div className="border-b border-line px-4 py-3">
+              <div className="flex items-center gap-3">
+                <span className="avatar">A</span>
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold leading-5">Alex</div>
+                  <div className="text-[11px] leading-4 text-zinc-500">Interviewer · AI: {engineLabel} · Voice: {voiceLabel}</div>
                 </div>
-              )}
-              <div className="mt-2 flex flex-wrap gap-x-1.5 gap-y-1 text-[11px] text-neutral-600" aria-label="Interview progress">
-                {PHASE_STEPS.map((s, i) => (
-                  <span key={s} className={i === phaseIdx ? "font-semibold text-neutral-100" : i < phaseIdx ? "text-neutral-400" : ""}>
-                    {s}
-                    {i < PHASE_STEPS.length - 1 ? "  ·" : ""}
+                {(speaker.speaking || liveSpeaking) && (
+                  <span className="ml-auto flex items-center gap-1.5 text-[11px] font-medium text-emerald-400" role="status">
+                    <span className="dot dot-pulse bg-emerald-400" />
+                    Speaking
                   </span>
+                )}
+              </div>
+              <div className="mt-3 flex gap-1" aria-label="Interview progress">
+                {PHASE_STEPS.map((s, i) => (
+                  <div key={s} className="min-w-0 flex-1">
+                    <div className={`h-1 rounded-full ${i < phaseIdx ? "bg-accent/60" : i === phaseIdx ? "bg-accent" : "bg-line"}`} />
+                    <div className={`mt-1.5 truncate text-[10px] ${i === phaseIdx ? "font-semibold text-zinc-100" : "text-zinc-500"}`}>{s}</div>
+                  </div>
                 ))}
               </div>
             </div>
             <div ref={transcriptBoxRef} className="max-h-[320px] flex-1 space-y-3 overflow-y-auto p-4 sm:max-h-[430px] lg:max-h-none" aria-live="polite">
               {transcript.map((m, i) => (
-                <div key={i} className={`break-words rounded-xl px-3 py-2.5 text-[13px] leading-5 ${m.role === "ai" ? "bg-neutral-900" : "ml-4 bg-white text-black"}`}>
-                  <div className="mb-1 text-[10px] font-medium opacity-60">{m.role === "ai" ? "Alex (Interviewer)" : "You"}</div>
+                <div key={i} className={`break-words rounded-xl px-3 py-2.5 text-[13px] leading-5 ${m.role === "ai" ? "border border-line bg-panel2 text-zinc-100" : "ml-4 bg-zinc-100 text-zinc-900"}`}>
+                  <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide opacity-60">{m.role === "ai" ? "Alex" : "You"}</div>
                   {m.text}
                 </div>
               ))}
-            </div>
-            <div className="border-t border-neutral-800 p-3">
-              {(phase === "coding" || phase === "clarifying") && (
-                <p className="mb-2 text-[11px] leading-4 text-neutral-500">Try: &quot;give me a test case&quot;, &quot;hint&quot; (recorded on Mid and Hard), &quot;what about empty input?&quot; Voice input works in Chrome.</p>
+              {transcript.length === 0 && (
+                <p className="text-[13px] leading-5 text-zinc-500">Connecting to your interviewer. Alex will introduce himself in a moment.</p>
               )}
-              {!voice.supported && <p className="mb-2 text-[11px] text-amber-400">Voice input not supported here. Type instead.</p>}
-              {voice.error && <p className="mb-2 text-[11px] text-amber-400" role="alert">{voice.error}</p>}
+            </div>
+            <div className="border-t border-line p-3">
+              {(phase === "coding" || phase === "clarifying") && (
+                <p className="mb-2 text-[11px] leading-4 text-zinc-500">Try: &quot;give me a test case&quot;, &quot;hint&quot; (recorded on Mid and Hard), &quot;what about empty input?&quot; Voice input works in Chrome.</p>
+              )}
+              {!voice.supported && live.status !== "live" && <p className="mb-2 text-[11px] text-amber-400">Voice input not supported here. Type instead.</p>}
+              {voice.error && live.status !== "live" && <p className="mb-2 text-[11px] text-amber-400" role="alert">{voice.error}</p>}
               {voice.listening && (
                 <p className="mb-2 flex items-center gap-1.5 text-[11px] text-red-400" role="status">
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
+                  <span className="dot dot-pulse bg-red-500" />
                   Listening, speak now
                 </p>
               )}
               <div className="flex gap-2">
                 <label htmlFor="tech-panel-input" className="sr-only">Message to the interviewer</label>
-                <input id="tech-panel-input" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submitPanel()} placeholder={inputPlaceholder[phase]} className="min-w-0 flex-1 rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2.5 text-sm outline-none" />
+                <input id="tech-panel-input" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submitPanel()} placeholder={inputPlaceholder[phase]} className="input min-w-0 flex-1" />
                 {live.status === "live" ? (
                   <span className="flex items-center gap-1.5 rounded-lg border border-emerald-800 bg-emerald-950/40 px-3 text-xs text-emerald-300" role="status">
-                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+                    <span className="dot dot-pulse bg-emerald-400" />
                     Live mic on
                   </span>
                 ) : (
-                  <button type="button" onClick={() => (voice.listening ? voice.stop() : voice.start())} disabled={!voice.supported} aria-label="Toggle microphone input" className={`rounded-lg border px-3 text-xs disabled:opacity-40 ${voice.listening ? "border-red-500 bg-red-950/50 text-red-300" : "border-neutral-700"}`}>{voice.listening ? "Listening..." : "Mic"}</button>
+                  <button type="button" onClick={() => (voice.listening ? voice.stop() : voice.start())} disabled={!voice.supported} aria-label="Toggle microphone input" className={`btn btn-sm ${voice.listening ? "border-red-500 bg-red-950/50 text-red-300" : "btn-ghost"}`}>{voice.listening ? "Listening..." : "Mic"}</button>
                 )}
-                <button type="button" onClick={() => submitPanel()} className="rounded-lg bg-white px-4 text-sm font-semibold text-black">Send</button>
+                <button type="button" onClick={() => submitPanel()} className="btn btn-primary btn-sm">Send</button>
               </div>
             </div>
           </aside>

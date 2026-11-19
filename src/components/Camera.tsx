@@ -34,15 +34,16 @@ export default function Camera({ small }: { small?: boolean }) {
   }, []);
 
   return (
-    <div className={`overflow-hidden rounded-xl border border-neutral-800 bg-black ${small ? "w-full" : "w-full"}`}>
+    <div className="overflow-hidden rounded-xl border border-line bg-black">
       {error ? (
-        <div className="flex h-36 items-center justify-center p-4 text-center text-xs text-neutral-400">{error}</div>
+        <div className="flex h-36 items-center justify-center p-4 text-center text-xs leading-5 text-zinc-400">{error}</div>
       ) : (
-        <video ref={ref} autoPlay playsInline muted className={`${small ? "h-36" : "h-52"} w-full object-cover`} />
+        <video ref={ref} autoPlay playsInline muted className={`${small ? "h-36" : "h-52"} w-full -scale-x-100 object-cover`} />
       )}
-      <div className="flex items-center gap-2 px-3 py-2 text-[11px] text-neutral-400">
-        <span className={`h-2 w-2 rounded-full ${on ? "bg-green-500" : "bg-red-500"}`} />
-        {on ? "Camera on" : "Camera off"} - Mic uses your browser voice input below
+      <div className="flex items-center gap-2 border-t border-line bg-panel px-3 py-2 text-[11px] text-zinc-400">
+        <span className={`dot ${on ? "dot-pulse bg-emerald-400" : "bg-red-500"}`} />
+        {on ? "Camera on" : "Camera off"}
+        <span className="text-zinc-600">Preview only, nothing is recorded</span>
       </div>
     </div>
   );
