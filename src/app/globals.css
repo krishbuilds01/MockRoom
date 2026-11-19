@@ -59,8 +59,11 @@ body {
   outline-offset: 2px;
 }
 .btn:disabled {
-  opacity: 0.42;
-  filter: saturate(0.3);
+  background: #e9e4d8;
+  border-color: var(--color-line2);
+  color: #78716c;
+  opacity: 1;
+  filter: none;
   cursor: not-allowed;
   pointer-events: none;
 }
