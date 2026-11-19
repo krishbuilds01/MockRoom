@@ -86,6 +86,23 @@ export default function Home() {
     } catch {}
   }, []);
 
+  useEffect(() => {
+    const resetTransient = () => {
+      setResumeBusy(false);
+      setResumeError("");
+    };
+    resetTransient();
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") resetTransient();
+    };
+    window.addEventListener("pageshow", resetTransient);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("pageshow", resetTransient);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
+
   function start() {
     if (type === "resume") {
       void startResume();
@@ -112,15 +129,19 @@ export default function Home() {
     }
     setResumeError("");
     setResumeBusy(true);
-    const result = (await postResumeQuestions(text)) || { questions: buildResumeQuestionsLocal(text), engine: "local" as const };
     try {
-      sessionStorage.setItem(RESUME_QUESTIONS_KEY, JSON.stringify(result.questions));
-      localStorage.setItem(RESUME_STORAGE_KEY, text);
-    } catch {}
-    const q = new URLSearchParams({ difficulty, resume: "1" });
-    if (companyId !== "any") q.set("company", companyId);
-    markFreshStart("general");
-    router.push(`/interview/general?${q}`);
+      const result = (await postResumeQuestions(text)) || { questions: buildResumeQuestionsLocal(text), engine: "local" as const };
+      try {
+        sessionStorage.setItem(RESUME_QUESTIONS_KEY, JSON.stringify(result.questions));
+        localStorage.setItem(RESUME_STORAGE_KEY, text);
+      } catch {}
+      const q = new URLSearchParams({ difficulty, resume: "1" });
+      if (companyId !== "any") q.set("company", companyId);
+      markFreshStart("general");
+      router.push(`/interview/general?${q}`);
+    } finally {
+      setResumeBusy(false);
+    }
   }
 
   function deleteSavedResume() {
