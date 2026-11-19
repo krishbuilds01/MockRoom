@@ -179,6 +179,13 @@ export default function Home() {
               </div>
               <p className="mt-1.5 text-[13px] leading-5 text-stone-600">Paste your resume and Alex interviews you on it: your projects, your listed skills, and the choices you wrote down.</p>
             </button>
+            <Link href="/system-design" className="block rounded-xl border border-line bg-panel2 p-3.5 text-left transition hover:border-line2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold">System Design</span>
+                <span className="badge badge-mid">Coming soon</span>
+              </div>
+              <p className="mt-1.5 text-[13px] leading-5 text-stone-600">Design a URL shortener, a chat system, a news feed. The room is being built. See what it will cover.</p>
+            </Link>
           </div>
 
           {type === "resume" && (
