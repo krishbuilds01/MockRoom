@@ -1,5 +1,5 @@
 "use client";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useReducer, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Camera from "@/components/Camera";
@@ -26,6 +26,7 @@ import { sanitizeAiText } from "@/lib/sanitize";
 import { useVoice } from "@/lib/useVoice";
 import { useSpeaker } from "@/lib/useSpeaker";
 import { useLiveSession } from "@/lib/liveSession";
+import { initialMicGate, micGateReducer } from "@/lib/voiceGate";
 
 type Phase = "intro" | "main" | "candidate" | "done";
 
@@ -90,14 +91,58 @@ function GeneralRoom() {
   const liveOnRef = useRef(false);
   const liveIntroDoneRef = useRef(false);
   const lastTypedRef = useRef<{ text: string; at: number }>({ text: "", at: 0 });
-  const speaker = useSpeaker();
-  const voice = useVoice((text) => setInput(text));
+  const [gate, dispatchGate] = useReducer(micGateReducer, initialMicGate);
+  const gateRef = useRef(false);
+  useEffect(() => {
+    gateRef.current = gate.gated;
+  }, [gate]);
+  const speaker = useSpeaker({
+    onStart: () => dispatchGate({ type: "speech-start" }),
+    onEnd: () => dispatchGate({ type: "speech-end" }),
+    onAboutToEnd: () => dispatchGate({ type: "speech-about-to-end" }),
+  });
+  const voice = useVoice((text) => setInput(text), gateRef);
+  useEffect(() => {
+    voice.applyGate(gate.gated);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gate.gated]);
+
+  function onMicClick() {
+    if (speaker.speaking) {
+      speaker.stop();
+      gateRef.current = false;
+      dispatchGate({ type: "interrupt" });
+      dispatchGate({ type: "user-mic", on: true });
+      voice.start();
+      return;
+    }
+    if (voice.listening || voice.userOn) {
+      voice.stop();
+      dispatchGate({ type: "user-mic", on: false });
+    } else {
+      dispatchGate({ type: "user-mic", on: true });
+      voice.start();
+    }
+  }
+
   const [liveSpeaking, setLiveSpeaking] = useState(false);
+  const [liveGated, setLiveGated] = useState(false);
   const live = useLiveSession({
     onAiTurn: (t) => liveAiRef.current(t),
     onUserTurn: (t) => passiveRef.current(t),
     onSpeaking: (s) => setLiveSpeaking(s),
+    onAboutToEnd: () => {
+      live.setGated(false);
+      setLiveGated(false);
+    },
   });
+  useEffect(() => {
+    if (liveSpeaking) {
+      live.setGated(true);
+      setLiveGated(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveSpeaking]);
   const liveAiRef = useRef<(text: string) => void>(() => {});
   const passiveRef = useRef<(text: string) => void>(() => {});
 
@@ -501,12 +546,18 @@ function GeneralRoom() {
             <div className="mt-1 text-xs text-zinc-500">
               {`${statusLine} · ${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, "0")} of about ${Math.round(targetSec / 60)} min target · AI: ${engineLabel} · Voice: ${voiceLabel}`}
             </div>
-            {(speaker.speaking || liveSpeaking) && (
-              <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-medium text-emerald-400" role="status">
-                <span className="dot dot-pulse bg-emerald-400" />
-                Interviewer is speaking
-              </div>
-            )}
+            {(speaker.speaking || liveSpeaking) &&
+              (liveActive ? (
+                <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-medium text-emerald-400" role="status">
+                  <span className="dot dot-pulse bg-emerald-400" />
+                  Interviewer is speaking
+                </div>
+              ) : (
+                <button type="button" onClick={onMicClick} className="mt-1.5 flex items-center gap-1.5 text-[11px] font-medium text-emerald-400" role="status" title="Tap to interrupt and answer">
+                  <span className="dot dot-pulse bg-emerald-400" />
+                  Interviewer is speaking - tap to interrupt
+                </button>
+              ))}
           </div>
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={() => { const next = !muted; setMuted(next); live.setMuted(next); if (next) speaker.stop(); }} aria-label="Toggle AI voice" className="btn btn-ghost btn-sm">{muted ? "Unmute AI voice" : "Mute AI voice"}</button>
@@ -586,22 +637,34 @@ function GeneralRoom() {
           <div className="shrink-0 border-t border-line p-4">
             {!voice.supported && !liveActive && <p className="mb-2 text-xs text-amber-400">Voice input is not supported in this browser. Type your answer instead. Chrome works best.</p>}
             {voice.error && !liveActive && <p className="mb-2 text-xs text-amber-400" role="alert">{voice.error}</p>}
-            {voice.listening && (
+            {!liveActive && voice.gated ? (
+              <p className="mb-2 flex items-center gap-1.5 text-xs text-zinc-400" role="status">
+                <span className="dot bg-zinc-500" />
+                Mic paused while Alex speaks
+              </p>
+            ) : !liveActive && voice.listening ? (
               <p className="mb-2 flex items-center gap-1.5 text-xs text-red-400" role="status">
                 <span className="dot dot-pulse bg-red-500" />
                 Listening, speak now
               </p>
-            )}
+            ) : null}
             <div className="flex gap-2">
               <label htmlFor="general-answer" className="sr-only">Your answer</label>
               <input id="general-answer" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submitAnswer()} placeholder={inputPlaceholder[phase]} className="input min-w-0 flex-1" />
               {liveActive ? (
-                <span className="flex items-center gap-1.5 rounded-lg border border-emerald-800 bg-emerald-950/40 px-4 text-sm text-emerald-300" role="status">
-                  <span className="dot dot-pulse bg-emerald-400" />
-                  Live mic on
-                </span>
+                liveGated ? (
+                  <span className="flex items-center gap-1.5 rounded-lg border border-line bg-panel2 px-4 text-sm text-zinc-400" role="status">
+                    <span className="dot bg-zinc-500" />
+                    Mic paused while Alex speaks
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1.5 rounded-lg border border-emerald-800 bg-emerald-950/40 px-4 text-sm text-emerald-300" role="status">
+                    <span className="dot dot-pulse bg-emerald-400" />
+                    Live mic on
+                  </span>
+                )
               ) : (
-                <button type="button" onClick={() => (voice.listening ? voice.stop() : voice.start())} disabled={!voice.supported} aria-label="Toggle microphone input" className={`btn btn-sm ${voice.listening ? "border-red-500 bg-red-950/50 text-red-300" : "btn-ghost"}`}>{voice.listening ? "Listening..." : "Mic"}</button>
+                <button type="button" onClick={onMicClick} disabled={!voice.supported && !speaker.speaking} aria-label="Toggle microphone input" className={`btn btn-sm ${voice.listening ? "border-red-500 bg-red-950/50 text-red-300" : "btn-ghost"}`}>{voice.listening ? "Listening..." : "Mic"}</button>
               )}
               <button type="button" onClick={() => submitAnswer()} disabled={waiting && !liveActive} className="btn btn-primary btn-sm">Send</button>
             </div>

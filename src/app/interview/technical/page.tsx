@@ -1,5 +1,5 @@
 "use client";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useReducer, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -39,6 +39,7 @@ import { postInterview, type InterviewApiResponse } from "@/lib/interviewApi";
 import { sanitizeAiText } from "@/lib/sanitize";
 import { useVoice } from "@/lib/useVoice";
 import { useSpeaker } from "@/lib/useSpeaker";
+import { initialMicGate, micGateReducer } from "@/lib/voiceGate";
 
 const Editor = dynamic(() => import("@monaco-editor/react"), { ssr: false, loading: () => <div className="flex h-full items-center justify-center text-sm text-neutral-500">Loading editor...</div> });
 
@@ -137,8 +138,39 @@ function TechnicalRoom() {
   const seqRef = useRef(0);
   const pendingQRef = useRef(false);
   const askedQuestionsRef = useRef<Set<string>>(new Set());
-  const speaker = useSpeaker();
-  const voice = useVoice((text) => setInput(text));
+  const [gate, dispatchGate] = useReducer(micGateReducer, initialMicGate);
+  const gateRef = useRef(false);
+  useEffect(() => {
+    gateRef.current = gate.gated;
+  }, [gate]);
+  const speaker = useSpeaker({
+    onStart: () => dispatchGate({ type: "speech-start" }),
+    onEnd: () => dispatchGate({ type: "speech-end" }),
+    onAboutToEnd: () => dispatchGate({ type: "speech-about-to-end" }),
+  });
+  const voice = useVoice((text) => setInput(text), gateRef);
+  useEffect(() => {
+    voice.applyGate(gate.gated);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gate.gated]);
+
+  function onMicClick() {
+    if (speaker.speaking) {
+      speaker.stop();
+      gateRef.current = false;
+      dispatchGate({ type: "interrupt" });
+      dispatchGate({ type: "user-mic", on: true });
+      voice.start();
+      return;
+    }
+    if (voice.listening || voice.userOn) {
+      voice.stop();
+      dispatchGate({ type: "user-mic", on: false });
+    } else {
+      dispatchGate({ type: "user-mic", on: true });
+      voice.start();
+    }
+  }
 
   const problemData = [
     "Examples: " + problem.examples.map((e) => `input ${e.input} -> output ${e.output}`).join("; "),
@@ -923,7 +955,7 @@ function TechnicalRoom() {
               <div className="flex gap-2">
                 <label htmlFor="tech-panel-input" className="sr-only">Message to the interviewer</label>
                 <input id="tech-panel-input" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submitPanel()} placeholder={inputPlaceholder[phase]} className="input min-w-0 flex-1" />
-                <button type="button" onClick={() => (voice.listening ? voice.stop() : voice.start())} disabled={!voice.supported} aria-label="Toggle microphone input" className={`btn btn-sm ${voice.listening ? "border-red-500 bg-red-950/50 text-red-300" : "btn-ghost"}`}>{voice.listening ? "Listening..." : "Mic"}</button>
+                <button type="button" onClick={onMicClick} disabled={!voice.supported && !speaker.speaking} aria-label="Toggle microphone input" className={`btn btn-sm ${voice.listening ? "border-red-500 bg-red-950/50 text-red-300" : "btn-ghost"}`}>{voice.listening ? "Listening..." : "Mic"}</button>
                 <button type="button" onClick={() => submitPanel()} disabled={waiting} className="btn btn-primary btn-sm">Send</button>
               </div>
             </div>

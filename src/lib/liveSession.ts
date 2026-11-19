@@ -8,6 +8,7 @@ export type LiveCallbacks = {
   onAiTurn: (text: string) => void;
   onUserTurn: (text: string) => void;
   onSpeaking: (speaking: boolean) => void;
+  onAboutToEnd?: () => void;
   onStatus?: (status: LiveStatus) => void;
 };
 
@@ -45,6 +46,9 @@ export class LiveSession {
   private aiBuffer = "";
   private userBuffer = "";
   private mutedFlag = false;
+  private gatedFlag = false;
+  private aboutToEndFired = false;
+  private drainTimer: ReturnType<typeof setInterval> | null = null;
   private closedByUser = false;
   private setupTimer: ReturnType<typeof setTimeout> | null = null;
   status: LiveStatus = "idle";
@@ -226,6 +230,25 @@ export class LiveSession {
     if (m) this.flushPlayout();
   }
 
+  setGated(g: boolean) {
+    this.gatedFlag = g;
+  }
+
+  private startDrainWatch() {
+    if (this.drainTimer) return;
+    this.drainTimer = setInterval(() => {
+      if (this.sources.size === 0 || !this.playCtx) {
+        if (this.drainTimer) clearInterval(this.drainTimer);
+        this.drainTimer = null;
+        return;
+      }
+      if (!this.aboutToEndFired && this.nextPlayTime - this.playCtx.currentTime <= 0.8) {
+        this.aboutToEndFired = true;
+        this.cb.onAboutToEnd?.();
+      }
+    }, 100);
+  }
+
   private enqueueAudio(b64: string) {
     if (this.mutedFlag) return;
     const ctx = this.ensurePlayCtx();
@@ -240,6 +263,7 @@ export class LiveSession {
     const buffer = ctx.createBuffer(1, samples.length, 24000);
     const data = buffer.getChannelData(0);
     for (let i = 0; i < samples.length; i++) data[i] = samples[i] / 32768;
+    if (this.sources.size === 0) this.aboutToEndFired = false;
     const src = ctx.createBufferSource();
     src.buffer = buffer;
     src.connect(ctx.destination);
@@ -248,6 +272,7 @@ export class LiveSession {
     this.nextPlayTime = start + buffer.duration;
     this.sources.add(src);
     this.cb.onSpeaking(true);
+    this.startDrainWatch();
     src.onended = () => {
       this.sources.delete(src);
       if (this.sources.size === 0) this.cb.onSpeaking(false);
@@ -255,6 +280,10 @@ export class LiveSession {
   }
 
   private flushPlayout() {
+    if (this.drainTimer) {
+      clearInterval(this.drainTimer);
+      this.drainTimer = null;
+    }
     for (const src of this.sources) {
       try {
         src.stop();
@@ -282,6 +311,7 @@ export class LiveSession {
       const inRate = this.micCtx.sampleRate;
       const ratio = inRate / 16000;
       this.micNode.onaudioprocess = (e) => {
+        if (this.gatedFlag) return;
         if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
         const input = e.inputBuffer.getChannelData(0);
         const outLen = Math.floor(input.length / ratio);
@@ -354,6 +384,7 @@ export function useLiveSession(cb: LiveCallbacks) {
         onAiTurn: (t) => cbRef.current.onAiTurn(t),
         onUserTurn: (t) => cbRef.current.onUserTurn(t),
         onSpeaking: (s) => cbRef.current.onSpeaking(s),
+        onAboutToEnd: () => cbRef.current.onAboutToEnd?.(),
         onStatus: (s) => setStatusState(s),
       });
     }
@@ -376,6 +407,10 @@ export function useLiveSession(cb: LiveCallbacks) {
     sessionRef.current?.setMuted(m);
   }, []);
 
+  const setGated = useCallback((g: boolean) => {
+    sessionRef.current?.setGated(g);
+  }, []);
+
   const close = useCallback(() => {
     sessionRef.current?.close();
     sessionRef.current = null;
@@ -389,5 +424,5 @@ export function useLiveSession(cb: LiveCallbacks) {
     };
   }, []);
 
-  return { status, connect, sendText, unlock, setMuted, close, sessionRef };
+  return { status, connect, sendText, unlock, setMuted, setGated, close, sessionRef };
 }

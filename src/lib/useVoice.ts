@@ -30,8 +30,10 @@ function errorMessage(code: string | undefined): string {
   }
 }
 
-export function useVoice(onText: (text: string) => void) {
+export function useVoice(onText: (text: string) => void, gateRef?: { current: boolean }) {
   const [listening, setListening] = useState(false);
+  const [userOn, setUserOn] = useState(false);
+  const [gated, setGated] = useState(false);
   const [error, setError] = useState("");
   const [supported] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -48,7 +50,7 @@ export function useVoice(onText: (text: string) => void) {
     };
   }, []);
 
-  function start() {
+  function beginRecognition() {
     const w = window as unknown as Record<string, unknown>;
     const Ctor = (w.SpeechRecognition || w.webkitSpeechRecognition) as (new () => Rec) | undefined;
     if (!Ctor) {
@@ -64,6 +66,7 @@ export function useVoice(onText: (text: string) => void) {
     rec.interimResults = false;
     rec.continuous = false;
     rec.onresult = (e) => {
+      if (gateRef?.current) return;
       const text = e.results[0][0].transcript;
       if (text) onText(text);
     };
@@ -83,12 +86,47 @@ export function useVoice(onText: (text: string) => void) {
     }
   }
 
+  function start() {
+    setUserOn(true);
+    if (gateRef?.current) {
+      setGated(true);
+      return;
+    }
+    beginRecognition();
+  }
+
   function stop() {
+    setUserOn(false);
+    setGated(false);
     try {
       recRef.current?.stop();
     } catch {}
     setListening(false);
   }
 
-  return { listening, supported, error, start, stop };
+  function applyGate(g: boolean) {
+    if (g) {
+      setGated((prev) => {
+        if (!prev) {
+          try {
+            recRef.current?.stop();
+          } catch {}
+          setListening(false);
+        }
+        return true;
+      });
+      return;
+    }
+    setGated((prev) => {
+      if (prev) {
+        setUserOn((on) => {
+          if (on) beginRecognition();
+          return on;
+        });
+      }
+      return false;
+    });
+  }
+
+  return { listening, supported, error, start, stop, userOn, gated, applyGate };
 }

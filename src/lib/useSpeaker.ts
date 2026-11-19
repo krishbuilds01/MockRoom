@@ -20,10 +20,40 @@ function withTimeout<T>(p: Promise<T>, ms: number): Promise<T | "timeout"> {
   ]);
 }
 
-export function useSpeaker() {
+export type SpeakerCallbacks = {
+  onStart?: () => void;
+  onEnd?: () => void;
+  onAboutToEnd?: () => void;
+};
+
+export function useSpeaker(callbacks?: SpeakerCallbacks) {
   const [voiceSource, setVoiceSource] = useState<VoiceSource>(null);
   const [speaking, setSpeaking] = useState(false);
   const tokenRef = useRef(0);
+  const cbRef = useRef(callbacks);
+  cbRef.current = callbacks;
+  const speakingRef = useRef(false);
+  const aboutToEndFiredRef = useRef(false);
+
+  const fireAboutToEnd = useCallback(() => {
+    if (aboutToEndFiredRef.current) return;
+    aboutToEndFiredRef.current = true;
+    cbRef.current?.onAboutToEnd?.();
+  }, []);
+
+  const beginSpeech = useCallback(() => {
+    speakingRef.current = true;
+    aboutToEndFiredRef.current = false;
+    setSpeaking(true);
+    cbRef.current?.onStart?.();
+  }, []);
+
+  const endSpeech = useCallback(() => {
+    if (!speakingRef.current) return;
+    speakingRef.current = false;
+    setSpeaking(false);
+    cbRef.current?.onEnd?.();
+  }, []);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const cacheRef = useRef<Map<string, string>>(new Map());
   const ttsDownRef = useRef(false);
@@ -65,7 +95,7 @@ export function useSpeaker() {
 
   const stop = useCallback(() => {
     tokenRef.current += 1;
-    setSpeaking(false);
+    endSpeech();
     if (audioRef.current) {
       try {
         audioRef.current.pause();
@@ -76,7 +106,7 @@ export function useSpeaker() {
         window.speechSynthesis.cancel();
       } catch {}
     }
-  }, []);
+  }, [endSpeech]);
 
   useEffect(() => {
     const cache = cacheRef.current;
@@ -145,7 +175,7 @@ export function useSpeaker() {
   );
 
   const playUrl = useCallback(
-    (url: string, token: number): Promise<boolean> => {
+    (url: string, token: number, onNearEnd?: () => void): Promise<boolean> => {
       return new Promise((resolve) => {
         const audio = getAudio();
         if (!audio || token !== tokenRef.current) {
@@ -153,10 +183,19 @@ export function useSpeaker() {
           return;
         }
         let settled = false;
+        let nearEndFired = false;
+        const onTimeUpdate = () => {
+          if (nearEndFired || !onNearEnd) return;
+          if (audio.duration && audio.duration - audio.currentTime <= 0.8) {
+            nearEndFired = true;
+            onNearEnd();
+          }
+        };
         const finish = (ok: boolean) => {
           if (settled) return;
           settled = true;
           clearInterval(watchdog);
+          audio.removeEventListener("timeupdate", onTimeUpdate);
           audio.onended = null;
           audio.onerror = null;
           resolve(ok && token === tokenRef.current);
@@ -166,6 +205,7 @@ export function useSpeaker() {
         }, 200);
         audio.onended = () => finish(true);
         audio.onerror = () => finish(false);
+        if (onNearEnd) audio.addEventListener("timeupdate", onTimeUpdate);
         try {
           audio.src = url;
           const p = audio.play();
@@ -185,7 +225,7 @@ export function useSpeaker() {
       const token = tokenRef.current;
       const chunks = chunkForSpeech(text);
       if (!chunks.length) return;
-      setSpeaking(true);
+      beginSpeech();
       const startedAt = Date.now();
       const pending: Promise<FetchResult>[] = chunks.map((c) => fetchTts(c));
       try {
@@ -198,13 +238,16 @@ export function useSpeaker() {
               : LATER_CHUNK_GRACE_MS;
           const result = await withTimeout(pending[i], budget);
           if (token !== tokenRef.current) return;
+          const isLast = i === chunks.length - 1;
           if (result !== "timeout" && result) {
-            played = await playUrl(result, token);
+            if (isLast) fireAboutToEnd();
+            played = await playUrl(result, token, isLast ? fireAboutToEnd : undefined);
             if (token !== tokenRef.current) return;
             if (played) setVoiceSource("gemini");
           }
           if (!played) {
             setVoiceSource("browser");
+            if (isLast) fireAboutToEnd();
             await speakSentenceBrowser(chunks[i]);
             if (token !== tokenRef.current) return;
           }
@@ -214,10 +257,10 @@ export function useSpeaker() {
           }
         }
       } finally {
-        if (token === tokenRef.current) setSpeaking(false);
+        if (token === tokenRef.current) endSpeech();
       }
     },
-    [fetchTts, playUrl, stop]
+    [fetchTts, playUrl, stop, beginSpeech, endSpeech, fireAboutToEnd]
   );
 
   return { speak, stop, voiceSource, speaking, unlock };
