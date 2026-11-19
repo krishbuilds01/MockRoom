@@ -17,7 +17,12 @@ function loadHistory(): SessionRecord[] {
     if (!Array.isArray(parsed)) return [];
     return parsed.filter(
       (h): h is SessionRecord =>
-        !!h && typeof h === "object" && typeof (h as SessionRecord).date === "string" && !!(h as SessionRecord).scores
+        !!h &&
+        typeof h === "object" &&
+        typeof (h as SessionRecord).date === "string" &&
+        !!(h as SessionRecord).scores &&
+        typeof (h as SessionRecord).scores.problemSolving === "number" &&
+        typeof (h as SessionRecord).scores.coding === "number"
     );
   } catch {
     return [];
@@ -37,8 +42,13 @@ export default function Home() {
   }, []);
 
   function start() {
-    const q = new URLSearchParams({ difficulty, topic });
-    router.push(type === "technical" ? `/interview/technical?${q}` : `/interview/general?${q}`);
+    if (type === "technical") {
+      const q = new URLSearchParams({ difficulty, topic });
+      router.push(`/interview/technical?${q}`);
+    } else {
+      const q = new URLSearchParams({ difficulty });
+      router.push(`/interview/general?${q}`);
+    }
   }
 
   const chronological = [...history].reverse();
@@ -90,7 +100,7 @@ export default function Home() {
                 <button type="button" key={t} onClick={() => setTopic(t)} aria-pressed={topic === t} className={`rounded-full px-4 py-2 text-sm ${topic === t ? "bg-white text-black" : "border border-neutral-700 text-neutral-300"}`}>{t}</button>
               ))}
             </div>
-            <p className="mt-3 text-xs text-neutral-500">Topics with a ready problem today: HashMap, Strings, Arrays, Two Pointers. Trees and DP fall back to the closest available problem at your difficulty.</p>
+            <p className="mt-3 text-xs text-neutral-500">Topics with a ready problem today: HashMap, Strings, Arrays, Two Pointers. If a topic has no problem at your exact difficulty yet, the room tells you clearly at the top and serves the closest one, scored at its real level. Trees and DP fall back the same way.</p>
           </>
         )}
 
@@ -125,8 +135,11 @@ export default function Home() {
             {history.map((h) => (
               <div key={h.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-neutral-800 p-4 text-sm">
                 <div className="min-w-0">
-                  <div className="truncate font-medium">{h.type === "technical" ? h.problemTitle || "Technical interview" : "Live AI Interview"}</div>
-                  <div className="text-xs text-neutral-500">{new Date(h.date).toLocaleString()} - {h.difficulty} - {Math.round(h.timeSec / 60)} min{h.targetSec ? ` of ${Math.round(h.targetSec / 60)} target` : ""}</div>
+                  <div className="truncate font-medium">
+                    {h.type === "technical" ? h.problemTitle || "Technical interview" : "Live AI Interview"}
+                    {h.incomplete && <span className="ml-2 rounded-full border border-amber-700 px-2 py-0.5 text-[10px] font-medium text-amber-300">Incomplete</span>}
+                  </div>
+                  <div className="text-xs text-neutral-500">{`${new Date(h.date).toLocaleString()} · ${h.difficulty} · ${Math.round(h.timeSec / 60)} min${h.targetSec ? ` of ${Math.round(h.targetSec / 60)} target` : ""}`}</div>
                 </div>
                 <div className="text-xs text-neutral-400">
                   {h.type === "technical" && <span className="mr-3">Tests {h.testsPassed}/{h.totalTests}</span>}

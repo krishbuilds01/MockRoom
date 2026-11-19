@@ -49,6 +49,128 @@ export function pickAck(seed: number): string {
   return acks[Math.abs(seed) % acks.length];
 }
 
+export const INTERVIEWER_NAME = "Alex";
+
+export function aOrAn(word: string): string {
+  return /^[aeiou]/i.test(word.trim()) ? "an" : "a";
+}
+
+export function hasComplexityStatement(text: string): boolean {
+  return /(o\([^)]+\)|quadratic|linear|constant time|constant space|logarithmic|exponential)/i.test(text);
+}
+
+export function techOpeningText(problem: Problem, difficulty: string, targetMin: number): string {
+  return `Hi, I am ${INTERVIEWER_NAME}, and I will be your interviewer today. Here is how this session runs: I give you a coding problem, we talk it through before any code, you code while I watch and ask questions, then we dry run it, cover complexity, and finish with your questions for me. We have about ${targetMin} minutes, and this is ${aOrAn(difficulty)} ${difficulty} session, so I will be strict: vague answers get pushed back, and hints are recorded. Before we start, introduce yourself in a few lines: your background, and what you have been building lately.`;
+}
+
+export function generalOpeningText(difficulty: string, targetMin: number, count: number): string {
+  return `Hi, I am ${INTERVIEWER_NAME}, and I will be your interviewer today. Here is how this runs: you introduce yourself, then I ask ${count} questions with follow-ups, and we finish with your questions for me. We have about ${targetMin} minutes. This is ${aOrAn(difficulty)} ${difficulty} session, so I will be direct: short, vague answers get pushed back, at every level. First, introduce yourself in a few lines: your background, and what you have been working on.`;
+}
+
+export function introReaction(intro: string, seed: number): string {
+  const a = intro.toLowerCase();
+  const ack = pickAck(seed + wordCount(intro));
+  if (wordCount(intro) < 8) {
+    return `${ack} That is a very short introduction. Give me a little more: where you study or work, your main stack, and one thing you built that you can talk about in depth.`;
+  }
+  if (a.includes("student") || a.includes("study") || a.includes("college") || a.includes("university")) {
+    return `${ack} Good, a student background with real building experience is exactly what I want to hear about. I will judge the work, not the title.`;
+  }
+  if (a.includes("intern") || a.includes("work") || a.includes("job") || a.includes("engineer") || a.includes("developer")) {
+    return `${ack} Good. I am less interested in the role title and more in what you personally built and decided, so expect me to dig there.`;
+  }
+  if (a.includes("project") || a.includes("built") || a.includes("building")) {
+    return `${ack} Good, you led with what you built. That is the right instinct for an interview.`;
+  }
+  return `${ack} Good, I have the picture. Let us get into it.`;
+}
+
+const readyPhrases = [
+  "no question",
+  "no clarifying",
+  "no doubts",
+  "nothing else",
+  "i am ready",
+  "i'm ready",
+  "im ready",
+  "ready to start",
+  "let's start",
+  "lets start",
+  "let us start",
+  "all clear",
+  "that's clear",
+  "thats clear",
+  "it is clear",
+  "no, thanks",
+  "no thanks",
+  "i have none",
+  "none from my side",
+];
+
+export function isReadySignal(text: string): boolean {
+  const t = text.toLowerCase().trim().replace(/\s+/g, " ");
+  if (t === "no" || t === "none" || t === "nope" || t === "ready" || t === "no." || t === "none.") return true;
+  return readyPhrases.some((p) => t.includes(p));
+}
+
+export function answerClarifying(problem: Problem, qRaw: string): string {
+  const direct = answerCandidateQuestion(problem, qRaw, "Mid");
+  if (direct) return direct;
+  const q = qRaw.toLowerCase();
+  if (q.includes("example")) {
+    const ex = problem.examples[0];
+    return ex
+      ? `Use the first example: input ${ex.input} should give output ${ex.output}. The rest are in the problem panel.`
+      : "The examples in the problem panel define the expected shape.";
+  }
+  if (q.includes("sorted") || q.includes("order")) {
+    return `The statement says this: ${problem.statement.split(". ")[0]}. If the statement does not promise an order, do not assume one.`;
+  }
+  if (q.includes("constraint") || q.includes("range") || q.includes("how large") || q.includes("how big") || q.includes("size")) {
+    return `The constraints are on the left. The binding ones here: ${problem.constraints.slice(0, 2).join("; ")}. Design for those, not for the examples.`;
+  }
+  if (q.includes("return")) {
+    return `Return exactly what the statement asks for: ${problem.statement.split(". ").slice(0, 2).join(". ")}. Match the examples.`;
+  }
+  return `Fair question. What the statement guarantees is this: ${problem.constraints[0]}. Anything it does not promise, your solution has to handle or explicitly rule out. The examples on the left show the expected shape.`;
+}
+
+export function dryRunReaction(problem: Problem, text: string): string {
+  const words = wordCount(text);
+  const t = problem.tests[0];
+  const expectedStr = JSON.stringify(t.expected);
+  if (words < 15) {
+    return `That is not a dry run, that is a summary. Do it again properly: take input ${JSON.stringify(t.args)}, name the value of each variable after every step, and stop at the return. The expected output is ${expectedStr}, so your trace has to land exactly there.`;
+  }
+  if (text.includes(expectedStr) || text.toLowerCase().includes("return") || text.toLowerCase().includes("returns")) {
+    return `Okay, that trace holds together, and it lands on the expected output ${expectedStr}. That is what a dry run is supposed to prove.`;
+  }
+  return `You walked the steps, but you never landed on a final value. A dry run ends at the return: for this input the expected output is ${expectedStr}. If your trace does not reach it, your code has a bug.`;
+}
+
+export function candidateQuestionAnswer(qRaw: string): string {
+  const q = qRaw.toLowerCase();
+  if (q.includes("team") || q.includes("who would i work") || q.includes("report")) {
+    return "You would join a small product team, five to seven engineers, with a tech lead you would report to. The team owns one product area end to end, from design reviews to on-call.";
+  }
+  if (q.includes("stack") || q.includes("technolog") || q.includes("tools")) {
+    return "The core stack is TypeScript services with React on the front end, Postgres, and a lot of automated testing. We care more about how you reason than about which framework you used last.";
+  }
+  if (q.includes("next step") || q.includes("process") || q.includes("timeline") || q.includes("when will")) {
+    return "After this round there is a hiring manager conversation, then an offer decision. You would hear back within about a week either way.";
+  }
+  if (q.includes("day") || q.includes("work look") || q.includes("responsibilit") || q.includes("role")) {
+    return "A normal day is mostly building: design doc or ticket work in the morning, code reviews, and pairing when something is tricky. Standup is short. Meetings are kept light for engineers at your level.";
+  }
+  if (q.includes("growth") || q.includes("learn") || q.includes("mentor")) {
+    return "You would get a mentor for your first months, regular code review feedback, and a growth plan reviewed twice a year. The expectation is steady independence by the end of the first year.";
+  }
+  if (q.includes("remote") || q.includes("hybrid") || q.includes("office") || q.includes("location")) {
+    return "The team is hybrid, two to three days in the office for pairing and design sessions, the rest remote. Core hours overlap matters more than exact location.";
+  }
+  return "Good question. The short answer: this role sits in a product team that ships weekly, reviews carefully, and expects engineers to own their work end to end. The longer answer would come from the hiring manager round.";
+}
+
 export function generalFollowUp(answer: string, difficulty: string, qIndex: number): string {
   const a = answer.toLowerCase();
   const ack = pickAck(qIndex * 7 + wordCount(answer));
@@ -107,6 +229,14 @@ export function analyzeApproach(problem: Problem, answer: string, difficulty: st
     parts.push("That is not an approach, that is a guess. I need three things: the data structure, the main loop or pass, and what you return. State them.");
   } else {
     parts.push("I follow the broad idea, but it is not precise yet. State your expected time and space complexity and one edge case you will handle, before you touch the code.");
+  }
+  if (hasComplexityStatement(answer)) {
+    const stated = checkComplexity(problem, answer);
+    parts.push(
+      stated.correct
+        ? "You also stated a complexity, and it matches the intended solution. I have recorded it, and I will hold you to it against your final code."
+        : "You also stated a complexity. I have recorded it exactly as stated, and I will check it against your final code at the end."
+    );
   }
   if (!(difficulty === "Hard" && isBruteForceApproach(answer))) {
     parts.push("Start coding. I will watch, and I will stop you to explain lines I pick.");
@@ -253,7 +383,8 @@ function normComplexityToken(raw: string): string | null {
 }
 
 export function expectedComplexity(problem: Problem): { time: string | null; space: string | null } {
-  const matches = [...problem.complexity.matchAll(/O\(([^)]+)\)/g)].map((m) => normComplexityToken(m[1]));
+  const firstSentence = problem.complexity.split(". ")[0];
+  const matches = [...firstSentence.matchAll(/O\(([^)]+)\)/g)].map((m) => normComplexityToken(m[1]));
   const time = matches[0] ?? null;
   let space = matches.length > 1 ? matches[matches.length - 1] : null;
   if (problem.id === "group-anagrams") space = null;
@@ -294,6 +425,7 @@ export interface ScoreSignals {
   hintsUsed?: number;
   aiAsked?: number;
   complexityCorrect?: boolean | null;
+  complexityAttempted?: boolean;
   thinApproach?: boolean;
   userAnswers?: number;
   totalUserWords?: number;
@@ -341,7 +473,9 @@ export function computeScores(s: ScoreSignals) {
         ? 7 + ratio * 3 - Math.min(1, hints * 0.5)
         : s.complexityCorrect === false
           ? 3
-          : 3.5 + ratio * 1.5;
+          : s.complexityAttempted === false
+            ? 0
+            : 3.5 + ratio * 1.5;
 
     if (ratio === 1) strengths.push("All test cases passed, including the hidden cases. That is the baseline, not the whole score.");
     if (ratio > 0 && ratio < 1) improvements.push(`Only ${s.testsPassed} of ${s.totalTests} tests passed. The failing cases are listed in your session; debug those exact inputs.`);
@@ -415,6 +549,12 @@ export interface SessionRecord {
   complexityAnswer?: string;
   complexityCorrect?: boolean | null;
   thinAnswers?: number;
+  introGiven?: boolean;
+  askedClarifying?: boolean;
+  dryRunDone?: boolean;
+  askedQuestionAtEnd?: boolean;
+  incomplete?: boolean;
+  codeChanged?: boolean;
 }
 
 export function saveSession(rec: SessionRecord) {

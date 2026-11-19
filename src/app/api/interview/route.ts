@@ -3,13 +3,27 @@ import { askGemini, geminiAvailable } from "@/lib/gemini";
 import {
   analyzeApproach,
   answerCandidateQuestion,
+  answerClarifying,
+  candidateQuestionAnswer,
   checkComplexity,
+  dryRunReaction,
   generalFollowUp,
+  introReaction,
   isThinAnswer,
 } from "@/lib/interviewer";
 import { problems, type Problem } from "@/lib/problems";
 
-type Mode = "general" | "approach" | "codewatch" | "ask" | "complexity" | "feedback";
+type Mode =
+  | "general"
+  | "approach"
+  | "codewatch"
+  | "ask"
+  | "complexity"
+  | "feedback"
+  | "intro"
+  | "clarifying"
+  | "dryrun"
+  | "candidate-question";
 
 function trunc(value: unknown, max: number): string {
   return typeof value === "string" ? value.slice(0, max) : "";
@@ -48,12 +62,13 @@ function buildPrompt(mode: Mode, body: Record<string, unknown>): string {
   const code = trunc(body.code, 4000);
   const diffSummary = trunc(body.diffSummary, 600);
   const message = trunc(body.message, 1500);
+  const problemData = trunc(body.problemData, 1500);
   const transcript = transcriptText(body.transcript);
   const testsPassed = typeof body.testsPassed === "number" ? body.testsPassed : null;
   const testsTotal = typeof body.testsTotal === "number" ? body.testsTotal : null;
 
   const base = [
-    "You are a tough, experienced interviewer at a top tech company running a live one on one interview. You are fair, but you are strict and hard to impress. You do not hand out praise for basics.",
+    "You are a tough, experienced interviewer at a top tech company running a live one on one interview. Your name is Alex, and the candidate knows you as Alex. You are fair, but you are strict and hard to impress. You do not hand out praise for basics.",
     "Sound like a real person talking: use natural contractions, and vary your short acknowledgements (Right, Okay, Got it, Fair enough, Hmm). Never start two replies the same way. Do not use filler words.",
     "Speak in short plain sentences. Ask only ONE question at a time. Keep your whole reply under 60 words.",
     "No markdown, no lists, no headings, no code blocks. Your reply will be spoken aloud.",
@@ -62,6 +77,7 @@ function buildPrompt(mode: Mode, body: Record<string, unknown>): string {
     topic ? `Topic: ${topic}.` : "",
     problemTitle ? `Problem: ${problemTitle}.` : "",
     problemStatement ? `Problem statement (short): ${problemStatement}` : "",
+    problemData ? `Problem data (examples, constraints, edge case notes):\n${problemData}` : "",
     transcript ? `Recent conversation:\n${transcript}` : "",
   ];
 
@@ -70,7 +86,7 @@ function buildPrompt(mode: Mode, body: Record<string, unknown>): string {
     base.push("Judge the answer hard. If it is thin or generic, say so plainly and demand a concrete example with specifics. If it has substance, ask ONE deeper follow-up about trade-offs, failure cases, or scale. Do not start a new topic.");
   } else if (mode === "approach") {
     base.push(`Before coding, the candidate explained their approach: "${message}"`);
-    base.push("React like a strict interviewer. If the approach is brute force and the difficulty is Mid or Hard, challenge them to find the faster approach before coding. If it is vague, demand the data structure, the main pass, and the return value. If it is sound, say so in a few words and ask ONE probing question about complexity or an edge case, then tell them to start coding.");
+    base.push("React like a strict interviewer. If the approach is brute force and the difficulty is Mid or Hard, challenge them to find the faster approach before coding. If it is vague, demand the data structure, the main pass, and the return value. If it is sound, say so in a few words and ask ONE probing question about complexity or an edge case, then tell them to start coding. If the candidate already stated a time or space complexity in the approach, acknowledge it in a few words, say it is recorded, and do not ask for the complexity again.");
   } else if (mode === "codewatch") {
     if (code) base.push(`The candidate is coding right now. Current code:\n${code}`);
     if (diffSummary) base.push(`What just changed in the code: ${diffSummary}`);
@@ -86,13 +102,28 @@ function buildPrompt(mode: Mode, body: Record<string, unknown>): string {
       base.push(`The candidate just stated their complexity: "${message}"`);
       base.push("Say plainly whether that is right or wrong for their actual code, give the correct time and space complexity in one short sentence, note that this answer is scored, and close the interview.");
     } else {
-      base.push("The candidate just submitted their solution. Ask them ONE question: the exact time and space complexity of their solution, and why. Tell them this answer is scored.");
+      base.push("The candidate just submitted their solution. First check the recent conversation above: if the candidate already stated a time or space complexity earlier, do not ask from scratch. Name what they stated, say plainly whether it is right for their code, and close. Only if they never stated one, ask them ONE question: the exact time and space complexity of their solution, and why. Tell them this answer is scored.");
     }
   } else if (mode === "feedback") {
     if (code) base.push(`The candidate's final code:\n${code}`);
     if (testsPassed !== null && testsTotal !== null) base.push(`Result: passed ${testsPassed} of ${testsTotal} test cases.`);
     if (message) base.push(`Session notes: ${message}`);
     base.push("Give a short, honest spoken closing: one real strength only if earned, the most important thing to fix, and what to practice next. Do not inflate. Keep it under 70 words.");
+  } else if (mode === "intro") {
+    base.push(`The candidate just introduced themselves at the start of the interview: "${message}"`);
+    base.push("React briefly and professionally, like a real interviewer. Refer to ONE specific thing they actually said, no generic flattery. If the introduction is very thin, say so and ask for their background and one thing they built. Keep it to 1 or 2 sentences, under 35 words. Do not present any problem or question, the session flow handles that next.");
+  } else if (mode === "clarifying") {
+    if (code) base.push(`The candidate's current code:\n${code}`);
+    base.push(`Before coding, the candidate is asking a clarifying question about the problem: "${message}"`);
+    base.push("Answer ONLY from the problem statement and problem data given above. If the data does not cover it, state the standard assumption for this kind of problem in one sentence and mark it as an assumption. Keep it under 45 words. Do not add hints about the solution approach, and do not ask if they have more questions, the session flow handles that.");
+  } else if (mode === "dryrun") {
+    if (code) base.push(`The candidate's submitted code:\n${code}`);
+    if (testsPassed !== null && testsTotal !== null) base.push(`Their submitted code passed ${testsPassed} of ${testsTotal} test cases.`);
+    base.push(`You asked the candidate to dry run their code on an example input out loud. Their dry run: "${message}"`);
+    base.push("Judge the trace hard. If it is vague or skips variable values step by step, say exactly which step was skipped and what value they should have named. If it is a real step by step trace that lands on the expected output, acknowledge it in a few words. 1 or 2 sentences, under 45 words. Do not ask about complexity, that comes next in the flow.");
+  } else if (mode === "candidate-question") {
+    base.push(`The interview is over and the candidate is asking you a question about the role, the team, or the company: "${message}"`);
+    base.push("Answer in character as Alex, a senior engineer on a small product team. Give a brief, sensible, generic answer: small product team owning an area end to end, TypeScript and React stack, code review culture, hiring manager round next, decision within about a week. Do not invent a company name, salary, or specific promises. 2 sentences at most, under 45 words.");
   }
   return base.filter(Boolean).join("\n");
 }
@@ -149,6 +180,20 @@ function localReply(mode: Mode, body: Record<string, unknown>): string {
       ? "That answer is too thin to score well. It is recorded as stated. Your session is complete. Click End Interview to see your feedback."
       : "Noted, that complexity answer is recorded as stated. Your session is complete. Click End Interview to see your feedback.";
   }
+  if (mode === "intro") {
+    return introReaction(message, qIndex + 3);
+  }
+  if (mode === "clarifying") {
+    if (problem) return answerClarifying(problem, message);
+    return "Answer from the statement on the left: it defines the inputs, the outputs, and the constraints. If it does not promise something, do not assume it.";
+  }
+  if (mode === "dryrun") {
+    if (problem) return dryRunReaction(problem, message);
+    return "A dry run means values, step by step, until the return. If your trace does not land on the expected output for the example, the code has a bug.";
+  }
+  if (mode === "candidate-question") {
+    return candidateQuestionAnswer(message);
+  }
   const ratio = testsTotal > 0 ? testsPassed / testsTotal : 0;
   if (testsTotal > 0 && ratio === 1) return "Session over. You passed all the test cases, which is the baseline I expect. Whether the session scores well now depends on your approach, your complexity answer, and how you handled my questions. Your detailed feedback is ready.";
   if (testsTotal > 0 && ratio > 0) return `Session over. You passed ${testsPassed} of ${testsTotal} test cases. That gap is the main story of this session. Your feedback names the weak areas and the exact problems to do next.`;
@@ -160,7 +205,18 @@ export async function POST(req: NextRequest) {
   const parsed = (await req.json().catch(() => null)) as unknown;
   const body: Record<string, unknown> =
     parsed && typeof parsed === "object" && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : {};
-  const modes: Mode[] = ["general", "approach", "codewatch", "ask", "complexity", "feedback"];
+  const modes: Mode[] = [
+    "general",
+    "approach",
+    "codewatch",
+    "ask",
+    "complexity",
+    "feedback",
+    "intro",
+    "clarifying",
+    "dryrun",
+    "candidate-question",
+  ];
   const mode: Mode = modes.includes(body.mode as Mode) ? (body.mode as Mode) : "general";
   const llmAvailable = geminiAvailable();
 

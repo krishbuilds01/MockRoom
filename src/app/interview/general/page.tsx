@@ -4,19 +4,41 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Camera from "@/components/Camera";
 import {
+  candidateQuestionAnswer,
   computeScores,
   generalFollowUp,
+  generalOpeningText,
   generalQuestions,
   generalSecondFollowUp,
+  introReaction,
+  isReadySignal,
   isThinAnswer,
   saveSession,
   wordCount,
   type Msg,
+  type SessionRecord,
 } from "@/lib/interviewer";
 import { targetSecFor } from "@/lib/problems";
 import { postInterview } from "@/lib/interviewApi";
 import { useVoice } from "@/lib/useVoice";
 import { useSpeaker } from "@/lib/useSpeaker";
+
+type Phase = "intro" | "main" | "candidate" | "done";
+
+const PHASE_STEPS = ["Opening", "Questions", "Your questions", "Done"];
+const PHASE_INDEX: Record<Phase, number> = { intro: 0, main: 1, candidate: 2, done: 3 };
+const PHASE_LABELS: Record<Phase, string> = {
+  intro: "Opening",
+  main: "Questions",
+  candidate: "Your questions",
+  done: "Done",
+};
+
+function isBehavioural(q: string): boolean {
+  return /(time you|describe a time|disagreed|weakest|a hard bug)/i.test(q);
+}
+
+const STAR_SUFFIX = " Structure it like a story: the situation, your task, what you did, and the result.";
 
 function GeneralRoom() {
   const params = useSearchParams();
@@ -26,21 +48,34 @@ function GeneralRoom() {
   const targetSec = targetSecFor("general", difficulty);
   const [transcript, setTranscript] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
+  const [phase, setPhase] = useState<Phase>("intro");
   const [qIndex, setQIndex] = useState(0);
   const [stage, setStage] = useState(0);
   const [muted, setMuted] = useState(false);
-  const [engine, setEngine] = useState<"gemini" | "local">("local");
+  const [engine, setEngine] = useState<"gemini" | "local" | null>(null);
   const [startedAt] = useState(() => Date.now());
   const [elapsed, setElapsed] = useState(0);
   const startedRef = useRef(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const statsRef = useRef({ answers: 0, words: 0, thin: 0, followUpsAsked: 0, followUpsAnswered: 0 });
+  const statsRef = useRef({ answers: 0, words: 0, thin: 0, followUpsAsked: 0, followUpsAnswered: 0, introPushes: 0, askedEnd: false });
+  const introRef = useRef("");
   const transcriptRef = useRef<Msg[]>([]);
+  const mountedRef = useRef(true);
+  const savedRef = useRef(false);
+  const transcriptBoxRef = useRef<HTMLDivElement>(null);
+  const mutedRef = useRef(muted);
   const speaker = useSpeaker();
   const voice = useVoice((text) => setInput(text));
 
   useEffect(() => {
     transcriptRef.current = transcript;
+  }, [transcript]);
+  useEffect(() => {
+    mutedRef.current = muted;
+  }, [muted]);
+  useEffect(() => {
+    const el = transcriptBoxRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, [transcript]);
 
   useEffect(() => {
@@ -60,7 +95,9 @@ function GeneralRoom() {
   }, []);
 
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
+      mountedRef.current = false;
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, []);
@@ -68,31 +105,105 @@ function GeneralRoom() {
   useEffect(() => {
     if (startedRef.current) return;
     startedRef.current = true;
-    const intro = `Hi, I'm your interviewer. This is a ${difficulty} level session, and I'll be direct with you: short, vague answers will get pushed back, at every level. We have ${questions.length} questions, target time is about ${Math.round(targetSec / 60)} minutes. First question: ${questions[0]}`;
+    const intro = generalOpeningText(difficulty, Math.round(targetSec / 60), questions.length);
     setTranscript([{ role: "ai", text: intro, ts: Date.now() }]);
     speaker.speak(intro, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function push(role: Msg["role"], text: string) {
+    if (!mountedRef.current) return;
     setTranscript((prev) => [...prev, { role, text, ts: Date.now() }]);
+  }
+
+  function sayNow(text: string) {
+    push("ai", text);
+    speaker.speak(text, mutedRef.current);
   }
 
   function sayLater(text: string) {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
+      if (!mountedRef.current) return;
       push("ai", text);
-      speaker.speak(text, muted);
+      speaker.speak(text, mutedRef.current);
     }, 400);
+  }
+
+  function questionText(idx: number): string {
+    const halfway = idx === Math.floor(questions.length / 2);
+    const prefix = halfway ? "We are about halfway through. " : "";
+    const star = isBehavioural(questions[idx]) ? STAR_SUFFIX : "";
+    return `${prefix}Question ${idx + 1}: ${questions[idx]}${star}`;
   }
 
   async function submitAnswer() {
     const answer = input.trim();
-    if (!answer || qIndex >= questions.length) return;
+    if (!answer) return;
     setInput("");
     push("user", answer);
-    const words = wordCount(answer);
-    statsRef.current.words += words;
+    statsRef.current.words += wordCount(answer);
+
+    if (phase === "done") {
+      sayNow("That is the end of the interview. Click End Interview and read your feedback carefully, it is specific about what to fix.");
+      return;
+    }
+
+    if (phase === "intro") {
+      if (wordCount(answer) < 8 && statsRef.current.introPushes < 1) {
+        statsRef.current.introPushes += 1;
+        sayNow(introReaction(answer, 1) + " Take another go at the introduction.");
+        return;
+      }
+      introRef.current = answer;
+      const api = await postInterview({
+        mode: "intro",
+        difficulty,
+        message: answer,
+        transcript: transcriptRef.current.slice(-6),
+      });
+      if (!mountedRef.current) return;
+      let reaction: string;
+      if (api && api.reply) {
+        setEngine(api.engine);
+        reaction = api.reply;
+      } else {
+        setEngine("local");
+        reaction = wordCount(answer) < 8 ? "Right, let us get into it." : introReaction(answer, 2);
+      }
+      setPhase("main");
+      sayNow(`${reaction} Let us start. ${questionText(0)}`);
+      return;
+    }
+
+    if (phase === "candidate") {
+      if (isReadySignal(answer)) {
+        setPhase("done");
+        sayNow("Understood. Thank you for your time, that wraps us up. Click End Interview to see your feedback: it goes question by question and names exactly what to work on.");
+        return;
+      }
+      statsRef.current.askedEnd = true;
+      const api = await postInterview({
+        mode: "candidate-question",
+        difficulty,
+        message: answer,
+        transcript: transcriptRef.current.slice(-6),
+      });
+      if (!mountedRef.current) return;
+      let ans: string;
+      if (api && api.reply) {
+        setEngine(api.engine);
+        ans = api.reply;
+      } else {
+        setEngine("local");
+        ans = candidateQuestionAnswer(answer);
+      }
+      setPhase("done");
+      sayNow(`${ans} That is a good place to wrap up. Thank you for your time. Click End Interview to see your feedback.`);
+      return;
+    }
+
+    if (qIndex >= questions.length) return;
 
     if (stage === 0) {
       statsRef.current.answers += 1;
@@ -106,15 +217,13 @@ function GeneralRoom() {
         qIndex,
         transcript: transcriptRef.current.slice(-6),
       });
+      if (!mountedRef.current) return;
       if (api && api.reply) {
         setEngine(api.engine);
-        push("ai", api.reply);
-        speaker.speak(api.reply, muted);
+        sayNow(api.reply);
       } else {
         setEngine("local");
-        const fu = generalFollowUp(answer, difficulty, qIndex);
-        push("ai", fu);
-        speaker.speak(fu, muted);
+        sayNow(generalFollowUp(answer, difficulty, qIndex));
       }
       return;
     }
@@ -124,26 +233,23 @@ function GeneralRoom() {
       statsRef.current.followUpsAsked += 1;
       setStage(2);
       const fu2 = generalSecondFollowUp(answer, difficulty);
-      push("ai", fu2);
-      speaker.speak(fu2, muted);
+      sayNow(isBehavioural(questions[qIndex]) ? fu2 + " And use the STAR structure this time: situation, task, action, result." : fu2);
       return;
     }
 
     const next = qIndex + 1;
     if (next >= questions.length) {
       setQIndex(next);
-      sayLater("That was the last question. I have what I need. End the interview and read your feedback carefully, it will be specific.");
+      setPhase("candidate");
+      sayLater("That covers my questions. We have a couple of minutes left. Do you have any questions for me, about the role or the team?");
       return;
     }
     setQIndex(next);
     setStage(0);
-    sayLater(`Question ${next + 1}: ${questions[next]}`);
+    sayLater(questionText(next));
   }
 
-  function endInterview() {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    speaker.stop();
-    voice.stop();
+  function buildRecord(incomplete: boolean): SessionRecord {
     const timeSec = Math.floor((Date.now() - startedAt) / 1000);
     const st = statsRef.current;
     const finalTranscript = transcriptRef.current;
@@ -164,7 +270,7 @@ function GeneralRoom() {
       hintsUsed: 0,
     };
     const scores = computeScores(signals);
-    saveSession({
+    return {
       id: String(Date.now()),
       type: "general",
       difficulty,
@@ -180,20 +286,81 @@ function GeneralRoom() {
       aiAsked: st.followUpsAsked,
       aiAnswered: st.followUpsAnswered,
       thinAnswers: st.thin,
-    });
+      introGiven: !!introRef.current,
+      askedQuestionAtEnd: st.askedEnd,
+      incomplete,
+    };
+  }
+
+  function hasActivity(): boolean {
+    return transcriptRef.current.some((m) => m.role === "user");
+  }
+
+  function savePartial() {
+    if (savedRef.current || !hasActivity()) return;
+    savedRef.current = true;
+    try {
+      saveSession(buildRecord(true));
+    } catch {}
+  }
+  const savePartialRef = useRef(savePartial);
+  useEffect(() => {
+    savePartialRef.current = savePartial;
+  });
+
+  useEffect(() => {
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (savedRef.current || !hasActivity()) return;
+      savePartialRef.current();
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      savePartialRef.current();
+    };
+  }, []);
+
+  function onBackHome(e: React.MouseEvent) {
+    if (savedRef.current || !hasActivity()) return;
+    if (!window.confirm("Leave the interview? Your answers so far will be saved to your history as an incomplete session.")) {
+      e.preventDefault();
+      return;
+    }
+    savePartial();
+  }
+
+  function endInterview() {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    speaker.stop();
+    voice.stop();
+    savedRef.current = true;
+    saveSession(buildRecord(false));
     router.push("/interview/feedback");
   }
 
-  const voiceLabel = speaker.voiceSource === "gemini" ? "Gemini voice" : speaker.voiceSource === "browser" ? "browser voice" : "voice ready";
+  const voiceLabel = speaker.voiceSource === "gemini" ? "Gemini voice" : speaker.voiceSource === "browser" ? "browser voice" : "connecting";
+  const engineLabel = engine === "gemini" ? "Gemini" : engine === "local" ? "local mode" : "connecting";
+  const phaseIdx = PHASE_INDEX[phase];
+  const statusLine =
+    phase === "main"
+      ? `${difficulty} level · Question ${Math.min(qIndex + 1, questions.length)} of ${questions.length}`
+      : `${difficulty} level · ${PHASE_LABELS[phase]}`;
+  const inputPlaceholder: Record<Phase, string> = {
+    intro: "Introduce yourself...",
+    main: "Type your answer, or use the mic...",
+    candidate: "Ask Alex a question, or say none...",
+    done: "Interview complete",
+  };
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-6xl px-4 py-6">
+    <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <Link href="/" className="text-xs text-neutral-500 hover:text-neutral-300">Back to home</Link>
-          <div className="mt-1 font-semibold">Live AI Interview</div>
+          <Link href="/" onClick={onBackHome} className="text-xs text-neutral-500 hover:text-neutral-300">Back to home</Link>
+          <div className="mt-1 font-semibold">Live AI Interview - with Alex</div>
           <div className="text-xs text-neutral-500">
-            {difficulty} level - Question {Math.min(qIndex + 1, questions.length)} of {questions.length} - {Math.floor(elapsed / 60)}:{String(elapsed % 60).padStart(2, "0")} of about {Math.round(targetSec / 60)} min target - AI: {engine === "gemini" ? "Gemini" : "local mode"} - AI voice: {voiceLabel}
+            {`${statusLine} · ${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, "0")} of about ${Math.round(targetSec / 60)} min target · AI: ${engineLabel} · AI voice: ${voiceLabel}`}
           </div>
           {speaker.speaking && (
             <div className="mt-1 flex items-center gap-1.5 text-[11px] text-emerald-400" role="status">
@@ -201,6 +368,14 @@ function GeneralRoom() {
               Interviewer is speaking
             </div>
           )}
+          <div className="mt-2 flex flex-wrap gap-x-1.5 gap-y-1 text-[11px] text-neutral-600" aria-label="Interview progress">
+            {PHASE_STEPS.map((s, i) => (
+              <span key={s} className={i === phaseIdx ? "font-semibold text-neutral-100" : i < phaseIdx ? "text-neutral-400" : ""}>
+                {s}
+                {i < PHASE_STEPS.length - 1 ? "  ·" : ""}
+              </span>
+            ))}
+          </div>
         </div>
         <div className="flex gap-2">
           <button type="button" onClick={() => { setMuted(!muted); if (!muted) speaker.stop(); }} aria-label="Toggle AI voice" className="rounded-lg border border-neutral-700 px-3 py-2 text-sm">{muted ? "Unmute AI voice" : "Mute AI voice"}</button>
@@ -208,30 +383,37 @@ function GeneralRoom() {
         </div>
       </header>
 
-      <div className="mt-6 grid gap-5 lg:grid-cols-[320px_1fr]">
+      <div className="mt-6 grid flex-1 gap-5 lg:grid-cols-[320px_1fr]">
         <div className="space-y-4">
           <Camera />
           <div className="rounded-xl border border-neutral-800 p-4 text-xs leading-5 text-neutral-400">
-            Speak your answer with the mic button, or type it. Expect one follow-up per question, and a second one if your follow-up answer is still thin. Thin answers are scored down.
-            {qIndex >= questions.length && <div className="mt-2 text-neutral-200">Interview complete. Click End Interview to see your feedback.</div>}
+            Speak your answer with the mic button, or type it. After the opening and your introduction, expect one follow-up per question, and a second one if your follow-up answer is still thin. Thin answers are scored down. The interview ends with your questions for Alex.
+            {phase === "done" && <div className="mt-2 text-neutral-200">Interview complete. Click End Interview to see your feedback.</div>}
           </div>
         </div>
 
-        <section className="flex min-h-[540px] flex-col rounded-2xl border border-neutral-800">
-          <div className="flex-1 space-y-3 overflow-y-auto p-5" aria-live="polite">
+        <section className="flex min-h-[480px] flex-col rounded-2xl border border-neutral-800 lg:min-h-0">
+          <div ref={transcriptBoxRef} className="flex-1 space-y-3 overflow-y-auto p-5" aria-live="polite">
             {transcript.map((m, i) => (
-              <div key={i} className={`max-w-[85%] rounded-xl px-4 py-3 text-sm leading-6 ${m.role === "ai" ? "bg-neutral-900 text-neutral-100" : "ml-auto bg-white text-black"}`}>
-                <div className="mb-1 text-[11px] font-medium opacity-60">{m.role === "ai" ? "AI Interviewer" : "You"}</div>
+              <div key={i} className={`max-w-[85%] break-words rounded-xl px-4 py-3 text-sm leading-6 ${m.role === "ai" ? "bg-neutral-900 text-neutral-100" : "ml-auto bg-white text-black"}`}>
+                <div className="mb-1 text-[11px] font-medium opacity-60">{m.role === "ai" ? "Alex (Interviewer)" : "You"}</div>
                 {m.text}
               </div>
             ))}
           </div>
           <div className="border-t border-neutral-800 p-4">
             {!voice.supported && <p className="mb-2 text-xs text-amber-400">Voice input is not supported in this browser. Type your answer instead. Chrome works best.</p>}
+            {voice.error && <p className="mb-2 text-xs text-amber-400" role="alert">{voice.error}</p>}
+            {voice.listening && (
+              <p className="mb-2 flex items-center gap-1.5 text-xs text-red-400" role="status">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
+                Listening, speak now
+              </p>
+            )}
             <div className="flex gap-2">
               <label htmlFor="general-answer" className="sr-only">Your answer</label>
-              <input id="general-answer" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submitAnswer()} placeholder="Type your answer, or use the mic..." className="min-w-0 flex-1 rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-3 text-sm outline-none" />
-              <button type="button" onClick={() => (voice.listening ? voice.stop() : voice.start())} disabled={!voice.supported} aria-label="Toggle microphone input" className="rounded-lg border border-neutral-700 px-4 text-sm disabled:opacity-40">{voice.listening ? "Listening... tap to stop" : "Mic"}</button>
+              <input id="general-answer" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submitAnswer()} placeholder={inputPlaceholder[phase]} className="min-w-0 flex-1 rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-3 text-sm outline-none" />
+              <button type="button" onClick={() => (voice.listening ? voice.stop() : voice.start())} disabled={!voice.supported} aria-label="Toggle microphone input" className={`rounded-lg border px-4 text-sm disabled:opacity-40 ${voice.listening ? "border-red-500 bg-red-950/50 text-red-300" : "border-neutral-700"}`}>{voice.listening ? "Listening..." : "Mic"}</button>
               <button type="button" onClick={submitAnswer} className="rounded-lg bg-white px-5 text-sm font-semibold text-black">Send</button>
             </div>
           </div>

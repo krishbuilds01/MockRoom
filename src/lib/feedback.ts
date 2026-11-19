@@ -15,6 +15,7 @@ export interface PhaseNote {
   did: string;
   weak: string;
   strong: string;
+  flag: boolean;
 }
 
 function hrefFor(p: Problem): string {
@@ -33,9 +34,12 @@ export function weakAreas(rec: SessionRecord, problem?: Problem): string[] {
     if ((rec.hintsUsed ?? 0) > 0) out.push(`Independence on ${problem ? problem.topic : "this topic"}: you needed ${rec.hintsUsed} hint${(rec.hintsUsed ?? 0) > 1 ? "s" : ""} to get unstuck.`);
     if (!rec.approachText || wordCount(rec.approachText) < 8) out.push("Problem decomposition: your approach explanation was too thin to plan the code from.");
     if ((rec.aiAsked ?? 0) - (rec.aiAnswered ?? 0) >= 2) out.push("Communication under pressure: several interviewer questions went unanswered.");
+    if (rec.askedClarifying === false) out.push("Clarifying questions: you started without confirming a single detail of the problem. Real interviewers read that as rushing, and it is where wrong assumptions come from.");
+    if (rec.dryRunDone === false) out.push("Dry run habit: you never traced your code out loud on an example. A two minute dry run catches bugs that tests only show later.");
     if (rec.runs === 0) out.push("Testing habit: you never ran your code during the session.");
     if (rec.targetSec && rec.timeSec > rec.targetSec * 1.25 && ratio < 1) out.push("Speed: you went well over the target time without a full pass. Practice this pattern timed.");
   } else {
+    if (rec.askedQuestionAtEnd === false) out.push("Interview etiquette: you had no questions for the interviewer at the end. One good question about the team or the role is part of how real interviews close.");
     if ((rec.thinAnswers ?? 0) > 0) out.push(`Answer depth: ${rec.thinAnswers} answer${(rec.thinAnswers ?? 0) > 1 ? "s were" : " was"} too thin. Use example, steps, reason, in that order.`);
     if (rec.scores.complexity <= 4) out.push("Technical depth: answers stayed at definition level. Add trade-offs, failure cases, and numbers.");
     if (rec.scores.communication <= 4) out.push("Communication: structure answers instead of streaming thoughts. Claim, example, trade-off, result.");
@@ -115,33 +119,72 @@ export function recommendNext(rec: SessionRecord, problem?: Problem): NextStep[]
 export function phaseNotes(rec: SessionRecord, problem?: Problem): PhaseNote[] {
   const notes: PhaseNote[] = [];
   if (rec.type === "technical" && problem) {
+    if (rec.introGiven !== undefined || rec.askedClarifying !== undefined) {
+      notes.push({
+        phase: "Opening and clarifying",
+        did: `${rec.introGiven ? "You introduced yourself at the start." : "No introduction was recorded."} ${rec.askedClarifying ? "You asked clarifying questions before coding." : "You asked no clarifying questions."}`,
+        weak:
+          rec.askedClarifying === false
+            ? "Starting without one clarifying question is the most common way candidates solve the wrong problem. Confirm inputs, ranges, and one edge case, every time."
+            : "Clarifying is a scored habit. Keep it short and specific: inputs, ranges, and what to return.",
+        strong: "A strong opening is 3 to 4 lines on your background, then two or three precise questions about the problem before any approach talk.",
+        flag: rec.askedClarifying === false,
+      });
+    }
     const approachWords = rec.approachText ? wordCount(rec.approachText) : 0;
+    const noCodeNoPlan = !rec.approachText && rec.codeChanged === false;
     notes.push({
       phase: "Approach",
-      did: rec.approachText ? `You said: "${rec.approachText.slice(0, 220)}"` : "No approach was recorded.",
+      did: rec.approachText
+        ? `You said: "${rec.approachText.slice(0, 220)}"`
+        : noCodeNoPlan
+          ? "The session ended before any approach or code. The editor still holds the starter code."
+          : "No approach was recorded.",
       weak: !rec.approachText
-        ? "You coded without a stated plan. Interviewers cannot score what they cannot hear."
+        ? noCodeNoPlan
+          ? "Nothing was attempted, so there is nothing to score here. Next time, state even a rough plan out loud: it earns marks and structures the coding."
+          : "You coded without a stated plan. Interviewers cannot score what they cannot hear."
         : approachWords < 8
           ? "Too thin. A judgeable approach names the data structure, the pass, and the return value."
           : "Check it against the intended pattern below: if your plan differs, you should be able to say why.",
       strong: `A strong approach here sounds like: "${problem.pattern}" Then state ${problem.complexity.replace("Expected: ", "").toLowerCase()} up front.`,
+      flag: !rec.approachText || approachWords < 8,
     });
     const ratio = rec.totalTests > 0 ? `${rec.testsPassed} of ${rec.totalTests}` : "no";
     notes.push({
       phase: "Coding and testing",
-      did: `You ran your code ${rec.runs} time${rec.runs === 1 ? "" : "s"} and passed ${ratio} tests.${(rec.hintsUsed ?? 0) > 0 ? ` You used ${rec.hintsUsed} hint${(rec.hintsUsed ?? 0) > 1 ? "s" : ""}.` : ""}`,
+      did:
+        rec.codeChanged === false
+          ? "No code was written in this session. The editor still holds the untouched starter code, and nothing was run."
+          : `You ran your code ${rec.runs} time${rec.runs === 1 ? "" : "s"} and passed ${ratio} tests.${(rec.hintsUsed ?? 0) > 0 ? ` You used ${rec.hintsUsed} hint${(rec.hintsUsed ?? 0) > 1 ? "s" : ""}.` : ""}`,
       weak:
-        rec.testsPassed < rec.totalTests
-          ? "Passing the examples is not passing the problem. The edge cases below are where the hidden tests live."
-          : rec.runs === 0
-            ? "You passed without running, which will not survive a harder problem. Run as you go."
-            : "Solid testing habit. Keep tracing one failing style case by hand whenever a run surprises you.",
+        rec.codeChanged === false
+          ? "An interview with no code written scores at the floor on coding, whatever the reason. Start from the smallest example next time."
+          : rec.testsPassed < rec.totalTests
+            ? "Passing the examples is not passing the problem. The edge cases below are where the hidden tests live."
+            : rec.runs === 0
+              ? "You passed without running, which will not survive a harder problem. Run as you go."
+              : "Solid testing habit. Keep tracing one failing style case by hand whenever a run surprises you.",
       strong: `Key points for ${problem.title}: ${problem.keyPoints[0]} ${problem.keyPoints[1] || ""}`.trim(),
+      flag: rec.codeChanged === false || rec.testsPassed < rec.totalTests,
     });
+    if (rec.dryRunDone !== undefined) {
+      notes.push({
+        phase: "Dry run",
+        did: rec.dryRunDone
+          ? "After submitting, you dry ran your code out loud on an example input."
+          : "You never completed a dry run of your code out loud.",
+        weak: rec.dryRunDone
+          ? "Keep the habit: name every variable value, step by step, and finish exactly at the return value."
+          : "Skipping the dry run means your first trace of the code happens in the interviewer's head, not yours. Always trace one example before you finish.",
+        strong: `A clean dry run for ${problem.title} walks the first example input to the expected output ${JSON.stringify(problem.tests[0].expected)} with no skipped steps.`,
+        flag: !rec.dryRunDone,
+      });
+    }
     notes.push({
       phase: "Complexity and communication",
       did: rec.complexityAnswer
-        ? `You answered: "${rec.complexityAnswer.slice(0, 160)}". Interviewer questions answered: ${rec.aiAnswered ?? 0} of ${rec.aiAsked ?? 0}.`
+        ? `You answered: "${rec.complexityAnswer.slice(0, 160)}". Interviewer questions answered: ${rec.aiAnswered ?? 0} of ${rec.aiAsked ?? 0}.${rec.askedQuestionAtEnd ? " You asked a question at the end." : ""}`
         : `You never answered the complexity question. Interviewer questions answered: ${rec.aiAnswered ?? 0} of ${rec.aiAsked ?? 0}.`,
       weak:
         rec.complexityCorrect === false
@@ -150,33 +193,44 @@ export function phaseNotes(rec: SessionRecord, problem?: Problem): PhaseNote[] {
             ? "Skipping the complexity round leaves free marks on the table."
             : "Complexity was right. Next level: justify it from the code structure, not from memory of the problem.",
       strong: `Expected: ${problem.complexity}`,
+      flag: rec.complexityCorrect !== true,
     });
     return notes;
   }
   const pairs: PhaseNote[] = [];
   const msgs = rec.transcript || [];
   let q = 0;
+  let cursor = 0;
   for (let i = 0; i < msgs.length; i++) {
-    if (msgs[i].role === "ai") {
-      const nextUser = msgs.slice(i + 1).find((m) => m.role === "user");
-      const isQuestionLike = msgs[i].text.includes("?") || q === 0;
-      if (!isQuestionLike) continue;
-      q += 1;
-      if (q > 5) break;
-      const words = nextUser ? wordCount(nextUser.text) : 0;
-      pairs.push({
-        phase: `Question ${q}`,
-        did: nextUser ? `You answered in ${words} words: "${nextUser.text.slice(0, 180)}"` : "No answer recorded for this question.",
-        weak: !nextUser
-          ? "Unanswered questions end the conversation on that topic. Always attempt a structured partial answer."
-          : words < 20
-            ? "Too thin. This answer would not survive a follow-up in a real interview."
-            : words < 45
-              ? "Some substance, but it needs a trade-off or a failure case to sound senior."
-              : "Good depth. This is the length and specificity interviewers reward.",
-        strong: "A strong answer here covers: a direct claim, one concrete example, the trade-off you accepted, and the result or number that proves it.",
-      });
+    if (msgs[i].role !== "ai") continue;
+    const text = msgs[i].text;
+    if (text.includes("introduce yourself") || text.includes("I am Alex") || text.includes("Do you have any questions for me")) continue;
+    const isQuestionLike = text.includes("?") || q === 0;
+    if (!isQuestionLike) continue;
+    q += 1;
+    if (q > 5) break;
+    let nextUser: (typeof msgs)[number] | undefined;
+    for (let j = Math.max(cursor, i + 1); j < msgs.length; j++) {
+      if (msgs[j].role === "user") {
+        nextUser = msgs[j];
+        cursor = j + 1;
+        break;
+      }
     }
+    const words = nextUser ? wordCount(nextUser.text) : 0;
+    pairs.push({
+      phase: `Question ${q}`,
+      did: nextUser ? `You answered in ${words} words: "${nextUser.text.slice(0, 180)}"` : "No answer recorded for this question.",
+      weak: !nextUser
+        ? "Unanswered questions end the conversation on that topic. Always attempt a structured partial answer."
+        : words < 20
+          ? "Too thin. This answer would not survive a follow-up in a real interview."
+          : words < 45
+            ? "Some substance, but it needs a trade-off or a failure case to sound senior."
+            : "Good depth. This is the length and specificity interviewers reward.",
+      strong: "A strong answer here covers: a direct claim, one concrete example, the trade-off you accepted, and the result or number that proves it.",
+      flag: !nextUser || words < 45,
+    });
   }
   return pairs.length ? pairs : notes;
 }

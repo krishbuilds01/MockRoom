@@ -21,6 +21,8 @@ function validRecord(raw: string | null): SessionRecord | null {
     const parsed = JSON.parse(raw) as SessionRecord;
     if (!parsed || typeof parsed !== "object" || !parsed.scores || typeof parsed.scores.problemSolving !== "number") return null;
     if (!Array.isArray(parsed.transcript)) parsed.transcript = [];
+    if (!Array.isArray(parsed.scores.strengths)) parsed.scores.strengths = [];
+    if (!Array.isArray(parsed.scores.improvements)) parsed.scores.improvements = [];
     return parsed;
   } catch {
     return null;
@@ -79,8 +81,13 @@ export default function FeedbackPage() {
       <Link href="/" className="text-xs text-neutral-500 hover:text-neutral-300">Back to home</Link>
       <h1 className="mt-2 text-3xl font-bold">Interview Feedback</h1>
       <p className="mt-2 text-sm text-neutral-400">
-        {rec.type === "technical" ? rec.problemTitle : "Live AI Interview"} - {rec.difficulty} - {new Date(rec.date).toLocaleString()}
+        {`${rec.type === "technical" ? rec.problemTitle || "Technical interview" : "Live AI Interview"} · ${rec.difficulty} · ${new Date(rec.date).toLocaleString()}`}
       </p>
+      {rec.incomplete && (
+        <p className="mt-2 rounded-lg border border-amber-800 bg-amber-950/30 px-3 py-2 text-xs leading-5 text-amber-200">
+          This session was left before it finished, so it was saved as incomplete. Scores reflect only what actually happened in the room.
+        </p>
+      )}
       <p className="mt-1 text-xs text-neutral-500">{diffNote}</p>
       <p className="mt-1 text-xs text-neutral-500">{timeNote}</p>
 
@@ -99,7 +106,7 @@ export default function FeedbackPage() {
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Score label="Problem Solving" value={rec.scores.problemSolving} />
-        <Score label="Coding" value={rec.scores.coding} />
+        <Score label={rec.type === "technical" ? "Coding" : "Technical Depth"} value={rec.scores.coding} />
         <Score label="Communication" value={rec.scores.communication} />
         <Score label="Complexity Analysis" value={rec.scores.complexity} />
       </div>
@@ -123,7 +130,7 @@ export default function FeedbackPage() {
               <div key={n.phase} className="border-l-2 border-neutral-800 pl-4">
                 <div className="text-sm font-semibold">{n.phase}</div>
                 <p className="mt-1 break-words text-sm leading-6 text-neutral-300">{n.did}</p>
-                <p className="mt-1 text-sm leading-6 text-amber-200/90">Watch out: {n.weak}</p>
+                <p className={`mt-1 text-sm leading-6 ${n.flag ? "text-amber-200/90" : "text-neutral-300"}`}>{n.flag ? "Watch out: " : "Note: "}{n.weak}</p>
                 <p className="mt-1 text-sm leading-6 text-neutral-400">Strong version: {n.strong}</p>
               </div>
             ))}

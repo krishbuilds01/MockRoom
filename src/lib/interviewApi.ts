@@ -5,11 +5,14 @@ export interface InterviewApiResponse {
 }
 
 export async function postInterview(body: Record<string, unknown>): Promise<InterviewApiResponse | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 35000);
   try {
     const res = await fetch("/api/interview", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
+      signal: controller.signal,
     });
     if (!res.ok) return null;
     const data = await res.json().catch(() => null);
@@ -17,5 +20,7 @@ export async function postInterview(body: Record<string, unknown>): Promise<Inte
     return data as InterviewApiResponse;
   } catch {
     return null;
+  } finally {
+    clearTimeout(timer);
   }
 }
