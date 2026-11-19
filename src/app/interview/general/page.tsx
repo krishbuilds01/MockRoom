@@ -27,6 +27,16 @@ import {
 import { targetSecFor } from "@/lib/problems";
 import { companyContext, companyQuestions, getCompany } from "@/lib/companies";
 import { buildResumeQuestionsLocal, RESUME_QUESTIONS_KEY, RESUME_STORAGE_KEY, type ResumeQuestion } from "@/lib/resume";
+import {
+  clearActiveSession,
+  configFingerprint,
+  consumeFreshStart,
+  markActiveIncompleteSaved,
+  planMount,
+  readActiveSession,
+  writeActiveSession,
+  type StoredActiveSession,
+} from "@/lib/activeSession";
 import { postInterview } from "@/lib/interviewApi";
 import { sanitizeAiText } from "@/lib/sanitize";
 import { useVoice } from "@/lib/useVoice";
@@ -71,7 +81,7 @@ function GeneralRoom() {
   const router = useRouter();
   const company = getCompany(params.get("company"));
   const resumeMode = params.get("resume") === "1";
-  const [qset] = useState<ResumeQuestion[]>(() => {
+  function computeQset(): ResumeQuestion[] {
     const fallback = () =>
       companyQuestions(company.id, difficulty).map((q) => ({ question: q, target: company.id !== "any" ? company.name : "General" }));
     if (!resumeMode) return fallback();
@@ -90,7 +100,8 @@ function GeneralRoom() {
       if (saved && saved.trim().length >= 100) return buildResumeQuestionsLocal(saved);
     } catch {}
     return fallback();
-  });
+  }
+  const [qset, setQset] = useState<ResumeQuestion[]>(computeQset);
   const questions = qset.map((q) => q.question);
   const targetSec = targetSecFor("general", difficulty);
   const [transcript, setTranscript] = useState<Msg[]>([]);
@@ -102,16 +113,23 @@ function GeneralRoom() {
   const [engine, setEngine] = useState<"gemini" | "local" | null>(null);
   const [waiting, setWaiting] = useState(false);
   const [liveOn, setLiveOn] = useState(false);
-  const [sessionId] = useState(() => String(Date.now()));
+  const [sessionId, setSessionId] = useState(() => String(Date.now()));
+  const sessionIdRef = useRef(sessionId);
   const [recorder] = useState(() => new SessionRecorder());
   const [canRecord] = useState(recorderSupported);
   const [recordOn, setRecordOn] = useState(false);
   const [hasStream, setHasStream] = useState(false);
   const streamRef = useRef<MediaStream | null>(null);
   const pendingBlobRef = useRef<Blob | null>(null);
-  const [startedAt] = useState(() => Date.now());
+  const [startedAt, setStartedAt] = useState(() => Date.now());
   const [elapsed, setElapsed] = useState(0);
   const startedRef = useRef(false);
+  const startedFpRef = useRef<string | null>(null);
+  const deadRef = useRef(false);
+  const deadAtRef = useRef(0);
+  const deadUrlRef = useRef("");
+  const fingerprint = configFingerprint({ room: "general", difficulty, company: company.id, resume: resumeMode });
+  const sessionConfigRef = useRef({ difficulty, companyId: company.id, companyName: company.id !== "any" ? company.name : undefined, resume: resumeMode, targetSec });
   const statsRef = useRef({ answers: 0, words: 0, thin: 0, followUpsAsked: 0, followUpsAnswered: 0, introPushes: 0, askedEnd: false });
   const introRef = useRef("");
   const qaRef = useRef<{ question: string; answer?: string; target?: string }[]>([]);
@@ -221,6 +239,7 @@ function GeneralRoom() {
 
   useEffect(() => {
     mountedRef.current = true;
+    deadRef.current = false;
     return () => {
       mountedRef.current = false;
     };
@@ -255,10 +274,24 @@ function GeneralRoom() {
     }
   }
 
-  useEffect(() => {
+  function startSession(qs: ResumeQuestion[]) {
     if (startedRef.current) return;
     startedRef.current = true;
-    const base = generalOpeningText(difficulty, Math.round(targetSec / 60), questions.length);
+    startedFpRef.current = fingerprint;
+    sessionConfigRef.current = {
+      difficulty,
+      companyId: company.id,
+      companyName: company.id !== "any" ? company.name : undefined,
+      resume: resumeMode,
+      targetSec,
+    };
+    writeActiveSession("general", {
+      fingerprint,
+      sessionId: sessionIdRef.current,
+      hasContent: false,
+      incompleteSaved: false,
+    });
+    const base = generalOpeningText(difficulty, Math.round(targetSec / 60), qs.length);
     if (resumeMode) {
       sayNow(
         base.replace(
@@ -269,8 +302,82 @@ function GeneralRoom() {
       return;
     }
     sayNow(company.openingLine ? base.replace("First, introduce yourself", `${company.openingLine} First, introduce yourself`) : base);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }
+
+  function resetSessionState() {
+    speaker.stop();
+    voice.stop();
+    live.close();
+    if (recorder.active) void recorder.stop();
+    pendingBlobRef.current = null;
+    setRecordOn(false);
+    setLiveOn(false);
+    liveOnRef.current = false;
+    liveIntroDoneRef.current = false;
+    setTranscript([]);
+    transcriptRef.current = [];
+    setInput("");
+    setPhase("intro");
+    phaseRef.current = "intro";
+    setQIndex(0);
+    setStage(0);
+    setEngine(null);
+    setWaiting(false);
+    const nid = String(Date.now());
+    sessionIdRef.current = nid;
+    setSessionId(nid);
+    setStartedAt(Date.now());
+    setElapsed(0);
+    statsRef.current = { answers: 0, words: 0, thin: 0, followUpsAsked: 0, followUpsAnswered: 0, introPushes: 0, askedEnd: false };
+    introRef.current = "";
+    qaRef.current = [];
+    savedRef.current = false;
+    endedRef.current = false;
+    pendingRef.current = false;
+    seqRef.current += 1;
+    startedRef.current = false;
+    startedFpRef.current = null;
+  }
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (deadRef.current) {
+      const revived = consumeFreshStart("general", deadAtRef.current) || window.location.search !== deadUrlRef.current;
+      if (!revived) return;
+      deadRef.current = false;
+    }
+    if (startedRef.current && startedFpRef.current === fingerprint) return;
+    if (startedRef.current && startedFpRef.current !== fingerprint) {
+      const current: StoredActiveSession = {
+        fingerprint: startedFpRef.current as string,
+        sessionId: sessionIdRef.current,
+        hasContent: transcriptRef.current.length > 0,
+        incompleteSaved: savedRef.current,
+      };
+      if (planMount(current, fingerprint).action === "save-stale-and-start" && !endedRef.current) {
+        savePartial();
+      }
+      resetSessionState();
+    } else if (!startedRef.current) {
+      const stored = readActiveSession("general");
+      if (stored && stored.sessionId !== sessionIdRef.current && planMount(stored, fingerprint).action !== "restore") {
+        clearActiveSession("general");
+      }
+    }
+    const qs = computeQset();
+    setQset(qs);
+    startSession(qs);
+  });
+
+  useEffect(() => {
+    if (!startedRef.current) return;
+    writeActiveSession("general", {
+      fingerprint,
+      sessionId: sessionIdRef.current,
+      hasContent: transcript.length > 0,
+      incompleteSaved: savedRef.current,
+    });
+  }, [transcript, fingerprint]);
 
   function questionText(idx: number): string {
     const halfway = idx === Math.floor(questions.length / 2);
@@ -487,15 +594,15 @@ function GeneralRoom() {
     };
     const scores = computeScores(signals);
     return {
-      id: sessionId,
+      id: sessionIdRef.current,
       type: "general",
-      difficulty,
-      companyId: company.id,
-      companyName: company.id !== "any" ? company.name : undefined,
-      resumeInterview: resumeMode || undefined,
+      difficulty: sessionConfigRef.current.difficulty,
+      companyId: sessionConfigRef.current.companyId,
+      companyName: sessionConfigRef.current.companyName,
+      resumeInterview: sessionConfigRef.current.resume || undefined,
       date: new Date().toISOString(),
       timeSec,
-      targetSec,
+      targetSec: sessionConfigRef.current.targetSec,
       testsPassed: 0,
       totalTests: 0,
       runs: 0,
@@ -532,7 +639,7 @@ function GeneralRoom() {
     let blob = pendingBlobRef.current;
     if (recorder.active) blob = (await recorder.stop()) || blob;
     pendingBlobRef.current = null;
-    if (blob) await saveRecording(sessionId, blob);
+    if (blob) await saveRecording(sessionIdRef.current, blob);
   }
 
   function savePartial() {
@@ -543,6 +650,7 @@ function GeneralRoom() {
     void finalizeRecording();
     try {
       saveSession(buildRecord(true));
+      markActiveIncompleteSaved("general", sessionIdRef.current);
     } catch {}
   }
   const savePartialRef = useRef(savePartial);
@@ -573,6 +681,11 @@ function GeneralRoom() {
   function leaveAndSave() {
     setLeaveOpen(false);
     savePartial();
+    clearActiveSession("general");
+    deadRef.current = true;
+    deadAtRef.current = Date.now();
+    deadUrlRef.current = window.location.search;
+    resetSessionState();
     router.push("/");
   }
 
@@ -584,6 +697,11 @@ function GeneralRoom() {
     savedRef.current = true;
     await finalizeRecording();
     saveSession(buildRecord(false));
+    clearActiveSession("general");
+    deadRef.current = true;
+    deadAtRef.current = Date.now();
+    deadUrlRef.current = window.location.search;
+    resetSessionState();
     router.push("/interview/feedback");
   }
 

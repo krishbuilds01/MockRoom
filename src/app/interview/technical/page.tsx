@@ -9,7 +9,17 @@ import ConfirmModal from "@/components/ConfirmModal";
 import SpeakingWave from "@/components/SpeakingWave";
 import { useMicOpenSound } from "@/lib/useMicOpenSound";
 import { recorderSupported, saveRecording, SessionRecorder } from "@/lib/recording";
-import { getProblemById, LANGS, pickProblem, targetSecFor, type Lang } from "@/lib/problems";
+import { getProblemById, LANGS, pickProblem, targetSecFor, type Lang, type Problem } from "@/lib/problems";
+import {
+  clearActiveSession,
+  configFingerprint,
+  consumeFreshStart,
+  markActiveIncompleteSaved,
+  planMount,
+  readActiveSession,
+  writeActiveSession,
+  type StoredActiveSession,
+} from "@/lib/activeSession";
 import { runCode, type RunOutput } from "@/lib/runner";
 import {
   aOrAn,
@@ -87,7 +97,10 @@ function TechnicalRoom() {
   const company = getCompany(params.get("company"));
   const topic = params.get("topic") || "HashMap";
   const router = useRouter();
-  const [problem] = useState(() => getProblemById(params.get("problem")) || pickProblem(topic, difficulty));
+  function computeProblem(): Problem {
+    return getProblemById(params.get("problem")) || pickProblem(topic, difficulty);
+  }
+  const [problem, setProblem] = useState<Problem>(computeProblem);
   const targetSec = targetSecFor("technical", difficulty, problem);
   const [lang, setLang] = useState<Lang>("javascript");
   const [codeByLang, setCodeByLang] = useState<Record<Lang, string>>(() => ({
@@ -108,14 +121,34 @@ function TechnicalRoom() {
   const [engine, setEngine] = useState<"gemini" | "local" | null>(null);
   const [waiting, setWaiting] = useState(false);
   const [elapsed, setElapsed] = useState(0);
-  const [sessionId] = useState(() => String(Date.now()));
+  const [sessionId, setSessionId] = useState(() => String(Date.now()));
+  const sessionIdRef = useRef(sessionId);
   const [recorder] = useState(() => new SessionRecorder());
   const [canRecord] = useState(recorderSupported);
   const [recordOn, setRecordOn] = useState(false);
   const [hasStream, setHasStream] = useState(false);
   const streamRef = useRef<MediaStream | null>(null);
   const pendingBlobRef = useRef<Blob | null>(null);
-  const [startedAt] = useState(() => Date.now());
+  const [startedAt, setStartedAt] = useState(() => Date.now());
+  const startedFpRef = useRef<string | null>(null);
+  const deadRef = useRef(false);
+  const deadAtRef = useRef(0);
+  const deadUrlRef = useRef("");
+  const urlProblem = computeProblem();
+  const fingerprint = configFingerprint({
+    room: "technical",
+    difficulty,
+    topic,
+    company: company.id,
+    problemId: urlProblem.id,
+  });
+  const sessionConfigRef = useRef({
+    difficulty,
+    topic,
+    companyId: company.id,
+    companyName: company.id !== "any" ? company.name : undefined,
+    targetSec: targetSecFor("technical", difficulty, urlProblem),
+  });
 
   const codeRef = useRef(code);
   const langRef = useRef(lang);
@@ -214,6 +247,7 @@ function TechnicalRoom() {
 
   useEffect(() => {
     mountedRef.current = true;
+    deadRef.current = false;
     return () => {
       mountedRef.current = false;
     };
@@ -272,16 +306,129 @@ function TechnicalRoom() {
     }
   }
 
-  useEffect(() => {
+  function startSession(prob: Problem) {
     if (startedRef.current) return;
     startedRef.current = true;
+    startedFpRef.current = fingerprint;
+    sessionConfigRef.current = {
+      difficulty,
+      topic,
+      companyId: company.id,
+      companyName: company.id !== "any" ? company.name : undefined,
+      targetSec: targetSecFor("technical", difficulty, prob),
+    };
+    writeActiveSession("technical", {
+      fingerprint,
+      sessionId: sessionIdRef.current,
+      hasContent: false,
+      incompleteSaved: false,
+    });
     lastAiRef.current = Date.now();
     lastChangeRef.current = Date.now();
     lastProgressRef.current = Date.now();
-    const openingBase = techOpeningText(problem, difficulty, Math.round(targetSec / 60));
+    const openingBase = techOpeningText(prob, difficulty, Math.round(sessionConfigRef.current.targetSec / 60));
     commitAi(company.openingLine ? openingBase.replace("Before we start, introduce yourself", `${company.openingLine} Before we start, introduce yourself`) : openingBase, true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }
+
+  function resetSessionState(prob: Problem) {
+    speaker.stop();
+    voice.stop();
+    if (recorder.active) void recorder.stop();
+    pendingBlobRef.current = null;
+    setRecordOn(false);
+    setProblem(prob);
+    setLang("javascript");
+    langRef.current = "javascript";
+    const starters = { javascript: prob.starter.javascript, python: prob.starter.python, java: prob.starter.java };
+    setCodeByLang(starters);
+    codeRef.current = prob.starter.javascript;
+    snapshotRef.current = prob.starter.javascript;
+    setPhase("opening");
+    phaseRef.current = "opening";
+    setTranscript([]);
+    transcriptRef.current = [];
+    setInput("");
+    setRunOut(null);
+    runOutRef.current = null;
+    submitOutRef.current = null;
+    setLastKind(null);
+    setRunError("");
+    setEngine(null);
+    setWaiting(false);
+    setRunning(false);
+    const nid = String(Date.now());
+    sessionIdRef.current = nid;
+    setSessionId(nid);
+    setStartedAt(Date.now());
+    setElapsed(0);
+    runsRef.current = 0;
+    statsRef.current = {
+      asked: 0,
+      answered: 0,
+      hints: 0,
+      approachAttempts: 0,
+      introPushes: 0,
+      clarifyingCount: 0,
+      dryRunPushes: 0,
+      dryRunDone: false,
+      askedEnd: false,
+    };
+    introRef.current = "";
+    approachRef.current = "";
+    complexityRef.current = { answer: "", correct: null };
+    statedComplexityRef.current = null;
+    lastAiRef.current = Date.now();
+    lastChangeRef.current = Date.now();
+    lastProgressRef.current = Date.now();
+    savedRef.current = false;
+    endedRef.current = false;
+    pendingRef.current = false;
+    seqRef.current += 1;
+    pendingQRef.current = false;
+    askedQuestionsRef.current = new Set();
+    startedRef.current = false;
+    startedFpRef.current = null;
+  }
+
+  useEffect(() => {
+    if (deadRef.current) {
+      const revived = consumeFreshStart("technical", deadAtRef.current) || window.location.search !== deadUrlRef.current;
+      if (!revived) return;
+      deadRef.current = false;
+    }
+    if (startedRef.current && startedFpRef.current === fingerprint) return;
+    const prob = computeProblem();
+    if (startedRef.current && startedFpRef.current !== fingerprint) {
+      const current: StoredActiveSession = {
+        fingerprint: startedFpRef.current as string,
+        sessionId: sessionIdRef.current,
+        hasContent: transcriptRef.current.length > 0 || codeChangedNow(),
+        incompleteSaved: savedRef.current,
+      };
+      if (planMount(current, fingerprint).action === "save-stale-and-start" && !endedRef.current) {
+        savePartial();
+      }
+      resetSessionState(prob);
+    } else if (!startedRef.current) {
+      const stored = readActiveSession("technical");
+      if (stored && stored.sessionId !== sessionIdRef.current && planMount(stored, fingerprint).action !== "restore") {
+        clearActiveSession("technical");
+      }
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (problem.id !== prob.id) resetSessionState(prob);
+    }
+    startSession(prob);
+  });
+
+  useEffect(() => {
+    if (!startedRef.current) return;
+    writeActiveSession("technical", {
+      fingerprint,
+      sessionId: sessionIdRef.current,
+      hasContent: transcript.length > 0,
+      incompleteSaved: savedRef.current,
+    });
+  }, [transcript, fingerprint]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -689,17 +836,17 @@ function TechnicalRoom() {
     };
     const scores = computeScores(signals);
     return {
-      id: sessionId,
+      id: sessionIdRef.current,
       type: "technical",
-      difficulty,
-      companyId: company.id,
-      companyName: company.id !== "any" ? company.name : undefined,
-      topic,
+      difficulty: sessionConfigRef.current.difficulty,
+      companyId: sessionConfigRef.current.companyId,
+      companyName: sessionConfigRef.current.companyName,
+      topic: sessionConfigRef.current.topic,
       problemTitle: problem.title,
       problemId: problem.id,
       date: new Date().toISOString(),
       timeSec,
-      targetSec,
+      targetSec: sessionConfigRef.current.targetSec,
       testsPassed: passed,
       totalTests: total,
       runs: runsRef.current,
@@ -742,7 +889,7 @@ function TechnicalRoom() {
     let blob = pendingBlobRef.current;
     if (recorder.active) blob = (await recorder.stop()) || blob;
     pendingBlobRef.current = null;
-    if (blob) await saveRecording(sessionId, blob);
+    if (blob) await saveRecording(sessionIdRef.current, blob);
   }
 
   function savePartial() {
@@ -753,6 +900,7 @@ function TechnicalRoom() {
     void finalizeRecording();
     try {
       saveSession(buildRecord(true));
+      markActiveIncompleteSaved("technical", sessionIdRef.current);
     } catch {}
   }
   const savePartialRef = useRef(savePartial);
@@ -783,6 +931,11 @@ function TechnicalRoom() {
   function leaveAndSave() {
     setLeaveOpen(false);
     savePartial();
+    clearActiveSession("technical");
+    deadRef.current = true;
+    deadAtRef.current = Date.now();
+    deadUrlRef.current = window.location.search;
+    resetSessionState(problem);
     router.push("/");
   }
 
@@ -793,6 +946,11 @@ function TechnicalRoom() {
     savedRef.current = true;
     await finalizeRecording();
     saveSession(buildRecord(false));
+    clearActiveSession("technical");
+    deadRef.current = true;
+    deadAtRef.current = Date.now();
+    deadUrlRef.current = window.location.search;
+    resetSessionState(problem);
     router.push("/interview/feedback");
   }
 

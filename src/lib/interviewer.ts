@@ -661,6 +661,7 @@ export function saveSession(rec: SessionRecord) {
       old = [];
     }
     const arr = Array.isArray(old) ? old : [];
+    if (arr.some((r) => r && typeof r === "object" && (r as SessionRecord).id === rec.id)) return;
     localStorage.setItem(key, JSON.stringify([rec, ...arr].slice(0, 20)));
   } catch {}
 }

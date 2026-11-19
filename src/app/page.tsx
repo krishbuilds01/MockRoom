@@ -6,6 +6,7 @@ import { topics } from "@/lib/problems";
 import { companies } from "@/lib/companies";
 import { buildResumeQuestionsLocal, postResumeQuestions, RESUME_QUESTIONS_KEY, RESUME_STORAGE_KEY } from "@/lib/resume";
 import { loadHistory } from "@/lib/analytics";
+import { markFreshStart } from "@/lib/activeSession";
 import { overallScore, type SessionRecord } from "@/lib/interviewer";
 import Logo from "@/components/Logo";
 import Footer from "@/components/Footer";
@@ -92,10 +93,12 @@ export default function Home() {
     if (type === "technical") {
       const q = new URLSearchParams({ difficulty, topic });
       if (companyId !== "any") q.set("company", companyId);
+      markFreshStart("technical");
       router.push(`/interview/technical?${q}`);
     } else {
       const q = new URLSearchParams({ difficulty });
       if (companyId !== "any") q.set("company", companyId);
+      markFreshStart("general");
       router.push(`/interview/general?${q}`);
     }
   }
@@ -115,6 +118,7 @@ export default function Home() {
     } catch {}
     const q = new URLSearchParams({ difficulty, resume: "1" });
     if (companyId !== "any") q.set("company", companyId);
+    markFreshStart("general");
     router.push(`/interview/general?${q}`);
   }
 
