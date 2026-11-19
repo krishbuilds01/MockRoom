@@ -1,3 +1,5 @@
+import { sanitizeAiText } from "./sanitize";
+
 export interface InterviewApiResponse {
   reply: string;
   engine: "gemini" | "local";
@@ -17,7 +19,9 @@ export async function postInterview(body: Record<string, unknown>): Promise<Inte
     if (!res.ok) return null;
     const data = await res.json().catch(() => null);
     if (!data || typeof data.reply !== "string") return null;
-    return data as InterviewApiResponse;
+    const out = data as InterviewApiResponse;
+    out.reply = sanitizeAiText(out.reply);
+    return out;
   } catch {
     return null;
   } finally {

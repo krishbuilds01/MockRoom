@@ -306,6 +306,61 @@ export function codeWatchQuestion(prev: string, curr: string, problem: Problem):
   return null;
 }
 
+export function truncateWords(text: string, max: number): string {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  const lastSpace = cut.lastIndexOf(" ");
+  const base = lastSpace > max * 0.5 ? cut.slice(0, lastSpace) : cut;
+  return base.trimEnd() + "...";
+}
+
+export function complexityPhrase(problem: Problem): string {
+  return problem.complexity.replace(/^Expected:\s*/, "").split(". ")[0].trim();
+}
+
+export function complexityConfirmation(problem: Problem, correct: boolean): string {
+  const phrase = complexityPhrase(problem);
+  return correct
+    ? `You already gave the complexity: ${phrase}. That is correct, and it is recorded, so I am not asking twice.`
+    : `You already gave the complexity, and it was not right. The correct answer is: ${phrase}. That is recorded.`;
+}
+
+export function shouldAutosavePartial(input: {
+  elapsedSec: number;
+  codeChanged: boolean;
+  hasAnyMessage: boolean;
+}): boolean {
+  return input.elapsedSec > 20 || input.codeChanged || input.hasAnyMessage;
+}
+
+function normalizeCode(code: string): string {
+  return code
+    .split("\n")
+    .map((l) => l.trimEnd())
+    .join("\n")
+    .replace(/\n+$/, "");
+}
+
+export function nextCodeWatchQuestion(
+  prev: string,
+  curr: string,
+  problem: Problem,
+  asked: Set<string>
+): string | null {
+  const p = normalizeCode(prev);
+  const c = normalizeCode(curr);
+  if (p === c) return null;
+  const { added, removed } = diffLines(p, c);
+  const charDelta = [...added, ...removed].reduce((sum, l) => sum + l.trim().length, 0);
+  if (charDelta < 12) return null;
+  const q = codeWatchQuestion(p, c, problem);
+  if (!q) return null;
+  const key = q.toLowerCase();
+  if (asked.has(key)) return null;
+  asked.add(key);
+  return q;
+}
+
 export function codeWatchProgressQuestion(code: string, runs: number, problem: Problem): string | null {
   const lines = code.split("\n").filter((l) => l.trim() && !l.trim().startsWith("//")).length;
   const starterLines = problem.starter.javascript.split("\n").filter((l) => l.trim()).length;
@@ -555,6 +610,7 @@ export interface SessionRecord {
   askedQuestionAtEnd?: boolean;
   incomplete?: boolean;
   codeChanged?: boolean;
+  qaPairs?: { question: string; answer?: string }[];
 }
 
 export function saveSession(rec: SessionRecord) {
