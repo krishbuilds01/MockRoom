@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Camera from "@/components/Camera";
-import { getProblemById, pickProblem, targetSecFor, type Lang } from "@/lib/problems";
+import { getProblemById, LANGS, pickProblem, targetSecFor, type Lang } from "@/lib/problems";
 import { runCode, type RunOutput } from "@/lib/runner";
 import {
   aOrAn,
@@ -97,6 +97,7 @@ function TechnicalRoom() {
   const [codeByLang, setCodeByLang] = useState<Record<Lang, string>>(() => ({
     javascript: problem.starter.javascript,
     python: problem.starter.python,
+    java: problem.starter.java,
   }));
   const code = codeByLang[lang];
   const [phase, setPhase] = useState<Phase>("opening");
@@ -876,8 +877,8 @@ function TechnicalRoom() {
         <section className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-t-2xl border border-line border-b-0 bg-panel px-4 py-2.5">
             <div className="flex gap-2" role="group" aria-label="Language">
-              {(["javascript", "python"] as Lang[]).map((l) => (
-                <button type="button" key={l} onClick={() => switchLang(l)} disabled={phaseIdx >= 4} title={phaseIdx >= 4 ? "Language is locked after you submit" : undefined} className={`btn btn-sm ${lang === l ? "btn-primary" : "btn-ghost"} disabled:opacity-40`}>{l === "javascript" ? "JavaScript" : "Python"}</button>
+              {LANGS.map((l) => (
+                <button type="button" key={l.id} onClick={() => switchLang(l.id)} disabled={phaseIdx >= 4} title={phaseIdx >= 4 ? "Language is locked after you submit" : undefined} className={`btn btn-sm ${lang === l.id ? "btn-primary" : "btn-ghost"}`}>{l.label}</button>
               ))}
             </div>
             <span className="hidden text-[11px] text-zinc-500 xl:block">Switching language keeps the code you wrote in each language, and clears the last run results.</span>

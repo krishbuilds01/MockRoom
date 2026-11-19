@@ -60,7 +60,111 @@ for __i, __t in enumerate(__tests):
   return code + "\n" + driver;
 }
 
+function jLit(v: unknown): string {
+  if (typeof v === "number") return String(v);
+  if (typeof v === "boolean") return v ? "true" : "false";
+  if (typeof v === "string") return JSON.stringify(v);
+  if (Array.isArray(v)) {
+    if (!v.length) return "new int[0]";
+    const first = v[0];
+    if (typeof first === "number") return `new int[]{${v.join(",")}}`;
+    if (typeof first === "string") return `new String[]{${v.map((x) => JSON.stringify(x)).join(",")}}`;
+    if (Array.isArray(first)) {
+      const inner = (first as unknown[])[0];
+      if (typeof inner === "string") return `new String[][]{${v.map((a) => jLit(a)).join(",")}}`;
+      if (Array.isArray(inner)) return `new String[][][]{${v.map((a) => jLit(a)).join(",")}}`;
+      return `new int[][]{${v.map((a) => jLit(a)).join(",")}}`;
+    }
+  }
+  return "null";
+}
+
+const JAVA_HELPERS = `
+public class Main {
+  static String esc(String s) {
+    if (s == null) return "";
+    return s.replace("\\\\", "\\\\\\\\").replace("\\"", "\\\\\\"").replace("\\n", " ");
+  }
+  static String arrJson(int[] a) {
+    if (a == null) return "null";
+    StringBuilder sb = new StringBuilder("[");
+    for (int i = 0; i < a.length; i++) { if (i > 0) sb.append(","); sb.append(a[i]); }
+    return sb.append("]").toString();
+  }
+  static String gridJson(int[][] g) {
+    if (g == null) return "null";
+    StringBuilder sb = new StringBuilder("[");
+    for (int i = 0; i < g.length; i++) { if (i > 0) sb.append(","); sb.append(arrJson(g[i])); }
+    return sb.append("]").toString();
+  }
+  static java.util.List<java.util.List<String>> canonList(java.util.List<java.util.List<String>> in) {
+    java.util.List<java.util.List<String>> out = new java.util.ArrayList<>();
+    if (in != null) {
+      for (java.util.List<String> g : in) {
+        java.util.List<String> c = new java.util.ArrayList<>(g);
+        java.util.Collections.sort(c);
+        out.add(c);
+      }
+    }
+    out.sort((a, b) -> String.join(",", a).compareTo(String.join(",", b)));
+    return out;
+  }
+  static java.util.List<java.util.List<String>> expList(String[][] e) {
+    java.util.List<java.util.List<String>> out = new java.util.ArrayList<>();
+    for (String[] g : e) out.add(new java.util.ArrayList<>(java.util.Arrays.asList(g)));
+    return out;
+  }
+  static String canonStr(java.util.List<java.util.List<String>> in) {
+    java.util.List<java.util.List<String>> c = canonList(in);
+    StringBuilder sb = new StringBuilder("[");
+    for (int i = 0; i < c.size(); i++) {
+      if (i > 0) sb.append(",");
+      sb.append("[");
+      java.util.List<String> g = c.get(i);
+      for (int j = 0; j < g.size(); j++) {
+        if (j > 0) sb.append(",");
+        sb.append("\\"").append(esc(g.get(j))).append("\\"");
+      }
+      sb.append("]");
+    }
+    return sb.append("]").toString();
+  }
+`;
+
+function javaTestBlock(problem: Problem, t: TestCase, i: number): string {
+  const call = `sol.${problem.javaMethod}(${t.args.map(jLit).join(", ")})`;
+  const exp = jLit(t.expected);
+  let body = "";
+  switch (problem.javaKind) {
+    case "intArray":
+      body = `int[] got = ${call}; boolean pass = java.util.Arrays.equals(got, ${exp}); System.out.println("__RESULT__{\\"index\\":${i},\\"got\\":" + arrJson(got) + ",\\"passed\\":" + pass + "}");`;
+      break;
+    case "boolIntArray":
+    case "boolString":
+      body = `boolean got = ${call}; boolean pass = got == ${exp}; System.out.println("__RESULT__{\\"index\\":${i},\\"got\\":" + got + ",\\"passed\\":" + pass + "}");`;
+      break;
+    case "intString":
+    case "intIntArray":
+      body = `int got = ${call}; boolean pass = got == ${exp}; System.out.println("__RESULT__{\\"index\\":${i},\\"got\\":" + got + ",\\"passed\\":" + pass + "}");`;
+      break;
+    case "groups":
+      body = `java.util.List<java.util.List<String>> got = ${call}; String gotJson = canonStr(got); boolean pass = gotJson.equals(canonStr(expList(${exp}))); System.out.println("__RESULT__{\\"index\\":${i},\\"got\\":" + gotJson + ",\\"passed\\":" + pass + "}");`;
+      break;
+    case "intervals":
+      body = `int[][] got = ${call}; boolean pass = java.util.Arrays.deepEquals(got, ${exp}); System.out.println("__RESULT__{\\"index\\":${i},\\"got\\":" + gridJson(got) + ",\\"passed\\":" + pass + "}");`;
+      break;
+  }
+  return `    try { ${body} } catch (Throwable e) { System.out.println("__RESULT__{\\"index\\":${i},\\"got\\":null,\\"passed\\":false,\\"error\\":\\"" + esc(String.valueOf(e.getMessage())) + "\\"}"); }`;
+}
+
+function buildJavaSource(problem: Problem, code: string, tests: TestCase[]): string {
+  const blocks = tests.map((t, i) => javaTestBlock(problem, t, i)).join("\n");
+  const driver = `${JAVA_HELPERS}  public static void main(String[] args) {\n    Solution sol = new Solution();\n${blocks}\n  }\n}\n`;
+  return "import java.util.*;\n" + code + "\n" + driver;
+}
+
 export function buildSource(problem: Problem, code: string, lang: Lang, tests: TestCase[]): string {
+  if (lang === "java") return buildJavaSource(problem, code, tests);
   return lang === "python" ? buildPySource(problem, code, tests) : buildJsSource(problem, code, tests);
 }
 
@@ -103,7 +207,8 @@ function parseOutput(problem: Problem, tests: TestCase[], stdout: string, stderr
   return { results, stdout, stderr, passed: results.filter((r) => r.passed).length, total: results.length };
 }
 
-// Primary runner: Judge0 CE public instance. Language ids: 63 = JavaScript, 71 = Python 3.
+// Primary runner: Judge0 CE public instance. Language ids: 63 = JavaScript, 71 = Python 3, 62 = Java (OpenJDK 13).
+const JUDGE0_LANG: Record<Lang, number> = { javascript: 63, python: 71, java: 62 };
 export async function runCode(problem: Problem, code: string, lang: Lang, includeHidden: boolean): Promise<RunOutput> {
   const tests = includeHidden ? problem.tests : problem.tests.filter((t) => !t.hidden);
   const source = buildSource(problem, code, lang, tests);
@@ -114,7 +219,7 @@ export async function runCode(problem: Problem, code: string, lang: Lang, includ
     res = await fetch("https://ce.judge0.com/submissions?base64_encoded=true&wait=true", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ source_code: toB64(source), language_id: lang === "python" ? 71 : 63 }),
+      body: JSON.stringify({ source_code: toB64(source), language_id: JUDGE0_LANG[lang] }),
       signal: controller.signal,
     });
   } catch (e) {

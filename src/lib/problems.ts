@@ -1,5 +1,17 @@
 export type Difficulty = "Easy" | "Mid" | "Hard";
-export type Lang = "javascript" | "python";
+export type Lang = "javascript" | "python" | "java";
+
+export type JavaKind = "intArray" | "boolIntArray" | "boolString" | "intString" | "groups" | "intervals" | "intIntArray";
+
+export const LANGS: { id: Lang; label: string }[] = [
+  { id: "javascript", label: "JavaScript" },
+  { id: "python", label: "Python" },
+  { id: "java", label: "Java" },
+];
+
+export function langLabel(lang: string | undefined): string {
+  return LANGS.find((l) => l.id === lang)?.label || "JavaScript";
+}
 
 export interface TestCase {
   args: unknown[];
@@ -17,6 +29,8 @@ export interface Problem {
   constraints: string[];
   functionJs: string;
   functionPy: string;
+  javaMethod: string;
+  javaKind: JavaKind;
   starter: Record<Lang, string>;
   tests: TestCase[];
   compare: "exact" | "unorderedGroups";
@@ -46,9 +60,12 @@ export const problems: Problem[] = [
     constraints: ["2 <= nums.length <= 10^4", "-10^9 <= nums[i] <= 10^9", "Only one valid answer exists"],
     functionJs: "twoSum",
     functionPy: "two_sum",
+    javaMethod: "twoSum",
+    javaKind: "intArray",
     starter: {
       javascript: "function twoSum(nums, target) {\n  \n}\n",
       python: "def two_sum(nums, target):\n    pass\n",
+      java: "import java.util.*;\n\nclass Solution {\n  public int[] twoSum(int[] nums, int target) {\n    return new int[0];\n  }\n}\n",
     },
     tests: [
       { args: [[2, 7, 11, 15], 9], expected: [0, 1] },
@@ -85,9 +102,12 @@ export const problems: Problem[] = [
     constraints: ["1 <= nums.length <= 10^5", "-10^9 <= nums[i] <= 10^9"],
     functionJs: "containsDuplicate",
     functionPy: "contains_duplicate",
+    javaMethod: "containsDuplicate",
+    javaKind: "boolIntArray",
     starter: {
       javascript: "function containsDuplicate(nums) {\n  \n}\n",
       python: "def contains_duplicate(nums):\n    pass\n",
+      java: "import java.util.*;\n\nclass Solution {\n  public boolean containsDuplicate(int[] nums) {\n    return false;\n  }\n}\n",
     },
     tests: [
       { args: [[1, 2, 3, 1]], expected: true },
@@ -125,9 +145,12 @@ export const problems: Problem[] = [
     constraints: ["1 <= s.length <= 10^4", "s consists of parentheses only"],
     functionJs: "isValid",
     functionPy: "is_valid",
+    javaMethod: "isValid",
+    javaKind: "boolString",
     starter: {
       javascript: "function isValid(s) {\n  \n}\n",
       python: "def is_valid(s):\n    pass\n",
+      java: "import java.util.*;\n\nclass Solution {\n  public boolean isValid(String s) {\n    return false;\n  }\n}\n",
     },
     tests: [
       { args: ["()"], expected: true },
@@ -167,9 +190,12 @@ export const problems: Problem[] = [
     constraints: ["0 <= s.length <= 5 * 10^4", "s consists of English letters, digits, symbols and spaces"],
     functionJs: "lengthOfLongestSubstring",
     functionPy: "length_of_longest_substring",
+    javaMethod: "lengthOfLongestSubstring",
+    javaKind: "intString",
     starter: {
       javascript: "function lengthOfLongestSubstring(s) {\n  \n}\n",
       python: "def length_of_longest_substring(s):\n    pass\n",
+      java: "import java.util.*;\n\nclass Solution {\n  public int lengthOfLongestSubstring(String s) {\n    return 0;\n  }\n}\n",
     },
     tests: [
       { args: ["abcabcbb"], expected: 3 },
@@ -208,9 +234,12 @@ export const problems: Problem[] = [
     constraints: ["1 <= strs.length <= 10^4", "0 <= strs[i].length <= 100", "strs[i] consists of lowercase English letters"],
     functionJs: "groupAnagrams",
     functionPy: "group_anagrams",
+    javaMethod: "groupAnagrams",
+    javaKind: "groups",
     starter: {
       javascript: "function groupAnagrams(strs) {\n  \n}\n",
       python: "def group_anagrams(strs):\n    pass\n",
+      java: "import java.util.*;\n\nclass Solution {\n  public List<List<String>> groupAnagrams(String[] strs) {\n    return new ArrayList<>();\n  }\n}\n",
     },
     tests: [
       { args: [["eat", "tea", "tan", "ate", "nat", "bat"]], expected: [["bat"], ["nat", "tan"], ["ate", "eat", "tea"]] },
@@ -246,9 +275,12 @@ export const problems: Problem[] = [
     constraints: ["1 <= intervals.length <= 10^4", "intervals[i].length == 2", "0 <= start <= end <= 10^4"],
     functionJs: "merge",
     functionPy: "merge",
+    javaMethod: "merge",
+    javaKind: "intervals",
     starter: {
       javascript: "function merge(intervals) {\n  \n}\n",
       python: "def merge(intervals):\n    pass\n",
+      java: "import java.util.*;\n\nclass Solution {\n  public int[][] merge(int[][] intervals) {\n    return new int[0][0];\n  }\n}\n",
     },
     tests: [
       { args: [[[1, 3], [2, 6], [8, 10], [15, 18]]], expected: [[1, 6], [8, 10], [15, 18]] },
@@ -285,9 +317,12 @@ export const problems: Problem[] = [
     constraints: ["n == height.length", "1 <= n <= 2 * 10^4", "0 <= height[i] <= 10^5"],
     functionJs: "trap",
     functionPy: "trap",
+    javaMethod: "trap",
+    javaKind: "intIntArray",
     starter: {
       javascript: "function trap(height) {\n  \n}\n",
       python: "def trap(height):\n    pass\n",
+      java: "import java.util.*;\n\nclass Solution {\n  public int trap(int[] height) {\n    return 0;\n  }\n}\n",
     },
     tests: [
       { args: [[0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1]], expected: 6 },
