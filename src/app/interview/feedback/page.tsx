@@ -95,7 +95,7 @@ export default function FeedbackPage() {
 
   if (!loaded)
     return (
-      <main className="flex h-dvh items-center justify-center px-5">
+      <main className="flex h-dvh items-center justify-center overflow-hidden px-5">
         <p className="text-sm text-neutral-600">Loading feedback...</p>
       </main>
     );
