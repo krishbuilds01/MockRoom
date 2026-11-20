@@ -3,7 +3,7 @@ import { geminiAvailable } from "@/lib/gemini";
 
 export const maxDuration = 30;
 
-const TTS_MODEL = "gemini-2.5-flash-preview-tts";
+const TTS_MODELS = ["gemini-2.5-flash-preview-tts", "gemini-2.5-pro-preview-tts"];
 const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 const VOICE_NAME = "Callirrhoe";
 const ALLOWED_VOICES = new Set([
@@ -55,19 +55,11 @@ function fallback(reason: string) {
   return NextResponse.json({ fallback: true, reason }, { status: 501 });
 }
 
-export async function POST(req: NextRequest) {
-  const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
-  const text = cleanText(body?.text);
-  if (!text) return fallback("empty");
-  const requestedVoice = typeof body?.voice === "string" ? body.voice : "";
-  const voiceName = ALLOWED_VOICES.has(requestedVoice) ? requestedVoice : VOICE_NAME;
-  if (!geminiAvailable()) return fallback("no-key");
-  const key = process.env.GEMINI_API_KEY as string;
-
+async function tryModel(model: string, key: string, text: string, voiceName: string): Promise<Buffer | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 20000);
   try {
-    const res = await fetch(`${API_BASE}/${TTS_MODEL}:generateContent`, {
+    const res = await fetch(`${API_BASE}/${model}:generateContent`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -84,30 +76,47 @@ export async function POST(req: NextRequest) {
       }),
       signal: controller.signal,
     });
-    if (!res.ok) return fallback("tts-failed");
+    if (!res.ok) return null;
     const data = await res.json().catch(() => null);
     const candidate = data?.candidates?.[0];
-    if (!candidate || candidate.finishReason === "MAX_TOKENS") return fallback("tts-failed");
+    if (!candidate || candidate.finishReason === "MAX_TOKENS") return null;
     const parts = candidate?.content?.parts;
-    if (!Array.isArray(parts)) return fallback("tts-failed");
+    if (!Array.isArray(parts)) return null;
     const inline = parts.find(
       (p: { inlineData?: { data?: string } }) => typeof p?.inlineData?.data === "string"
     )?.inlineData?.data;
-    if (!inline) return fallback("tts-failed");
+    if (!inline) return null;
     const pcm = Buffer.from(inline, "base64");
-    if (!pcm.length) return fallback("tts-failed");
-    const wav = Buffer.concat([wavHeader(pcm.length), pcm]);
-    return new NextResponse(new Uint8Array(wav), {
-      status: 200,
-      headers: {
-        "Content-Type": "audio/wav",
-        "Cache-Control": "no-store",
-        "X-Voice-Engine": "gemini",
-      },
-    });
+    if (!pcm.length) return null;
+    return Buffer.concat([wavHeader(pcm.length), pcm]);
   } catch {
-    return fallback("tts-failed");
+    return null;
   } finally {
     clearTimeout(timer);
   }
+}
+
+export async function POST(req: NextRequest) {
+  const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
+  const text = cleanText(body?.text);
+  if (!text) return fallback("empty");
+  const requestedVoice = typeof body?.voice === "string" ? body.voice : "";
+  const voiceName = ALLOWED_VOICES.has(requestedVoice) ? requestedVoice : VOICE_NAME;
+  if (!geminiAvailable()) return fallback("no-key");
+  const key = process.env.GEMINI_API_KEY as string;
+
+  for (let i = 0; i < TTS_MODELS.length; i++) {
+    const wav = await tryModel(TTS_MODELS[i], key, text, voiceName);
+    if (wav) {
+      return new NextResponse(new Uint8Array(wav), {
+        status: 200,
+        headers: {
+          "Content-Type": "audio/wav",
+          "Cache-Control": "no-store",
+          "X-Voice-Engine": i === 0 ? "gemini" : "gemini-pro",
+        },
+      });
+    }
+  }
+  return fallback("tts-failed");
 }

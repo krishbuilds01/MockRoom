@@ -157,7 +157,8 @@ function GeneralRoom() {
       onEnd: () => dispatchGate({ type: "speech-end" }),
       onAboutToEnd: () => dispatchGate({ type: "speech-about-to-end" }),
     },
-    interviewer.voice
+    interviewer.voice,
+    interviewer.pitch
   );
   const voice = useVoice((text) => setInput(text), gateRef);
   useEffect(() => {

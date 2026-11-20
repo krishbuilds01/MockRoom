@@ -3,13 +3,14 @@ export interface InterviewerProfile {
   name: string;
   gender: string;
   voice: string;
+  pitch: number;
   objectPronoun: string;
   reflexivePronoun: string;
 }
 
 export const INTERVIEWERS: InterviewerProfile[] = [
-  { id: "maya", name: "Maya", gender: "Female", voice: "Kore", objectPronoun: "her", reflexivePronoun: "herself" },
-  { id: "rohan", name: "Rohan", gender: "Male", voice: "Orus", objectPronoun: "him", reflexivePronoun: "himself" },
+  { id: "maya", name: "Maya", gender: "Female", voice: "Kore", pitch: 1.05, objectPronoun: "her", reflexivePronoun: "herself" },
+  { id: "rohan", name: "Rohan", gender: "Male", voice: "Orus", pitch: 0.8, objectPronoun: "him", reflexivePronoun: "himself" },
 ];
 
 export const DEFAULT_INTERVIEWER: InterviewerProfile = INTERVIEWERS[0];

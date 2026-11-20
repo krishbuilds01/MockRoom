@@ -50,6 +50,7 @@ export function pickBestVoice(): SpeechSynthesisVoice | null {
     const n = v.name.toLowerCase();
     let s = 0;
     if (n.includes("google us english")) s += 100;
+    if (n.includes("microsoft") && (n.includes("aria") || n.includes("jenny") || n.includes("guy"))) s += 80;
     if (n.includes("natural")) s += 60;
     if (n.includes("neural")) s += 55;
     if (n.includes("online")) s += 40;
@@ -62,7 +63,7 @@ export function pickBestVoice(): SpeechSynthesisVoice | null {
   return [...pool].sort((a, b) => score(b) - score(a))[0] || null;
 }
 
-export function speakSentenceBrowser(text: string): Promise<void> {
+export function speakSentenceBrowser(text: string, pitch = 1.0): Promise<void> {
   return new Promise((resolve) => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) {
       resolve();
@@ -78,8 +79,8 @@ export function speakSentenceBrowser(text: string): Promise<void> {
       const u = new SpeechSynthesisUtterance(text);
       const voice = pickBestVoice();
       if (voice) u.voice = voice;
-      u.rate = 0.98;
-      u.pitch = 1.0;
+      u.rate = 1.0;
+      u.pitch = pitch;
       u.onend = finish;
       u.onerror = finish;
       window.speechSynthesis.speak(u);

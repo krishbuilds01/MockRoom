@@ -26,7 +26,7 @@ export type SpeakerCallbacks = {
   onAboutToEnd?: () => void;
 };
 
-export function useSpeaker(callbacks?: SpeakerCallbacks, voiceName?: string) {
+export function useSpeaker(callbacks?: SpeakerCallbacks, voiceName?: string, pitch?: number) {
   const [voiceSource, setVoiceSource] = useState<VoiceSource>(null);
   const [speaking, setSpeaking] = useState(false);
   const tokenRef = useRef(0);
@@ -58,7 +58,8 @@ export function useSpeaker(callbacks?: SpeakerCallbacks, voiceName?: string) {
   }, []);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const cacheRef = useRef<Map<string, string>>(new Map());
-  const ttsDownRef = useRef(false);
+  const ttsFailuresRef = useRef(0);
+  const ttsCooldownUntilRef = useRef(0);
   const unlockedRef = useRef(false);
 
   const getAudio = useCallback((): HTMLAudioElement | null => {
@@ -151,8 +152,15 @@ export function useSpeaker(callbacks?: SpeakerCallbacks, voiceName?: string) {
     (text: string): Promise<FetchResult> => {
       const cached = cacheRef.current.get(text);
       if (cached) return Promise.resolve(cached);
-      if (ttsDownRef.current) return Promise.resolve(null);
+      if (Date.now() < ttsCooldownUntilRef.current) return Promise.resolve(null);
       return (async () => {
+        const noteFailure = () => {
+          ttsFailuresRef.current += 1;
+          if (ttsFailuresRef.current >= 3) {
+            ttsCooldownUntilRef.current = Date.now() + 60000;
+            ttsFailuresRef.current = 0;
+          }
+        };
         try {
           const res = await fetch("/api/tts", {
             method: "POST",
@@ -160,15 +168,20 @@ export function useSpeaker(callbacks?: SpeakerCallbacks, voiceName?: string) {
             body: JSON.stringify(voiceName ? { text, voice: voiceName } : { text }),
           });
           if (!res.ok || !(res.headers.get("Content-Type") || "").includes("audio")) {
-            ttsDownRef.current = true;
+            noteFailure();
             return null;
           }
           const blob = await res.blob();
-          if (!blob.size) return null;
+          if (!blob.size) {
+            noteFailure();
+            return null;
+          }
+          ttsFailuresRef.current = 0;
           const url = URL.createObjectURL(blob);
           cachePut(text, url);
           return url;
         } catch {
+          noteFailure();
           return null;
         }
       })();
@@ -250,7 +263,7 @@ export function useSpeaker(callbacks?: SpeakerCallbacks, voiceName?: string) {
           if (!played) {
             setVoiceSource("browser");
             if (isLast) fireAboutToEnd();
-            await speakSentenceBrowser(chunks[i]);
+            await speakSentenceBrowser(chunks[i], pitch);
             if (token !== tokenRef.current) return;
           }
           if (i < chunks.length - 1) {
@@ -262,7 +275,7 @@ export function useSpeaker(callbacks?: SpeakerCallbacks, voiceName?: string) {
         if (token === tokenRef.current) endSpeech();
       }
     },
-    [fetchTts, playUrl, stop, beginSpeech, endSpeech, fireAboutToEnd]
+    [fetchTts, playUrl, stop, beginSpeech, endSpeech, fireAboutToEnd, pitch]
   );
 
   return { speak, stop, voiceSource, speaking, unlock };
