@@ -29,7 +29,7 @@ export default function LeaveModal({
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 p-4" onClick={onStay}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/40 p-4" onClick={onStay}>
       <div
         role="dialog"
         aria-modal="true"
@@ -40,7 +40,7 @@ export default function LeaveModal({
         <h2 id="leave-dialog-title" className="font-display text-h2 font-semibold">
           Leave this interview?
         </h2>
-        <p className="mt-2 text-sm leading-6 text-stone-600">
+        <p className="mt-2 text-sm leading-6 text-neutral-600">
           Your progress so far will be saved to your history as an incomplete session.
         </p>
         <div className="mt-6 flex gap-2">

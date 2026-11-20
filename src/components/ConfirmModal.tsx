@@ -37,7 +37,7 @@ export default function ConfirmModal({
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 p-4" onClick={onCancel}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/40 p-4" onClick={onCancel}>
       <div
         role="dialog"
         aria-modal="true"
@@ -48,7 +48,7 @@ export default function ConfirmModal({
         <h2 id="confirm-dialog-title" className="font-display text-h2 font-semibold">
           {title}
         </h2>
-        <p className="mt-2 text-sm leading-6 text-stone-600">{body}</p>
+        <p className="mt-2 text-sm leading-6 text-neutral-600">{body}</p>
         <div className="mt-6 flex gap-2">
           <button ref={cancelBtnRef} type="button" onClick={onCancel} className="btn btn-ghost flex-1">
             {cancelLabel}

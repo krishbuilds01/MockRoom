@@ -9,9 +9,9 @@ import Footer from "@/components/Footer";
 function Stat({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
     <div className="min-w-[130px]">
-      <div className="text-xs font-medium text-stone-600">{label}</div>
+      <div className="text-xs font-medium text-neutral-600">{label}</div>
       <div className="tnum mt-1 font-display text-3xl font-semibold leading-none tracking-tight">{value}</div>
-      <div className="mt-1.5 text-xs leading-5 text-stone-600">{sub}</div>
+      <div className="mt-1.5 text-xs leading-5 text-neutral-600">{sub}</div>
     </div>
   );
 }
@@ -38,24 +38,24 @@ function TrendChart({ analytics }: { analytics: Analytics }) {
     <div>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="font-display text-h2 font-semibold">Score trend</h2>
-        <span className="text-xs text-stone-600">Overall score per session, numbered in the order you did them{range ? ` · ${range}` : ""}</span>
+        <span className="text-xs text-neutral-600">Overall score per session, numbered in the order you did them{range ? ` · ${range}` : ""}</span>
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} className="mt-4 w-full" role="img" aria-label="Overall score trend over time">
         {[0, 5, 10].map((g) => (
           <g key={g}>
-            <line x1={padL} x2={W - padR} y1={y(g)} y2={y(g)} stroke="#e7e2d9" strokeWidth="1" />
-            <text x={padL - 8} y={y(g) + 4} textAnchor="end" fontSize="12" fill="#57534e">{g}</text>
+            <line x1={padL} x2={W - padR} y1={y(g)} y2={y(g)} stroke="#d2d2d7" strokeWidth="1" />
+            <text x={padL - 8} y={y(g) + 4} textAnchor="end" fontSize="12" fill="#6e6e73">{g}</text>
           </g>
         ))}
-        {pts.length > 1 && <polyline points={line} fill="none" stroke="#15803d" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />}
+        {pts.length > 1 && <polyline points={line} fill="none" stroke="#0066cc" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />}
         {pts.map((p, i) => (
           <g key={p.date + i}>
-            <circle cx={x(i)} cy={y(p.overall)} r="4.5" fill="#15803d" stroke="#ffffff" strokeWidth="2" />
-            <text x={x(i)} y={y(p.overall) - 10} textAnchor="middle" fontSize="12" fontWeight="600" fill="#1c1917" style={{ fontVariantNumeric: "tabular-nums" }}>
+            <circle cx={x(i)} cy={y(p.overall)} r="4.5" fill="#0066cc" stroke="#ffffff" strokeWidth="2" />
+            <text x={x(i)} y={y(p.overall) - 10} textAnchor="middle" fontSize="12" fontWeight="600" fill="#1d1d1f" style={{ fontVariantNumeric: "tabular-nums" }}>
               {p.overall}
             </text>
             {(i % labelStep === 0 || i === pts.length - 1) && (
-              <text x={x(i)} y={H - 8} textAnchor="middle" fontSize="12" fill="#57534e">
+              <text x={x(i)} y={H - 8} textAnchor="middle" fontSize="12" fill="#6e6e73">
                 {p.label}
               </text>
             )}
@@ -69,12 +69,12 @@ function TrendChart({ analytics }: { analytics: Analytics }) {
 function AverageRow({ name, average, count }: { name: string; average: number; count: number }) {
   return (
     <div className="flex items-center gap-3 py-2.5">
-      <span className="w-40 shrink-0 truncate text-sm text-stone-700">{name}</span>
+      <span className="w-40 shrink-0 truncate text-sm text-neutral-700">{name}</span>
       <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-line">
         <div className={`h-full rounded-full ${scoreBarClass(average)}`} style={{ width: `${average * 10}%` }} />
       </div>
       <span className="tnum w-14 shrink-0 text-right text-sm font-semibold">{average}/10</span>
-      <span className="w-24 shrink-0 whitespace-nowrap text-right text-xs text-stone-600">{count} session{count === 1 ? "" : "s"}</span>
+      <span className="w-24 shrink-0 whitespace-nowrap text-right text-xs text-neutral-600">{count} session{count === 1 ? "" : "s"}</span>
     </div>
   );
 }
@@ -93,25 +93,25 @@ export default function ProgressPage() {
     <main className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col px-5">
       <nav className="flex h-16 shrink-0 items-center justify-between border-b border-line">
         <Logo />
-        <div className="flex items-center gap-5 text-sm text-stone-600">
-          <Link href="/" className="hover:text-stone-900">Home</Link>
-          <Link href="/interview/feedback" className="hover:text-stone-900">Latest feedback</Link>
+        <div className="flex items-center gap-5 text-sm text-neutral-600">
+          <Link href="/" className="hover:text-neutral-900">Home</Link>
+          <Link href="/interview/feedback" className="hover:text-neutral-900">Latest feedback</Link>
         </div>
       </nav>
 
       <div className="flex shrink-0 flex-wrap items-end justify-between gap-2 pt-6">
         <div>
           <h1 className="font-display text-4xl font-semibold tracking-tight">Your progress</h1>
-          <p className="mt-1 text-sm text-stone-600">Computed from the interviews stored in this browser. Nothing here is estimated.</p>
+          <p className="mt-1 text-sm text-neutral-600">Computed from the interviews stored in this browser. Nothing here is estimated.</p>
         </div>
       </div>
 
       {!analytics ? (
-        <p className="pt-8 text-sm text-stone-600">Loading your history...</p>
+        <p className="pt-8 text-sm text-neutral-600">Loading your history...</p>
       ) : analytics.total === 0 ? (
         <div className="card card-pad mt-6 max-w-xl">
           <h2 className="font-display text-h2 font-semibold">No interviews yet</h2>
-          <p className="mt-2 text-sm leading-6 text-stone-600">
+          <p className="mt-2 text-sm leading-6 text-neutral-600">
             Finish one interview and your scores, streak and topic averages appear here, computed from the sessions stored in
             this browser.
           </p>
@@ -133,8 +133,8 @@ export default function ProgressPage() {
           </div>
 
           {!enough && (
-            <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3" role="note">
-              <p className="text-sm leading-6 text-amber-800">
+            <div className="mt-4 rounded-lg border border-line2 bg-panel2 px-4 py-3" role="note">
+              <p className="text-sm leading-6 text-neutral-700">
                 You have {analytics.total} session{analytics.total === 1 ? "" : "s"} so far. Trends appear at 3 sessions, because
                 averages from one or two swing too much to mean anything.
               </p>
@@ -146,17 +146,17 @@ export default function ProgressPage() {
               {enough && <TrendChart analytics={analytics} />}
               <div className={enough ? "mt-5 border-t border-line pt-5" : ""}>
                 <h2 className="font-display text-h2 font-semibold">This week</h2>
-                <p className="mt-1 text-xs leading-5 text-stone-600">Three sessions aimed at your weakest areas, picked from your own scores.</p>
+                <p className="mt-1 text-xs leading-5 text-neutral-600">Three sessions aimed at your weakest areas, picked from your own scores.</p>
                 <ol className="mt-3 space-y-3.5">
                   {analytics.plan.map((item, i) => (
                     <li key={item.title} className="flex gap-3">
-                      <span className="tnum w-5 shrink-0 text-sm font-semibold text-stone-500">{i + 1}</span>
+                      <span className="tnum w-5 shrink-0 text-sm font-semibold text-neutral-500">{i + 1}</span>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <span className="text-sm font-semibold">{item.title}</span>
                           <Link href={item.href} className="btn btn-primary btn-sm">Start</Link>
                         </div>
-                        <p className="mt-0.5 text-sm leading-5 text-stone-600">{item.reason}</p>
+                        <p className="mt-0.5 text-sm leading-5 text-neutral-600">{item.reason}</p>
                       </div>
                     </li>
                   ))}
@@ -179,12 +179,12 @@ export default function ProgressPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="mt-2 text-sm leading-6 text-stone-600">No technical sessions yet, so there are no topic scores. Topic averages appear after your first coding interview.</p>
+                  <p className="mt-2 text-sm leading-6 text-neutral-600">No technical sessions yet, so there are no topic scores. Topic averages appear after your first coding interview.</p>
                 )}
                 {analytics.weakest && (
-                  <p className="mt-3 border-t border-line pt-3 text-sm leading-6 text-stone-600">
-                    Weakest right now: <span className="font-semibold text-stone-900">{analytics.weakest.name}</span> at{" "}
-                    <span className="tnum font-semibold text-stone-900">{analytics.weakest.average}/10</span>.
+                  <p className="mt-3 border-t border-line pt-3 text-sm leading-6 text-neutral-600">
+                    Weakest right now: <span className="font-semibold text-neutral-900">{analytics.weakest.name}</span> at{" "}
+                    <span className="tnum font-semibold text-neutral-900">{analytics.weakest.average}/10</span>.
                   </p>
                 )}
               </div>

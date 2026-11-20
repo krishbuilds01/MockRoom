@@ -63,13 +63,13 @@ export default function Camera({
       <video ref={ref} autoPlay playsInline muted className={`${on ? "" : "hidden"} ${small ? "h-36" : "h-52"} w-full -scale-x-100 bg-black object-cover`} />
       {!on && (
         <div className={`flex flex-col items-center justify-center gap-2 bg-panel2 p-4 text-center ${small ? "h-36" : "h-52"}`}>
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="text-stone-500" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-500" aria-hidden="true">
             <path d="M10.5 5H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3.5" />
             <path d="M20 10.5 15 13V8l5 2.5Z" />
             <path d="m3 3 18 18" />
           </svg>
-          <div className="text-sm font-semibold text-stone-900">Camera is off</div>
-          <p className="max-w-[30ch] text-xs leading-5 text-stone-600">
+          <div className="text-sm font-semibold text-neutral-900">Camera is off</div>
+          <p className="max-w-[30ch] text-xs leading-5 text-neutral-600">
             {error ? "You can continue without it, or turn it on for a more realistic session." : "Starting your camera. If a permission prompt appears, allow access."}
           </p>
           {error && (
@@ -86,18 +86,18 @@ export default function Camera({
           )}
         </div>
       )}
-      <div className="flex items-center gap-2 border-t border-line bg-panel px-3 py-2 text-xs text-stone-600">
+      <div className="flex items-center gap-2 border-t border-line bg-panel px-3 py-2 text-xs text-neutral-600">
         {recording ? (
           <>
             <span className="dot dot-pulse bg-red-500" />
             Recording
-            <span className="text-stone-600">For your self-review. Stored only in this browser.</span>
+            <span className="text-neutral-600">For your self-review. Stored only in this browser.</span>
           </>
         ) : (
           <>
-            <span className={`dot ${on ? "dot-pulse bg-emerald-600" : "bg-stone-400"}`} />
+            <span className={`dot ${on ? "dot-pulse bg-accent" : "bg-neutral-400"}`} />
             {on ? "Camera on" : "Camera off"}
-            <span className="text-stone-600">Preview only, nothing is recorded</span>
+            <span className="text-neutral-600">Preview only, nothing is recorded</span>
           </>
         )}
       </div>

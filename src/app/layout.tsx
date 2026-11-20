@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import { Fraunces, Inter } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const fraunces = Fraunces({ subsets: ["latin"], variable: "--font-fraunces", weight: ["500", "600", "700"] });
 
 export const metadata: Metadata = {
   title: "Mock Room - Strict AI Interview Practice",
@@ -21,7 +20,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${fraunces.variable} min-h-screen bg-ink font-sans text-stone-900 antialiased`}>{children}</body>
+      <body className={`${inter.variable} min-h-screen bg-ink font-sans text-neutral-900 antialiased`}>{children}</body>
     </html>
   );
 }

@@ -21,16 +21,16 @@ export default function SystemDesignPage() {
     <main className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col px-5">
       <nav className="flex h-16 shrink-0 items-center justify-between border-b border-line">
         <Logo />
-        <div className="flex items-center gap-5 text-sm text-stone-600">
-          <Link href="/" className="hover:text-stone-900">Home</Link>
-          <Link href="/progress" className="hover:text-stone-900">Progress</Link>
+        <div className="flex items-center gap-5 text-sm text-neutral-600">
+          <Link href="/" className="hover:text-neutral-900">Home</Link>
+          <Link href="/progress" className="hover:text-neutral-900">Progress</Link>
         </div>
       </nav>
 
       <header className="max-w-2xl pt-8">
         <span className="badge badge-mid">Coming soon</span>
         <h1 className="mt-4 font-display text-display font-semibold">System design</h1>
-        <p className="mt-4 text-[15px] leading-7 text-stone-600">
+        <p className="mt-4 text-[15px] leading-7 text-neutral-600">
           This room is not open yet. When it opens, a session runs like a real design round: you get a system to design, you pin
           down requirements and scale first, then you design out loud while Maya or Rohan pushes on storage, hot keys and failure
           cases. Sessions will be scored on the same four axes as the other rooms and saved to the same history.
@@ -48,7 +48,7 @@ export default function SystemDesignPage() {
             {topics.map((t) => (
               <div key={t.name} className="flex flex-wrap items-baseline gap-x-3 py-2.5">
                 <span className="w-32 shrink-0 text-sm font-semibold">{t.name}</span>
-                <span className="min-w-0 flex-1 text-sm leading-6 text-stone-600">{t.note}</span>
+                <span className="min-w-0 flex-1 text-sm leading-6 text-neutral-600">{t.note}</span>
               </div>
             ))}
           </div>
@@ -59,7 +59,7 @@ export default function SystemDesignPage() {
             {rounds.map((r) => (
               <div key={r.title} className="py-3 first:pt-2.5">
                 <div className="text-sm font-semibold">{r.title}</div>
-                <p className="mt-0.5 text-sm leading-6 text-stone-600">{r.text}</p>
+                <p className="mt-0.5 text-sm leading-6 text-neutral-600">{r.text}</p>
               </div>
             ))}
           </div>

@@ -88,7 +88,7 @@ export default function CompanySelect({
         onClick={() => (open ? setOpen(false) : openList())}
       >
         <span className="truncate">{selected?.name}</span>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#57504a" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={`shrink-0 transition-transform ${open ? "rotate-180" : ""}`}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6e6e73" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={`shrink-0 transition-transform ${open ? "rotate-180" : ""}`}>
           <path d="m6 9 6 6 6-6" />
         </svg>
       </button>
@@ -106,8 +106,8 @@ export default function CompanySelect({
               role="option"
               aria-selected={c.id === value}
               className={`flex cursor-pointer items-center justify-between gap-2 rounded-md px-2.5 py-2 text-sm ${
-                i === activeIdx ? "bg-panel2 text-stone-900" : "text-stone-700"
-              } ${c.id === value ? "font-semibold text-stone-900" : ""}`}
+                i === activeIdx ? "bg-panel2 text-neutral-900" : "text-neutral-700"
+              } ${c.id === value ? "font-semibold text-neutral-900" : ""}`}
               onMouseEnter={() => setActiveIdx(i)}
               onClick={() => choose(i)}
             >

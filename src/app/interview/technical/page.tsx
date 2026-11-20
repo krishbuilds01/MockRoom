@@ -59,7 +59,7 @@ import { useVoice } from "@/lib/useVoice";
 import { useSpeaker } from "@/lib/useSpeaker";
 import { initialMicGate, micControlState, micGateReducer } from "@/lib/voiceGate";
 
-const Editor = dynamic(() => import("@monaco-editor/react"), { ssr: false, loading: () => <div className="flex h-full items-center justify-center text-sm text-stone-600">Loading editor...</div> });
+const Editor = dynamic(() => import("@monaco-editor/react"), { ssr: false, loading: () => <div className="flex h-full items-center justify-center text-sm text-neutral-600">Loading editor...</div> });
 
 type Phase = "opening" | "clarifying" | "approach" | "coding" | "dryrun" | "review" | "candidate" | "done";
 
@@ -996,7 +996,7 @@ function TechnicalRoom() {
       <header className="shrink-0 px-1">
         <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
           <div className="min-w-0">
-            <Link href="/" onClick={onBackHome} className="text-xs text-stone-600 hover:text-stone-800">Back to home</Link>
+            <Link href="/" onClick={onBackHome} className="text-xs text-neutral-600 hover:text-neutral-800">Back to home</Link>
             <div className="mt-1 flex flex-wrap items-center gap-2">
               <span className="text-[15px] font-semibold tracking-tight">Technical Interview</span>
               <span className="badge">{problem.title}</span>
@@ -1005,7 +1005,7 @@ function TechnicalRoom() {
               <span className="badge">{interviewer.name}</span>
               <span className="badge badge-accent">{PHASE_LABELS[phase]}</span>
             </div>
-            <div className="tnum mt-1 text-xs text-stone-600">
+            <div className="tnum mt-1 text-xs text-neutral-600">
               {`${difficulty} mode · ${problem.topic} · ${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, "0")} of about ${Math.round(targetSec / 60)} min target · AI: ${engineLabel} · Voice: ${voiceLabel}`}
             </div>
           </div>
@@ -1020,7 +1020,7 @@ function TechnicalRoom() {
             {PHASE_STEPS.map((s, i) => (
               <div key={s} className="min-w-0 flex-1">
                 <div className={`h-1 rounded-full ${i < phaseIdx ? "bg-accent/60" : i === phaseIdx ? "bg-accent" : "bg-line"}`} />
-                <div className={`mt-1 truncate text-xs ${i === phaseIdx ? "font-semibold text-stone-900" : "text-stone-600"}`}>{s}</div>
+                <div className={`mt-1 truncate text-xs ${i === phaseIdx ? "font-semibold text-neutral-900" : "text-neutral-600"}`}>{s}</div>
               </div>
             ))}
           </div>
@@ -1030,15 +1030,15 @@ function TechnicalRoom() {
                 <span key={s} className={`h-1.5 w-4 rounded-full ${i < phaseIdx ? "bg-accent/60" : i === phaseIdx ? "bg-accent" : "bg-line"}`} />
               ))}
             </div>
-            <span className="text-xs text-stone-600">
-              Step {phaseIdx + 1} of {PHASE_STEPS.length} · <span className="font-semibold text-stone-900">{PHASE_STEPS[phaseIdx]}</span>
+            <span className="text-xs text-neutral-600">
+              Step {phaseIdx + 1} of {PHASE_STEPS.length} · <span className="font-semibold text-neutral-900">{PHASE_STEPS[phaseIdx]}</span>
             </span>
           </div>
         </div>
       </header>
 
       {fallbackNotice && (
-        <div className="mx-1 mt-2 shrink-0 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800" role="note">
+        <div className="mx-1 mt-2 shrink-0 rounded-lg border border-line2 bg-panel2 px-3 py-2 text-xs leading-5 text-neutral-700" role="note">
           {fallbackNotice}
         </div>
       )}
@@ -1050,17 +1050,17 @@ function TechnicalRoom() {
             <span className={`badge ${problem.difficulty === "Easy" ? "badge-easy" : problem.difficulty === "Hard" ? "badge-hard" : "badge-mid"}`}>{problem.difficulty}</span>
             <span className="badge">{problem.topic}</span>
           </div>
-          <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-stone-700">{problem.statement}</p>
+          <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-neutral-700">{problem.statement}</p>
           <h3 className="mt-5 text-sm font-semibold">Examples</h3>
           {problem.examples.map((ex, i) => (
             <div key={i} className="mt-2 break-words rounded-lg border border-line bg-panel2 p-3 font-mono text-xs leading-5">
               <div>Input: {ex.input}</div>
               <div>Output: {ex.output}</div>
-              {ex.explanation && <div className="text-stone-600">{ex.explanation}</div>}
+              {ex.explanation && <div className="text-neutral-600">{ex.explanation}</div>}
             </div>
           ))}
           <h3 className="mt-5 text-sm font-semibold">Constraints</h3>
-          <ul className="mt-2 list-disc pl-5 text-xs leading-5 text-stone-600">
+          <ul className="mt-2 list-disc pl-5 text-xs leading-5 text-neutral-600">
             {problem.constraints.map((c) => <li key={c}>{c}</li>)}
           </ul>
           <div className="mt-5">
@@ -1070,7 +1070,7 @@ function TechnicalRoom() {
             <div className="mt-4 flex items-center justify-between gap-3 border-t border-line pt-4">
               <div className="min-w-0">
                 <div className="text-xs font-semibold">Record my session</div>
-                <p className="mt-0.5 text-xs leading-4 text-stone-600">{recordOn ? "Recording. Watch it back on the feedback page." : "Self-review video, stored only in this browser."}</p>
+                <p className="mt-0.5 text-xs leading-4 text-neutral-600">{recordOn ? "Recording. Watch it back on the feedback page." : "Self-review video, stored only in this browser."}</p>
               </div>
               <button type="button" onClick={toggleRecord} disabled={!hasStream && !recordOn} aria-pressed={recordOn} className={`btn btn-sm shrink-0 ${recordOn ? "btn-secondary" : "btn-ghost"}`}>
                 {recordOn ? (
@@ -1098,7 +1098,7 @@ function TechnicalRoom() {
               <button type="button" onClick={() => doRun(true)} disabled={running || phase !== "coding"} className="btn btn-success btn-sm">Submit</button>
             </div>
             {phase !== "coding" && (
-              <div className="w-full text-xs text-stone-600">
+              <div className="w-full text-xs text-neutral-600">
                 {phaseIdx < 3
                   ? "Run and Submit unlock once your approach is accepted and the coding phase starts."
                   : `Already submitted. Run and Submit are closed, finish the remaining steps with ${interviewer.name} on the right.`}
@@ -1106,7 +1106,7 @@ function TechnicalRoom() {
             )}
           </div>
           <div className="flex shrink-0 flex-col bg-panel p-3 lg:min-h-0 lg:flex-1">
-            <div className="relative h-[340px] shrink-0 overflow-hidden rounded-xl bg-[#1c1917] lg:h-auto lg:min-h-[120px] lg:flex-1">
+            <div className="relative h-[340px] shrink-0 overflow-hidden rounded-xl bg-[#1d1d1f] lg:h-auto lg:min-h-[120px] lg:flex-1">
               <Editor
                 height="100%"
                 language={lang}
@@ -1119,9 +1119,9 @@ function TechnicalRoom() {
                     inherit: true,
                     rules: [],
                     colors: {
-                      "editor.background": "#1c1917",
-                      "editor.lineHighlightBackground": "#292524",
-                      "editorGutter.background": "#1c1917",
+                      "editor.background": "#1d1d1f",
+                      "editor.lineHighlightBackground": "#2c2c2e",
+                      "editorGutter.background": "#1d1d1f",
                     },
                   });
                 }}
@@ -1133,7 +1133,7 @@ function TechnicalRoom() {
           <div className="max-h-[280px] shrink-0 overflow-y-auto border-t border-line bg-panel p-4 lg:max-h-[30%]">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h3 className="text-sm font-semibold">Test cases {lastKind === "submit" ? "(last submit)" : lastKind === "run" ? "(last run)" : ""}</h3>
-              <span className="text-xs text-stone-600">Run checks {visibleTests} visible cases. Submit checks all {problem.tests.length} cases including hidden, then starts the dry run.</span>
+              <span className="text-xs text-neutral-600">Run checks {visibleTests} visible cases. Submit checks all {problem.tests.length} cases including hidden, then starts the dry run.</span>
             </div>
             {runError && (
               <div className="mt-3 flex items-start justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700" role="alert">
@@ -1141,18 +1141,18 @@ function TechnicalRoom() {
                 <button type="button" onClick={() => setRunError("")} aria-label="Dismiss error" className="shrink-0 text-red-700">x</button>
               </div>
             )}
-            {!runOut && !runError && <p className="mt-3 text-xs text-stone-600">No runs yet. We start with your introduction and clarifying questions, then your approach, then code.</p>}
+            {!runOut && !runError && <p className="mt-3 text-xs text-neutral-600">No runs yet. We start with your introduction and clarifying questions, then your approach, then code.</p>}
             {runOut && (
               <div className="mt-3 space-y-3">
-                <div className={`text-sm font-semibold ${runOut.passed === runOut.total ? "text-emerald-700" : "text-amber-700"}`}>{runOut.passed} / {runOut.total} passed</div>
+                <div className={`text-sm font-semibold ${runOut.passed === runOut.total ? "text-accent" : "text-neutral-700"}`}>{runOut.passed} / {runOut.total} passed</div>
                 {runOut.results.map((r) => (
                   <div key={r.index} className="break-words border-t border-line pt-3 font-mono text-xs leading-5 first:border-t-0 first:pt-0">
                     <div className="flex items-center gap-2">
                       <span className={`chip ${r.passed ? "chip-pass" : "chip-fail"}`}>{r.passed ? "PASS" : "FAIL"}</span>
-                      <span className="text-stone-700">Case {r.index + 1}{r.hidden ? " (hidden)" : ""}</span>
+                      <span className="text-neutral-700">Case {r.index + 1}{r.hidden ? " (hidden)" : ""}</span>
                     </div>
-                    <div className="mt-1.5 text-stone-600">Input args: {JSON.stringify(r.args)}</div>
-                    <div className="text-stone-600">Expected: {JSON.stringify(r.expected)}</div>
+                    <div className="mt-1.5 text-neutral-600">Input args: {JSON.stringify(r.args)}</div>
+                    <div className="text-neutral-600">Expected: {JSON.stringify(r.expected)}</div>
                     <div>Got: {JSON.stringify(r.got)}</div>
                     {r.error && <div className="text-red-700">Error: {r.error}</div>}
                   </div>
@@ -1170,10 +1170,10 @@ function TechnicalRoom() {
                 <span className="avatar">{interviewer.name.charAt(0)}</span>
                 <div className="min-w-0">
                   <div className="text-sm font-semibold leading-5">{interviewer.name}</div>
-                  <div className="text-xs leading-4 text-stone-600">Interviewer · AI: {engineLabel} · Voice: {voiceLabel}</div>
+                  <div className="text-xs leading-4 text-neutral-600">Interviewer · AI: {engineLabel} · Voice: {voiceLabel}</div>
                 </div>
                 {speaker.speaking && (
-                  <span className="ml-auto text-xs font-medium text-emerald-700">
+                  <span className="ml-auto text-xs font-medium text-accent">
                     <SpeakingWave speaking label="Speaking" />
                   </span>
                 )}
@@ -1184,34 +1184,34 @@ function TechnicalRoom() {
                 {transcript.map((m, i) => (
                   <div key={i} className="py-2.5">
                     <div className="text-xs font-semibold">{m.role === "ai" ? interviewer.name : "You"}</div>
-                    <p className={`mt-0.5 break-words whitespace-pre-wrap text-[13px] leading-5 ${m.role === "ai" ? "text-stone-900" : "text-stone-700"}`}>{m.text}</p>
+                    <p className={`mt-0.5 break-words whitespace-pre-wrap text-[13px] leading-5 ${m.role === "ai" ? "text-neutral-900" : "text-neutral-700"}`}>{m.text}</p>
                   </div>
                 ))}
               </div>
               {waiting && (
-                <div className="flex items-center gap-1.5 pt-2.5 text-xs text-stone-600" role="status">
-                  <span className="dot dot-pulse bg-stone-400" />
+                <div className="flex items-center gap-1.5 pt-2.5 text-xs text-neutral-600" role="status">
+                  <span className="dot dot-pulse bg-neutral-400" />
                   {interviewer.name} is thinking...
                 </div>
               )}
               {transcript.length === 0 && (
-                <p className="pt-2.5 text-[13px] leading-5 text-stone-600">Connecting to your interviewer. {interviewer.name} will introduce {interviewer.reflexivePronoun} in a moment.</p>
+                <p className="pt-2.5 text-[13px] leading-5 text-neutral-600">Connecting to your interviewer. {interviewer.name} will introduce {interviewer.reflexivePronoun} in a moment.</p>
               )}
             </div>
             <div className="shrink-0 border-t border-line p-3">
               {(phase === "coding" || phase === "clarifying") && (
-                <p className="mb-2 text-xs leading-4 text-stone-600">Try: &quot;give me a test case&quot;, &quot;hint&quot; (recorded on Mid and Hard), &quot;what about empty input?&quot; Voice input works in Chrome.</p>
+                <p className="mb-2 text-xs leading-4 text-neutral-600">Try: &quot;give me a test case&quot;, &quot;hint&quot; (recorded on Mid and Hard), &quot;what about empty input?&quot; Voice input works in Chrome.</p>
               )}
-              {!voice.supported && <p className="mb-2 text-xs text-amber-700">Voice input not supported here. Type instead.</p>}
-              {voice.error && !speaker.speaking && <p className="mb-2 text-xs text-amber-700" role="alert">{voice.error}</p>}
+              {!voice.supported && <p className="mb-2 text-xs text-neutral-600">Voice input not supported here. Type instead.</p>}
+              {voice.error && !speaker.speaking && <p className="mb-2 text-xs text-red-600" role="alert">{voice.error}</p>}
               {micState === "paused" ? (
-                <p className="mb-2 flex items-center gap-1.5 text-xs text-stone-600" role="status">
-                  <span className="dot bg-stone-400" />
+                <p className="mb-2 flex items-center gap-1.5 text-xs text-neutral-600" role="status">
+                  <span className="dot bg-neutral-400" />
                   Mic paused while {interviewer.name} speaks
                 </p>
               ) : micState === "listening" ? (
-                <p className="mb-2 flex items-center gap-1.5 text-xs text-emerald-700" role="status">
-                  <span className="dot dot-pulse bg-emerald-600" />
+                <p className="mb-2 flex items-center gap-1.5 text-xs text-accent" role="status">
+                  <span className="dot dot-pulse bg-accent" />
                   Listening, speak now
                 </p>
               ) : null}
@@ -1220,11 +1220,11 @@ function TechnicalRoom() {
                 <input id="tech-panel-input" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submitPanel()} placeholder={inputPlaceholder[phase]} className="input min-w-0 flex-1" />
                 {micState === "paused" ? (
                   <button type="button" onClick={onMicClick} aria-label={`Interrupt ${interviewer.name} and turn your mic on`} className="btn btn-ghost btn-sm">
-                    <span className="dot bg-stone-400" />
+                    <span className="dot bg-neutral-400" />
                     Mic paused
                   </button>
                 ) : (
-                  <button type="button" onClick={onMicClick} disabled={!voice.supported} aria-label="Toggle microphone input" className={`btn btn-sm ${voice.listening ? "border-emerald-300 bg-emerald-50 text-emerald-700" : "btn-ghost"}`}>{voice.listening ? "Listening..." : "Mic"}</button>
+                  <button type="button" onClick={onMicClick} disabled={!voice.supported} aria-label="Toggle microphone input" className={`btn btn-sm ${voice.listening ? "border-line2 bg-accent-soft text-accent" : "btn-ghost"}`}>{voice.listening ? "Listening..." : "Mic"}</button>
                 )}
                 <button type="button" onClick={() => submitPanel()} disabled={waiting} className="btn btn-primary btn-sm">Send</button>
               </div>
@@ -1251,7 +1251,7 @@ function TechnicalRoom() {
 
 export default function Page() {
   return (
-    <Suspense fallback={<div className="p-8 text-sm text-stone-600">Loading interview room...</div>}>
+    <Suspense fallback={<div className="p-8 text-sm text-neutral-600">Loading interview room...</div>}>
       <TechnicalRoom />
     </Suspense>
   );

@@ -2,16 +2,15 @@
 
 @theme {
   --font-sans: var(--font-inter), ui-sans-system, system-ui, sans-serif;
-  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
 
-  --color-ink: #faf9f6;
+  --color-ink: #ffffff;
   --color-panel: #ffffff;
-  --color-panel2: #f4f1ea;
-  --color-line: #e7e2d9;
-  --color-line2: #d8d1c2;
-  --color-accent: #15803d;
-  --color-accent-strong: #166534;
-  --color-accent-soft: #e9f4ec;
+  --color-panel2: #f5f5f7;
+  --color-line: #d2d2d7;
+  --color-line2: #aeaeb2;
+  --color-accent: #0066cc;
+  --color-accent-strong: #0055b3;
+  --color-accent-soft: #eaf3fc;
 
   --text-display: 3.5rem;
   --text-display--line-height: 1.05;
@@ -27,7 +26,7 @@
 
 body {
   background: var(--color-ink);
-  color: #1c1917;
+  color: #1d1d1f;
   font-family: var(--font-sans);
   line-height: 1.6;
 }
@@ -59,9 +58,9 @@ body {
   outline-offset: 2px;
 }
 .btn:disabled {
-  background: #e9e4d8;
-  border-color: var(--color-line2);
-  color: #78716c;
+  background: #f5f5f7;
+  border-color: var(--color-line);
+  color: #86868b;
   opacity: 1;
   filter: none;
   cursor: not-allowed;
@@ -70,27 +69,27 @@ body {
 .btn-primary,
 .btn-accent,
 .btn-success {
-  background: var(--color-accent);
+  background: #1d1d1f;
   color: #ffffff;
 }
 .btn-primary:hover:not(:disabled),
 .btn-accent:hover:not(:disabled),
 .btn-success:hover:not(:disabled) {
-  background: var(--color-accent-strong);
+  background: #000000;
 }
 .btn-secondary {
   background: #ffffff;
-  border-color: var(--color-line2);
-  color: #292524;
+  border-color: var(--color-line);
+  color: #1d1d1f;
 }
 .btn-secondary:hover:not(:disabled) {
-  border-color: #c4bba6;
+  border-color: var(--color-line2);
   background: var(--color-panel2);
 }
 .btn-ghost {
   background: transparent;
   border-color: var(--color-line);
-  color: #44403c;
+  color: #424245;
 }
 .btn-ghost:hover:not(:disabled) {
   border-color: var(--color-line2);
@@ -114,51 +113,51 @@ body {
   width: 100%;
   min-height: 2.75rem;
   border-radius: 0.5rem;
-  border: 1px solid var(--color-line2);
+  border: 1px solid var(--color-line);
   background: #ffffff;
   padding: 0.625rem 0.875rem;
   font-size: 0.875rem;
-  color: #1c1917;
+  color: #1d1d1f;
   outline: none;
   transition: border-color 0.18s ease-out, box-shadow 0.18s ease-out;
 }
 .input:focus {
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(21, 128, 61, 0.16);
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.15);
 }
 .input::placeholder {
-  color: #a8a29e;
+  color: #86868b;
 }
 
 .select {
   min-height: 2.5rem;
   border-radius: 0.5rem;
-  border: 1px solid var(--color-line2);
+  border: 1px solid var(--color-line);
   background-color: #ffffff;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2357504a' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 0.75rem center;
   appearance: none;
   padding: 0.5rem 2.25rem 0.5rem 0.75rem;
   font-size: 0.875rem;
-  color: #1c1917;
+  color: #1d1d1f;
   outline: none;
   transition: border-color 0.18s ease-out, box-shadow 0.18s ease-out;
 }
 .select:focus {
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(21, 128, 61, 0.16);
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.15);
 }
 
 .card {
   background: var(--color-panel);
   border: 1px solid var(--color-line);
   border-radius: 0.75rem;
-  box-shadow: 0 1px 2px rgba(28, 25, 23, 0.04);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 .card-hero {
   border-radius: 1rem;
-  box-shadow: 0 1px 2px rgba(28, 25, 23, 0.05), 0 12px 32px -16px rgba(28, 25, 23, 0.12);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 12px 32px -16px rgba(0, 0, 0, 0.1);
 }
 .card-pad {
   padding: 1rem;
@@ -174,39 +173,39 @@ body {
   align-items: center;
   gap: 0.3rem;
   border-radius: 999px;
-  border: 1px solid var(--color-line2);
+  border: 1px solid var(--color-line);
   background: var(--color-panel2);
   padding: 0.2rem 0.6rem;
   font-size: 0.75rem;
   font-weight: 500;
   line-height: 1.3;
-  color: #44403c;
+  color: #424245;
   white-space: nowrap;
 }
 .badge-accent {
-  border-color: #bfe3cc;
+  border-color: #b9d9f5;
   background: var(--color-accent-soft);
-  color: #166534;
+  color: #0066cc;
 }
 .badge-easy {
-  border-color: #bbe7c6;
-  background: #ecf8ef;
-  color: #15803d;
+  border-color: var(--color-line);
+  background: var(--color-panel2);
+  color: #424245;
 }
 .badge-mid {
-  border-color: #ecd9a8;
-  background: #fbf4e0;
-  color: #a16207;
+  border-color: var(--color-line);
+  background: var(--color-panel2);
+  color: #424245;
 }
 .badge-hard {
-  border-color: #efc4c0;
-  background: #fbf0ef;
-  color: #b91c1c;
+  border-color: var(--color-line);
+  background: var(--color-panel2);
+  color: #424245;
 }
 .badge-live {
-  border-color: #bbe7c6;
-  background: #ecf8ef;
-  color: #166534;
+  border-color: #b9d9f5;
+  background: var(--color-accent-soft);
+  color: #0066cc;
 }
 
 .chip {
@@ -219,14 +218,14 @@ body {
   letter-spacing: 0.02em;
 }
 .chip-pass {
-  background: #ecf8ef;
-  color: #15803d;
-  border: 1px solid #bbe7c6;
+  background: #1d1d1f;
+  color: #ffffff;
+  border: 1px solid transparent;
 }
 .chip-fail {
-  background: #fbf0ef;
+  background: #fef2f2;
   color: #b91c1c;
-  border: 1px solid #efc4c0;
+  border: 1px solid #fecaca;
 }
 
 .panel-head {
@@ -246,8 +245,8 @@ body {
   height: 2.25rem;
   border-radius: 999px;
   background: var(--color-accent-soft);
-  border: 1px solid #bfe3cc;
-  color: #166534;
+  border: 1px solid #b9d9f5;
+  color: #0066cc;
   font-size: 0.85rem;
   font-weight: 600;
   flex-shrink: 0;
@@ -309,8 +308,8 @@ body {
 }
 
 .font-display {
-  font-family: "Fraunces", var(--font-fraunces), Georgia, "Times New Roman", serif;
-  letter-spacing: -0.01em;
+  font-family: var(--font-sans);
+  letter-spacing: -0.02em;
 }
 
 .dot {

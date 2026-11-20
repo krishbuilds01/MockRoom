@@ -1,13 +1,13 @@
 export default function Footer() {
   return (
-    <footer className="mt-8 shrink-0 border-t border-line py-4 text-xs leading-5 text-stone-600">
+    <footer className="mt-8 shrink-0 border-t border-line py-4 text-xs leading-5 text-neutral-600">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span>Mock Room. Interview practice with Maya and Rohan.</span>
         <a
           href="https://github.com/krishbuilds01/ai-interview-platform"
           target="_blank"
           rel="noreferrer"
-          className="font-medium text-stone-700 underline underline-offset-2 hover:text-stone-900"
+          className="font-medium text-neutral-700 underline underline-offset-2 hover:text-neutral-900"
         >
           GitHub
         </a>

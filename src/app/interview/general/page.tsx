@@ -751,7 +751,7 @@ function GeneralRoom() {
       <header className="shrink-0">
         <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
           <div className="min-w-0">
-            <Link href="/" onClick={onBackHome} className="text-xs text-stone-600 hover:text-stone-800">Back to home</Link>
+            <Link href="/" onClick={onBackHome} className="text-xs text-neutral-600 hover:text-neutral-800">Back to home</Link>
             <div className="mt-1 flex flex-wrap items-center gap-2">
               <span className="text-[15px] font-semibold tracking-tight">{resumeMode ? "Resume Interview" : "Live AI Interview"}</span>
               <span className={`badge ${difficulty === "Easy" ? "badge-easy" : difficulty === "Hard" ? "badge-hard" : "badge-mid"}`}>{difficulty}</span>
@@ -760,12 +760,12 @@ function GeneralRoom() {
               <span className="badge badge-accent">{PHASE_LABELS[phase]}</span>
               {liveActive && (
                 <span className="badge badge-live">
-                  <span className="dot dot-pulse bg-emerald-600" />
+                  <span className="dot dot-pulse bg-accent" />
                   Gemini Live
                 </span>
               )}
             </div>
-            <div className="tnum mt-1 text-xs text-stone-600">
+            <div className="tnum mt-1 text-xs text-neutral-600">
               {`${statusLine} · ${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, "0")} of about ${Math.round(targetSec / 60)} min target${engineLabel ? ` · AI: ${engineLabel}` : ""}${voiceLabel ? ` · Voice: ${voiceLabel}` : ""}`}
             </div>
           </div>
@@ -786,7 +786,7 @@ function GeneralRoom() {
             {PHASE_STEPS.map((s, i) => (
               <div key={s} className="min-w-0 flex-1">
                 <div className={`h-1 rounded-full ${i < phaseIdx ? "bg-accent/60" : i === phaseIdx ? "bg-accent" : "bg-line"}`} />
-                <div className={`mt-1 truncate text-xs ${i === phaseIdx ? "font-semibold text-stone-900" : "text-stone-600"}`}>{s}</div>
+                <div className={`mt-1 truncate text-xs ${i === phaseIdx ? "font-semibold text-neutral-900" : "text-neutral-600"}`}>{s}</div>
               </div>
             ))}
           </div>
@@ -796,8 +796,8 @@ function GeneralRoom() {
                 <span key={s} className={`h-1.5 w-4 rounded-full ${i < phaseIdx ? "bg-accent/60" : i === phaseIdx ? "bg-accent" : "bg-line"}`} />
               ))}
             </div>
-            <span className="text-xs text-stone-600">
-              Step {phaseIdx + 1} of {PHASE_STEPS.length} · <span className="font-semibold text-stone-900">{PHASE_STEPS[phaseIdx]}</span>
+            <span className="text-xs text-neutral-600">
+              Step {phaseIdx + 1} of {PHASE_STEPS.length} · <span className="font-semibold text-neutral-900">{PHASE_STEPS[phaseIdx]}</span>
             </span>
           </div>
         </div>
@@ -812,7 +812,7 @@ function GeneralRoom() {
             <div className="flex items-center justify-between gap-3 border-t border-line pt-4">
               <div className="min-w-0">
                 <div className="text-sm font-semibold">Record my session</div>
-                <p className="mt-0.5 text-xs leading-5 text-stone-600">
+                <p className="mt-0.5 text-xs leading-5 text-neutral-600">
                   {recordOn ? "Recording now. Watch it back on the feedback page." : hasStream ? "For self-review afterwards. The video never leaves this browser." : "Allow camera access first, then you can record."}
                 </p>
               </div>
@@ -828,10 +828,10 @@ function GeneralRoom() {
               </button>
             </div>
           )}
-          <div className="border-t border-line pt-4 text-xs leading-5 text-stone-600">
+          <div className="border-t border-line pt-4 text-xs leading-5 text-neutral-600">
             Speak your answer with the mic, or type it. One follow-up per question, a second if the first answer is thin.
-            {liveActive && <div className="mt-2 font-medium text-emerald-700">Live conversation is on: {interviewer.name} leads and listens continuously. Use the button above to end live and return to standard mode at any time.</div>}
-            {phase === "done" && <div className="mt-2 font-medium text-stone-900">Interview complete. Click End Interview to see your feedback.</div>}
+            {liveActive && <div className="mt-2 font-medium text-accent">Live conversation is on: {interviewer.name} leads and listens continuously. Use the button above to end live and return to standard mode at any time.</div>}
+            {phase === "done" && <div className="mt-2 font-medium text-neutral-900">Interview complete. Click End Interview to see your feedback.</div>}
           </div>
         </div>
 
@@ -841,10 +841,10 @@ function GeneralRoom() {
               <span className="avatar">{interviewer.name.charAt(0)}</span>
               <div>
                 <div className="text-sm font-semibold leading-5">{interviewer.name}</div>
-                <div className="text-xs leading-4 text-stone-600">Your interviewer</div>
+                <div className="text-xs leading-4 text-neutral-600">Your interviewer</div>
               </div>
               {(speaker.speaking || liveSpeaking) && (
-                <span className="text-xs font-medium text-emerald-700">
+                <span className="text-xs font-medium text-accent">
                   <SpeakingWave speaking label="Speaking" />
                 </span>
               )}
@@ -854,26 +854,26 @@ function GeneralRoom() {
           </div>
           <div ref={transcriptBoxRef} className="min-h-0 flex-1 overflow-y-auto p-5" aria-live="polite">
             <div className="border-b border-line pb-4">
-              <div className="text-xs font-semibold uppercase tracking-wider text-stone-600">Session brief</div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-neutral-600">Session brief</div>
               <dl className="mt-3 space-y-2 text-[13px] leading-5">
                 <div className="flex gap-2">
-                  <dt className="w-24 shrink-0 font-medium text-stone-600">Interviewer</dt>
+                  <dt className="w-24 shrink-0 font-medium text-neutral-600">Interviewer</dt>
                   <dd>{`${interviewer.name} · ${interviewer.gender}`}</dd>
                 </div>
                 <div className="flex gap-2">
-                  <dt className="w-24 shrink-0 font-medium text-stone-600">Format</dt>
+                  <dt className="w-24 shrink-0 font-medium text-neutral-600">Format</dt>
                   <dd>{resumeMode ? "Questions built from your resume, each with follow-ups" : `${qset.length} questions with follow-ups, then your questions for ${interviewer.name}`}</dd>
                 </div>
                 <div className="flex gap-2">
-                  <dt className="w-24 shrink-0 font-medium text-stone-600">Target</dt>
+                  <dt className="w-24 shrink-0 font-medium text-neutral-600">Target</dt>
                   <dd>{`About ${Math.round(targetSec / 60)} minutes`}</dd>
                 </div>
                 <div className="flex gap-2">
-                  <dt className="w-24 shrink-0 font-medium text-stone-600">Phases</dt>
+                  <dt className="w-24 shrink-0 font-medium text-neutral-600">Phases</dt>
                   <dd>Intro, questions, your questions, then scored feedback</dd>
                 </div>
                 <div className="flex gap-2">
-                  <dt className="w-24 shrink-0 font-medium text-stone-600">Covers</dt>
+                  <dt className="w-24 shrink-0 font-medium text-neutral-600">Covers</dt>
                   <dd>{company.id !== "any" ? company.style : difficulty === "Easy" ? "Foundations, and specifics over slogans" : difficulty === "Hard" ? "Depth, trade-offs, and optimisation under pressure" : "Real depth on your answers, with trade-offs"}</dd>
                 </div>
               </dl>
@@ -882,26 +882,26 @@ function GeneralRoom() {
               {transcript.map((m, i) => (
                 <div key={i} className="py-3">
                   <div className="text-[13px] font-semibold">{m.role === "ai" ? interviewer.name : "You"}</div>
-                  <p className={`mt-0.5 break-words whitespace-pre-wrap text-sm leading-6 ${m.role === "ai" ? "text-stone-900" : "text-stone-700"}`}>{m.text}</p>
+                  <p className={`mt-0.5 break-words whitespace-pre-wrap text-sm leading-6 ${m.role === "ai" ? "text-neutral-900" : "text-neutral-700"}`}>{m.text}</p>
                 </div>
               ))}
             </div>
             {waiting && !liveActive && (
-              <div className="flex items-center gap-1.5 pt-3 text-xs text-stone-600" role="status">
-                <span className="dot dot-pulse bg-stone-400" />
+              <div className="flex items-center gap-1.5 pt-3 text-xs text-neutral-600" role="status">
+                <span className="dot dot-pulse bg-neutral-400" />
                 {interviewer.name} is thinking...
               </div>
             )}
             {transcript.length === 0 && (
-              <p className="pt-3 text-sm leading-6 text-stone-600">Connecting to your interviewer. {interviewer.name} will introduce {interviewer.reflexivePronoun} in a moment.</p>
+              <p className="pt-3 text-sm leading-6 text-neutral-600">Connecting to your interviewer. {interviewer.name} will introduce {interviewer.reflexivePronoun} in a moment.</p>
             )}
           </div>
           <div className="shrink-0 border-t border-line p-4">
-            {!voice.supported && !liveActive && <p className="mb-2 text-xs text-amber-700">Voice input is not supported in this browser. Type your answer instead. Chrome works best.</p>}
-            {voice.error && !liveActive && !speaker.speaking && <p className="mb-2 text-xs text-amber-700" role="alert">{voice.error}</p>}
+            {!voice.supported && !liveActive && <p className="mb-2 text-xs text-neutral-600">Voice input is not supported in this browser. Type your answer instead. Chrome works best.</p>}
+            {voice.error && !liveActive && !speaker.speaking && <p className="mb-2 text-xs text-red-600" role="alert">{voice.error}</p>}
             {!liveActive && micState === "paused" ? (
-              <p className="mb-2 flex items-center gap-1.5 text-xs text-stone-600" role="status">
-                <span className="dot bg-stone-400" />
+              <p className="mb-2 flex items-center gap-1.5 text-xs text-neutral-600" role="status">
+                <span className="dot bg-neutral-400" />
                 Mic paused while {interviewer.name} speaks
               </p>
             ) : !liveActive && micState === "listening" ? (
@@ -915,23 +915,23 @@ function GeneralRoom() {
               <input id="general-answer" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submitAnswer()} placeholder={inputPlaceholder[phase]} className="input min-w-0 flex-1" />
               {liveActive ? (
                 liveGated ? (
-                  <span className="flex items-center gap-1.5 rounded-lg border border-line bg-panel2 px-4 text-sm text-stone-600" role="status">
-                    <span className="dot bg-stone-400" />
+                  <span className="flex items-center gap-1.5 rounded-lg border border-line bg-panel2 px-4 text-sm text-neutral-600" role="status">
+                    <span className="dot bg-neutral-400" />
                     Mic paused while {interviewer.name} speaks
                   </span>
                 ) : (
-                  <span className="flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-4 text-sm text-emerald-700" role="status">
-                    <span className="dot dot-pulse bg-emerald-600" />
+                  <span className="flex items-center gap-1.5 rounded-lg border border-line2 bg-accent-soft px-4 text-sm text-accent" role="status">
+                    <span className="dot dot-pulse bg-accent" />
                     Live mic on
                   </span>
                 )
               ) : micState === "paused" ? (
                 <button type="button" onClick={onMicClick} aria-label={`Interrupt ${interviewer.name} and turn your mic on`} className="btn btn-ghost btn-sm">
-                  <span className="dot bg-stone-400" />
+                  <span className="dot bg-neutral-400" />
                   Mic paused
                 </button>
               ) : (
-                <button type="button" onClick={onMicClick} disabled={!voice.supported} aria-label="Toggle microphone input" className={`btn btn-sm ${voice.listening ? "border-emerald-300 bg-emerald-50 text-emerald-700" : "btn-ghost"}`}>{voice.listening ? "Listening..." : "Mic"}</button>
+                <button type="button" onClick={onMicClick} disabled={!voice.supported} aria-label="Toggle microphone input" className={`btn btn-sm ${voice.listening ? "border-line2 bg-accent-soft text-accent" : "btn-ghost"}`}>{voice.listening ? "Listening..." : "Mic"}</button>
               )}
               <button type="button" onClick={() => submitAnswer()} disabled={waiting && !liveActive} className="btn btn-primary btn-sm">Send</button>
             </div>
@@ -957,7 +957,7 @@ function GeneralRoom() {
 
 export default function Page() {
   return (
-    <Suspense fallback={<div className="p-8 text-sm text-stone-600">Loading interview room...</div>}>
+    <Suspense fallback={<div className="p-8 text-sm text-neutral-600">Loading interview room...</div>}>
       <GeneralRoom />
     </Suspense>
   );
