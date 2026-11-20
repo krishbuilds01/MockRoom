@@ -715,16 +715,25 @@ function GeneralRoom() {
 
   const micState = micControlState({ speaking: speaker.speaking, gated: voice.gated, listening: voice.listening, supported: voice.supported });
   const liveActive = liveOn && live.status === "live";
-  const voiceLabel = liveActive
+  const speakingNow = speaker.speaking || liveSpeaking;
+  const voiceLabel: string | null = liveActive
     ? "Gemini Live"
-    : live.status === "connecting"
-      ? "connecting"
-      : speaker.voiceSource === "gemini"
-        ? "Gemini voice"
-        : speaker.voiceSource === "browser"
-          ? "browser voice"
+    : speaker.voiceSource === "gemini"
+      ? "Gemini voice"
+      : speaker.voiceSource === "browser"
+        ? "browser voice"
+        : speakingNow
+          ? null
           : "connecting";
-  const engineLabel = liveActive ? "Gemini Live" : engine === "gemini" ? "Gemini" : engine === "local" ? "local mode" : "connecting";
+  const engineLabel: string | null = liveActive
+    ? "Gemini Live"
+    : engine === "gemini"
+      ? "Gemini"
+      : engine === "local"
+        ? "local mode"
+        : speakingNow || waiting
+          ? null
+          : "connecting";
   const phaseIdx = PHASE_INDEX[phase];
   const statusLine =
     phase === "main"
@@ -757,7 +766,7 @@ function GeneralRoom() {
               )}
             </div>
             <div className="tnum mt-1 text-xs text-stone-600">
-              {`${statusLine} · ${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, "0")} of about ${Math.round(targetSec / 60)} min target · AI: ${engineLabel} · Voice: ${voiceLabel}`}
+              {`${statusLine} · ${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, "0")} of about ${Math.round(targetSec / 60)} min target${engineLabel ? ` · AI: ${engineLabel}` : ""}${voiceLabel ? ` · Voice: ${voiceLabel}` : ""}`}
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -848,23 +857,23 @@ function GeneralRoom() {
               <div className="text-xs font-semibold uppercase tracking-wider text-stone-600">Session brief</div>
               <dl className="mt-3 space-y-2 text-[13px] leading-5">
                 <div className="flex gap-2">
-                  <dt className="w-16 shrink-0 font-medium text-stone-600">Interviewer</dt>
+                  <dt className="w-24 shrink-0 font-medium text-stone-600">Interviewer</dt>
                   <dd>{`${interviewer.name} · ${interviewer.gender}`}</dd>
                 </div>
                 <div className="flex gap-2">
-                  <dt className="w-16 shrink-0 font-medium text-stone-600">Format</dt>
+                  <dt className="w-24 shrink-0 font-medium text-stone-600">Format</dt>
                   <dd>{resumeMode ? "Questions built from your resume, each with follow-ups" : `${qset.length} questions with follow-ups, then your questions for ${interviewer.name}`}</dd>
                 </div>
                 <div className="flex gap-2">
-                  <dt className="w-16 shrink-0 font-medium text-stone-600">Target</dt>
+                  <dt className="w-24 shrink-0 font-medium text-stone-600">Target</dt>
                   <dd>{`About ${Math.round(targetSec / 60)} minutes`}</dd>
                 </div>
                 <div className="flex gap-2">
-                  <dt className="w-16 shrink-0 font-medium text-stone-600">Phases</dt>
+                  <dt className="w-24 shrink-0 font-medium text-stone-600">Phases</dt>
                   <dd>Intro, questions, your questions, then scored feedback</dd>
                 </div>
                 <div className="flex gap-2">
-                  <dt className="w-16 shrink-0 font-medium text-stone-600">Covers</dt>
+                  <dt className="w-24 shrink-0 font-medium text-stone-600">Covers</dt>
                   <dd>{company.id !== "any" ? company.style : difficulty === "Easy" ? "Foundations, and specifics over slogans" : difficulty === "Hard" ? "Depth, trade-offs, and optimisation under pressure" : "Real depth on your answers, with trade-offs"}</dd>
                 </div>
               </dl>
