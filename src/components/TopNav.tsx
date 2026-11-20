@@ -28,7 +28,7 @@ export default function TopNav({ active }: { active?: string }) {
             );
           })}
         </nav>
-        <Link href="/#setup" className="btn btn-primary btn-sm">
+        <Link href="/setup" className="btn btn-primary btn-sm">
           Start interview
         </Link>
       </div>

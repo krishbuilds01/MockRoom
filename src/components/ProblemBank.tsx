@@ -34,7 +34,7 @@ const STAGE_CLASS: Record<BankStage, string> = {
   OA: "stage-oa",
 };
 
-function DifficultyPill({ difficulty }: { difficulty: BankDifficulty }) {
+export function DifficultyPill({ difficulty }: { difficulty: BankDifficulty }) {
   return (
     <span className={`pill ${DIFF_CLASS[difficulty]}`}>
       <span className="pill-dot" aria-hidden="true" />
@@ -43,7 +43,7 @@ function DifficultyPill({ difficulty }: { difficulty: BankDifficulty }) {
   );
 }
 
-function CompanyCell({ companies }: { companies: string[] }) {
+export function CompanyCell({ companies }: { companies: string[] }) {
   const shown = companies.slice(0, 2);
   const extra = companies.length - shown.length;
   return (

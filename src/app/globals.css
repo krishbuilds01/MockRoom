@@ -391,7 +391,7 @@ body {
 }
 
 .font-display {
-  font-family: var(--font-sans);
+  font-family: var(--font-space-grotesk), var(--font-sans);
   letter-spacing: -0.02em;
 }
 

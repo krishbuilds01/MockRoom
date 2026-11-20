@@ -1,0 +1,23 @@
+import TopNav from "@/components/TopNav";
+import SetupForm from "@/components/SetupForm";
+import Footer from "@/components/Footer";
+
+export default function SetupPage() {
+  return (
+    <div className="min-h-dvh bg-ink">
+      <TopNav />
+      <main className="mx-auto w-full max-w-[1340px] px-5 pb-5">
+        <header className="pt-8">
+          <h1 className="font-display text-4xl font-bold tracking-tight text-white">Set up your interview</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
+            Pick a mode, an interviewer and a difficulty, then start. There is no account and nothing to install.
+          </p>
+        </header>
+        <div className="mt-6 max-w-[820px]">
+          <SetupForm />
+        </div>
+        <Footer />
+      </main>
+    </div>
+  );
+}
