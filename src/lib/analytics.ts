@@ -21,6 +21,7 @@ export function loadHistory(): SessionRecord[] {
 
 export interface TrendPoint {
   date: string;
+  n: number;
   label: string;
   overall: number;
   type: string;
@@ -93,15 +94,13 @@ function techHref(topic: string, difficulty: string): string {
 export function computeAnalytics(history: SessionRecord[], now: Date = new Date()): Analytics {
   const total = history.length;
   const chronological = [...history].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  const trend: TrendPoint[] = chronological.map((h) => {
-    const d = new Date(h.date);
-    return {
-      date: h.date,
-      label: `${d.getDate()}/${d.getMonth() + 1}`,
-      overall: overallScore(h.scores),
-      type: h.type,
-    };
-  });
+  const trend: TrendPoint[] = chronological.map((h, i) => ({
+    date: h.date,
+    n: i + 1,
+    label: `#${i + 1}`,
+    overall: overallScore(h.scores),
+    type: h.type,
+  }));
   const averageOverall = total ? round1(trend.reduce((s, p) => s + p.overall, 0) / total) : 0;
 
   const topicMap = new Map<string, { sum: number; count: number }>();

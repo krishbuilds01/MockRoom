@@ -29,11 +29,16 @@ function TrendChart({ analytics }: { analytics: Analytics }) {
   const x = (i: number) => padL + (pts.length === 1 ? iw / 2 : (i / (pts.length - 1)) * iw);
   const y = (v: number) => padT + ih - (v / 11) * ih;
   const line = pts.map((p, i) => `${x(i)},${y(p.overall)}`).join(" ");
+  const labelStep = Math.max(1, Math.ceil(pts.length / 7));
+  const fmtDay = (iso: string) => new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+  const firstDay = pts.length ? fmtDay(pts[0].date) : "";
+  const lastDay = pts.length ? fmtDay(pts[pts.length - 1].date) : "";
+  const range = firstDay === lastDay ? firstDay : `${firstDay} to ${lastDay}`;
   return (
     <div>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="font-display text-h2 font-semibold">Score trend</h2>
-        <span className="text-xs text-stone-600">Overall score per session, oldest to newest</span>
+        <span className="text-xs text-stone-600">Overall score per session, numbered in the order you did them{range ? ` · ${range}` : ""}</span>
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} className="mt-4 w-full" role="img" aria-label="Overall score trend over time">
         {[0, 5, 10].map((g) => (
@@ -49,7 +54,7 @@ function TrendChart({ analytics }: { analytics: Analytics }) {
             <text x={x(i)} y={y(p.overall) - 10} textAnchor="middle" fontSize="12" fontWeight="600" fill="#1c1917" style={{ fontVariantNumeric: "tabular-nums" }}>
               {p.overall}
             </text>
-            {(pts.length <= 8 || i === 0 || i === pts.length - 1 || i % 3 === 0) && (
+            {(i % labelStep === 0 || i === pts.length - 1) && (
               <text x={x(i)} y={H - 8} textAnchor="middle" fontSize="12" fill="#57534e">
                 {p.label}
               </text>
@@ -69,7 +74,7 @@ function AverageRow({ name, average, count }: { name: string; average: number; c
         <div className={`h-full rounded-full ${scoreBarClass(average)}`} style={{ width: `${average * 10}%` }} />
       </div>
       <span className="tnum w-14 shrink-0 text-right text-sm font-semibold">{average}/10</span>
-      <span className="w-16 shrink-0 text-right text-xs text-stone-600">{count} session{count === 1 ? "" : "s"}</span>
+      <span className="w-24 shrink-0 whitespace-nowrap text-right text-xs text-stone-600">{count} session{count === 1 ? "" : "s"}</span>
     </div>
   );
 }

@@ -132,7 +132,7 @@ export default function Home() {
   const firstSteps = [
     "Choose a mode, an interviewer and a difficulty in the form, then start. There is no account and nothing to install.",
     `Voice room: an introduction, 5 questions with a follow-up on each, then your questions for ${interviewer.name}. Coding room: your approach is judged before you write code, and ${interviewer.name} watches the editor while you work.`,
-    "Every session ends with scores out of 10 on problem solving, coding, communication and complexity, your weak areas, and the next problems to do.",
+    "Every session ends with scores out of 10 on problem solving, coding, communication and complexity analysis, your weak areas, and the next problems to do.",
   ];
 
   return (
@@ -150,7 +150,7 @@ export default function Home() {
         <p className="mt-3 max-w-2xl text-[15px] leading-6 text-stone-600">
           One on one interview practice. Maya or Rohan runs your session: 5 questions with follow-ups in the voice room, or one
           coding problem watched line by line in the coding room. Thin answers get pushed back, hints are recorded, and every
-          session ends with scores out of 10 on problem solving, coding, communication and complexity.
+          session ends with scores out of 10 on problem solving, coding, communication and complexity analysis.
         </p>
       </header>
 
@@ -283,7 +283,7 @@ export default function Home() {
             </div>
             {chronological.length > 1 && (
               <div className="mt-4 border-t border-line pt-3">
-                <div className="text-[13px] text-stone-600">Overall score per session, oldest to newest</div>
+                <div className="text-[13px] text-stone-600">Overall score per session, numbered in the order you did them</div>
                 <div className="mt-2 flex gap-2 border-b border-line2">
                   {chronological.slice(-10).map((h) => {
                     const o = overallScore(h.scores);
@@ -298,12 +298,9 @@ export default function Home() {
                   })}
                 </div>
                 <div className="mt-1.5 flex gap-2">
-                  {chronological.slice(-10).map((h) => {
-                    const d = new Date(h.date);
-                    return (
-                      <span key={h.id} className="flex-1 text-center text-xs leading-none text-stone-600">{`${d.getDate()}/${d.getMonth() + 1}`}</span>
-                    );
-                  })}
+                  {chronological.slice(-10).map((h, i, arr) => (
+                    <span key={h.id} className="tnum flex-1 text-center text-xs leading-none text-stone-600">{`#${chronological.length - arr.length + i + 1}`}</span>
+                  ))}
                 </div>
               </div>
             )}
