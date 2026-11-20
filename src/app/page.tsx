@@ -134,6 +134,8 @@ export default function Home() {
 
   const analytics = history.length ? computeAnalytics(history) : null;
   const chronological = [...history].reverse();
+  const chartSessions = chronological.slice(-30);
+  const chartOffset = chronological.length - chartSessions.length;
   const latest = history[0] ?? null;
   const latestOverall = latest ? overallScore(latest.scores) : null;
   const previousOverall = history.length > 1 ? overallScore(history[1].scores) : null;
@@ -342,9 +344,12 @@ export default function Home() {
                 </div>
                 {chronological.length > 1 && (
                   <div>
-                    <div className="text-[13px] text-neutral-600">Overall score per session, numbered in the order you did them</div>
+                    <div className="text-[13px] text-neutral-600">
+                      Overall score per session, numbered in the order you did them
+                      {chartOffset > 0 && <> · Showing the most recent 30 of {chronological.length} sessions</>}
+                    </div>
                     <div className="mt-2 flex gap-2 border-b border-line2">
-                      {chronological.slice(-10).map((h) => {
+                      {chartSessions.map((h) => {
                         const o = overallScore(h.scores);
                         return (
                           <div key={h.id} className="flex flex-1 flex-col items-center gap-1.5" title={`${o}/10`}>
@@ -357,8 +362,8 @@ export default function Home() {
                       })}
                     </div>
                     <div className="mt-1.5 flex gap-2">
-                      {chronological.slice(-10).map((h, i, arr) => (
-                        <span key={h.id} className="tnum flex-1 text-center text-xs leading-none text-neutral-600">{`#${chronological.length - arr.length + i + 1}`}</span>
+                      {chartSessions.map((h, i) => (
+                        <span key={h.id} className="tnum flex-1 text-center text-xs leading-none text-neutral-600">{`#${chartOffset + i + 1}`}</span>
                       ))}
                     </div>
                   </div>
