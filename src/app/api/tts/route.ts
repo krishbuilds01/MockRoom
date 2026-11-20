@@ -1,7 +1,58 @@
 import { NextRequest, NextResponse } from "next/server";
+import { MsEdgeTTS, OUTPUT_FORMAT } from "msedge-tts";
 import { geminiAvailable } from "@/lib/gemini";
 
 export const maxDuration = 30;
+
+const EDGE_VOICE_BY_GEMINI: Record<string, string> = {
+  Kore: "en-IN-NeerjaNeural",
+  Orus: "en-IN-PrabhatNeural",
+};
+const GEMINI_VOICE_BY_EDGE: Record<string, string> = {
+  "en-IN-NeerjaNeural": "Kore",
+  "en-IN-PrabhatNeural": "Orus",
+};
+const DEFAULT_EDGE_VOICE = "en-IN-NeerjaNeural";
+
+function resolveVoices(requested: string): { edge: string; gemini: string } {
+  if (GEMINI_VOICE_BY_EDGE[requested]) return { edge: requested, gemini: GEMINI_VOICE_BY_EDGE[requested] };
+  if (EDGE_VOICE_BY_GEMINI[requested]) return { edge: EDGE_VOICE_BY_GEMINI[requested], gemini: requested };
+  if (ALLOWED_VOICES.has(requested)) return { edge: DEFAULT_EDGE_VOICE, gemini: requested };
+  return { edge: DEFAULT_EDGE_VOICE, gemini: VOICE_NAME };
+}
+
+async function tryEdge(text: string, edgeVoice: string): Promise<Buffer | null> {
+  const tts = new MsEdgeTTS();
+  try {
+    await tts.setMetadata(edgeVoice, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
+    const { audioStream } = tts.toStream(text);
+    const chunks: Buffer[] = [];
+    let total = 0;
+    await new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error("edge-timeout")), 15000);
+      audioStream.on("data", (chunk: Buffer) => {
+        chunks.push(chunk);
+        total += chunk.length;
+      });
+      audioStream.on("end", () => {
+        clearTimeout(timer);
+        resolve();
+      });
+      audioStream.on("error", (err: Error) => {
+        clearTimeout(timer);
+        reject(err);
+      });
+    });
+    if (!total) return null;
+    return Buffer.concat(chunks);
+  } catch {
+    return null;
+  } finally {
+    try {
+      tts.close();
+    } catch {}
+  }
+}
 
 const TTS_MODELS = ["gemini-2.5-flash-preview-tts", "gemini-2.5-pro-preview-tts"];
 const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
@@ -106,13 +157,26 @@ export async function POST(req: NextRequest) {
   const text = cleanText(body?.text);
   if (!text) return fallback("empty");
   const requestedVoice = typeof body?.voice === "string" ? body.voice : "";
-  const voiceName = ALLOWED_VOICES.has(requestedVoice) ? requestedVoice : VOICE_NAME;
+  const voices = resolveVoices(requestedVoice);
+
+  const mp3 = await tryEdge(text, voices.edge);
+  if (mp3) {
+    return new NextResponse(new Uint8Array(mp3), {
+      status: 200,
+      headers: {
+        "Content-Type": "audio/mpeg",
+        "Cache-Control": "no-store",
+        "X-Voice-Engine": "edge",
+      },
+    });
+  }
+
   const key = process.env.GEMINI_TTS_KEY || process.env.GEMINI_API_KEY;
-  if (!key && !geminiAvailable()) return fallback("no-key");
+  if (!key && !geminiAvailable()) return fallback("tts-failed");
 
   let lastStatus: number | null = null;
   for (let i = 0; i < TTS_MODELS.length; i++) {
-    const result = await tryModel(TTS_MODELS[i], key as string, text, voiceName);
+    const result = await tryModel(TTS_MODELS[i], key as string, text, voices.gemini);
     lastStatus = result.status;
     if (result.wav) {
       return new NextResponse(new Uint8Array(result.wav), {

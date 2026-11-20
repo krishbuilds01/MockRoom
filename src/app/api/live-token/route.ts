@@ -75,7 +75,7 @@ export async function POST(req: Request) {
     body = {};
   }
   const systemInstruction = (body.systemInstruction || "").slice(0, 6000);
-  const voice = getInterviewer(body.interviewer).voice;
+  const voice = getInterviewer(body.interviewer).geminiVoice;
 
   const attempts: Array<[string, boolean]> = [
     ["v1beta", true],

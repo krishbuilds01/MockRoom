@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { chunkForSpeech, speakSentenceBrowser } from "./voice";
 
-export type VoiceSource = "gemini" | "browser" | null;
+export type VoiceSource = "gemini" | "edge" | "browser" | null;
 
 const FIRST_CHUNK_DEADLINE_MS = 2500;
 const LATER_CHUNK_GRACE_MS = 2000;
@@ -57,6 +57,7 @@ export function useSpeaker(callbacks?: SpeakerCallbacks, voiceName?: string, pit
     cbRef.current?.onEnd?.();
   }, []);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const engineByUrlRef = useRef<Map<string, string>>(new Map());
   const cacheRef = useRef<Map<string, string>>(new Map());
   const ttsFailuresRef = useRef(0);
   const ttsCooldownUntilRef = useRef(0);
@@ -178,6 +179,7 @@ export function useSpeaker(callbacks?: SpeakerCallbacks, voiceName?: string, pit
           }
           ttsFailuresRef.current = 0;
           const url = URL.createObjectURL(blob);
+          engineByUrlRef.current.set(url, res.headers.get("X-Voice-Engine") || "gemini");
           cachePut(text, url);
           return url;
         } catch {
@@ -258,7 +260,7 @@ export function useSpeaker(callbacks?: SpeakerCallbacks, voiceName?: string, pit
             if (isLast) fireAboutToEnd();
             played = await playUrl(result, token, isLast ? fireAboutToEnd : undefined);
             if (token !== tokenRef.current) return;
-            if (played) setVoiceSource("gemini");
+            if (played) setVoiceSource(engineByUrlRef.current.get(result) === "edge" ? "edge" : "gemini");
           }
           if (!played) {
             setVoiceSource("browser");

@@ -970,8 +970,10 @@ function TechnicalRoom() {
   const micState = micControlState({ speaking: speaker.speaking, gated: voice.gated, listening: voice.listening, supported: voice.supported });
   const visibleTests = problem.tests.filter((t) => !t.hidden).length;
   const voiceLabel =
-    speaker.voiceSource === "gemini"
-      ? "Gemini voice"
+    speaker.voiceSource === "edge"
+      ? "Edge voice"
+      : speaker.voiceSource === "gemini"
+        ? "Gemini voice"
       : speaker.voiceSource === "browser"
         ? "browser voice"
         : "connecting";

@@ -719,8 +719,10 @@ function GeneralRoom() {
   const speakingNow = speaker.speaking || liveSpeaking;
   const voiceLabel: string | null = liveActive
     ? "Gemini Live"
-    : speaker.voiceSource === "gemini"
-      ? "Gemini voice"
+    : speaker.voiceSource === "edge"
+      ? "Edge voice"
+      : speaker.voiceSource === "gemini"
+        ? "Gemini voice"
       : speaker.voiceSource === "browser"
         ? "browser voice"
         : speakingNow
