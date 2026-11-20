@@ -246,8 +246,8 @@ function TechnicalRoom() {
     transcriptRef.current = transcript;
   }, [transcript]);
   useEffect(() => {
-    const el = transcriptBoxRef.current;
-    if (el) requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
+    const nearBottom = window.innerHeight + window.scrollY > document.documentElement.scrollHeight - 480;
+    if (nearBottom) requestAnimationFrame(() => { transcriptBoxRef.current?.scrollIntoView({ block: "end" }); });
   }, [transcript, waiting]);
   useEffect(() => {
     mutedRef.current = muted;
@@ -993,20 +993,20 @@ function TechnicalRoom() {
   };
 
   return (
-    <main className="mx-auto flex h-dvh w-full max-w-[1500px] flex-col overflow-hidden px-3 py-3">
+    <main className="mx-auto min-h-dvh w-full max-w-[1440px] px-4 py-5 sm:px-6">
       <header className="shrink-0 px-1">
         <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
           <div className="min-w-0">
             <Link href="/" onClick={onBackHome} className="text-xs text-neutral-600 hover:text-neutral-800">Back to home</Link>
             <div className="mt-1 flex flex-wrap items-center gap-2">
-              <span className="text-[15px] font-semibold tracking-tight">Technical Interview</span>
+              <span className="text-[15px] font-medium">Technical Interview</span>
               <span className="badge">{problem.title}</span>
               <span className={`badge ${problem.difficulty === "Easy" ? "badge-easy" : problem.difficulty === "Hard" ? "badge-hard" : "badge-mid"}`}>{problem.difficulty}</span>
               {company.id !== "any" && <span className="badge badge-accent">{company.name}</span>}
               <span className="badge">{interviewer.name}</span>
               <span className="badge badge-accent">{PHASE_LABELS[phase]}</span>
             </div>
-            <div className="tnum mt-1 text-xs text-neutral-600">
+            <div className="tnum mt-1 font-mono text-xs text-neutral-500">
               {`${difficulty} mode · ${problem.topic} · ${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, "0")} of about ${Math.round(targetSec / 60)} min target · AI: ${engineLabel} · Voice: ${voiceLabel}`}
             </div>
           </div>
@@ -1044,11 +1044,11 @@ function TechnicalRoom() {
         </div>
       )}
 
-      <div className="mt-3 flex min-h-0 flex-1 flex-col gap-3 overflow-hidden lg:flex-row">
-        <section className="card flex w-full shrink-0 flex-col overflow-hidden lg:h-full lg:w-[330px]">
-          <div className="min-h-0 flex-1 overflow-y-auto p-4">
+      <div className="mt-4 flex flex-col items-start gap-4 lg:flex-row">
+        <section className="card w-full p-4 lg:w-[330px] lg:shrink-0">
+          <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-base font-semibold tracking-tight">{problem.title}</h1>
+              <h1 className="text-base font-medium">{problem.title}</h1>
               <span className={`badge ${problem.difficulty === "Easy" ? "badge-easy" : problem.difficulty === "Hard" ? "badge-hard" : "badge-mid"}`}>{problem.difficulty}</span>
               <span className="badge">{problem.topic}</span>
             </div>
@@ -1086,7 +1086,7 @@ function TechnicalRoom() {
           </div>
         </section>
 
-        <section className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-line bg-panel lg:h-full lg:min-h-0">
+        <section className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-line bg-panel shadow-[0_1px_2px_rgba(31,27,22,0.04)]">
           <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-line bg-panel px-4 py-2.5">
             <div className="flex gap-2" role="group" aria-label="Language">
               {LANGS.map((l) => (
@@ -1105,23 +1105,23 @@ function TechnicalRoom() {
               </div>
             )}
           </div>
-          <div className="flex shrink-0 flex-col bg-panel p-3 lg:min-h-0 lg:flex-1">
-            <div className="relative h-[340px] shrink-0 overflow-hidden rounded-xl bg-panel lg:h-auto lg:min-h-[120px] lg:flex-1">
+          <div className="bg-panel p-3">
+            <div className="relative h-[380px] overflow-hidden rounded-[10px] border border-line bg-white sm:h-[440px] lg:h-[520px]">
               <Editor
                 height="100%"
                 language={lang}
                 value={code}
                 onChange={onCodeChange}
-                theme="interviewai-dark"
+                theme="interviewai-light"
                 beforeMount={(monaco) => {
-                  monaco.editor.defineTheme("interviewai-dark", {
-                    base: "vs-dark",
+                  monaco.editor.defineTheme("interviewai-light", {
+                    base: "vs",
                     inherit: true,
                     rules: [],
                     colors: {
-                      "editor.background": "#1b1b1d",
-                      "editor.lineHighlightBackground": "#29292d",
-                      "editorGutter.background": "#1b1b1d",
+                      "editor.background": "#ffffff",
+                      "editor.lineHighlightBackground": "#f4f1ea",
+                      "editorGutter.background": "#ffffff",
                     },
                   });
                 }}
@@ -1164,7 +1164,7 @@ function TechnicalRoom() {
         </section>
 
         {showAi && (
-          <aside className="card flex w-full shrink-0 flex-col overflow-hidden lg:h-full lg:w-[340px]">
+          <aside className="card flex w-full flex-col lg:w-[340px] lg:shrink-0">
             <div className="shrink-0 border-b border-line px-4 py-3">
               <div className="flex items-center gap-3">
                 <span className="avatar">{interviewer.name.charAt(0)}</span>
@@ -1179,12 +1179,9 @@ function TechnicalRoom() {
                 )}
               </div>
             </div>
-            <div ref={transcriptBoxRef} className="flex-1 p-4 lg:min-h-0" aria-live="polite">
-              {transcript.length > 6 && (
-                <p className="pb-1 text-xs text-neutral-500">{transcript.length - 6} earlier message{transcript.length - 6 === 1 ? "" : "s"}</p>
-              )}
+            <div className="p-4" aria-live="polite">
               <div className="divide-y divide-line">
-                {transcript.slice(-6).map((m, i) => (
+                {transcript.map((m, i) => (
                   <div key={i} className="py-2.5">
                     <div className="text-xs font-semibold">{m.role === "ai" ? interviewer.name : "You"}</div>
                     <p className={`mt-0.5 break-words whitespace-pre-wrap text-[13px] leading-5 ${m.role === "ai" ? "text-neutral-900" : "text-neutral-700"}`}>{m.text}</p>
@@ -1200,6 +1197,7 @@ function TechnicalRoom() {
               {transcript.length === 0 && (
                 <p className="pt-2.5 text-[13px] leading-5 text-neutral-600">Connecting to your interviewer. {interviewer.name} will introduce {interviewer.reflexivePronoun} in a moment.</p>
               )}
+              <div ref={transcriptBoxRef} />
             </div>
             <div className="shrink-0 border-t border-line p-3">
               {(phase === "coding" || phase === "clarifying") && (

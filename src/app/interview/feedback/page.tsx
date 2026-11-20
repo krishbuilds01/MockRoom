@@ -95,14 +95,14 @@ export default function FeedbackPage() {
 
   if (!loaded)
     return (
-      <main className="flex h-dvh items-center justify-center overflow-hidden px-5">
+      <main className="flex min-h-dvh items-center justify-center px-5 py-16">
         <p className="text-sm text-neutral-600">Loading feedback...</p>
       </main>
     );
   if (!rec) {
     return (
-      <main className="mx-auto flex h-dvh w-full max-w-2xl flex-col items-center justify-center overflow-hidden px-5 text-center">
-        <h1 className="text-3xl font-semibold tracking-tight">No interview found</h1>
+      <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col items-center justify-center px-5 py-16 text-center">
+        <h1 className="text-3xl font-medium tracking-tight">No interview found</h1>
         <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-neutral-600">Finish an interview and the feedback lands here. Past sessions are listed under Session history on the home page.</p>
         <Link href="/" className="btn btn-primary mt-6">Go home</Link>
       </main>
@@ -146,42 +146,42 @@ export default function FeedbackPage() {
   const answeredQ = qa.filter((p) => p.answer).length;
 
   return (
-    <main className="mx-auto flex h-dvh w-full max-w-6xl flex-col overflow-hidden px-5 py-4">
-      <nav className="flex h-12 shrink-0 items-center justify-between border-b border-line">
+    <main className="mx-auto w-full max-w-6xl px-5 py-6 sm:px-8">
+      <nav className="flex h-12 items-center justify-between border-b border-line">
         <Logo />
         <Link href="/" className="text-sm text-neutral-600 hover:text-neutral-900">Home</Link>
       </nav>
 
-      <div className="mt-3 flex shrink-0 flex-wrap items-center gap-2.5">
-        <h1 className="text-2xl font-semibold tracking-tight">Interview feedback</h1>
+      <div className="mt-5 flex flex-wrap items-center gap-2.5">
+        <h1 className="text-2xl font-medium tracking-tight">Interview feedback</h1>
         <span className={`badge ${rec.difficulty === "Easy" ? "badge-easy" : rec.difficulty === "Hard" ? "badge-hard" : "badge-mid"}`}>{rec.difficulty}</span>
         {rec.companyName && <span className="badge badge-accent">{rec.companyName}</span>}
         {rec.resumeInterview && <span className="badge">Resume interview</span>}
         {rec.incomplete && <span className="badge badge-mid">Incomplete session</span>}
       </div>
-      <p className="mt-1 shrink-0 text-[13px] text-neutral-600">
+      <p className="mt-1 text-[13px] text-neutral-600">
         {`${rec.type === "technical" ? rec.problemTitle || "Technical interview" : "Live AI Interview"} · ${new Date(rec.date).toLocaleString()}${rec.interviewerName ? ` · Interviewer: ${rec.interviewerName}` : ""}`}
       </p>
       {rec.incomplete && (
-        <p className="mt-2 shrink-0 rounded-lg border border-line2 bg-panel2 px-3 py-2 text-xs leading-5 text-neutral-700" role="note">
+        <p className="mt-3 rounded-[10px] border border-line bg-panel2 px-3 py-2 text-xs leading-5 text-neutral-700" role="note">
           This session was left before it finished, so it was saved as incomplete. Scores reflect only what actually happened in the room.
         </p>
       )}
-      <p className="mt-2 shrink-0 text-xs leading-5 text-neutral-600">{diffNote}</p>
-      <p className="shrink-0 text-xs leading-5 text-neutral-600">{timeNote}</p>
+      <p className="mt-3 text-xs leading-5 text-neutral-600">{diffNote}</p>
+      <p className="text-xs leading-5 text-neutral-600">{timeNote}</p>
       {verdict && (
-        <p className="mt-2 shrink-0 text-[13px] leading-5 text-neutral-700">
+        <p className="mt-2 text-[13px] leading-5 text-neutral-700">
           <span className="font-semibold text-neutral-900">Against the company bar: </span>
           {verdict}
         </p>
       )}
 
-      <div className="mt-3 grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] gap-4 lg:grid-cols-[380px_minmax(0,1fr)] lg:grid-rows-1">
+      <div className="mt-5 grid items-start gap-4 lg:grid-cols-[380px_minmax(0,1fr)]">
         <section className="card card-pad self-start" aria-label="Scorecard">
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="text-xs font-medium text-neutral-600">Overall score</div>
-              <div className="tnum mt-1 text-4xl font-semibold leading-none tracking-tight">
+              <div className="tnum mt-1 text-4xl font-medium leading-none tracking-tight">
                 {overall}
                 <span className="text-base font-medium text-neutral-600">/10</span>
               </div>
@@ -230,7 +230,7 @@ export default function FeedbackPage() {
           </div>
         </section>
 
-        <section className="card min-h-0 overflow-y-auto" aria-label="Feedback detail">
+        <section className="card" aria-label="Feedback detail">
           <div className="divide-y divide-line px-5 py-4">
             <section className="pb-4">
               <div className="grid gap-5 md:grid-cols-2">
@@ -319,7 +319,7 @@ export default function FeedbackPage() {
             {rec.code && (
               <section className="py-4">
                 <h2 className="text-sm font-semibold">Your final code</h2>
-                <pre className="mt-2 max-h-64 overflow-auto rounded-lg border border-line bg-panel2 p-3 font-mono text-xs leading-5">{rec.code}</pre>
+                <pre className="mt-2 max-h-96 overflow-auto rounded-[10px] border border-line bg-panel2 p-3 font-mono text-xs leading-5">{rec.code}</pre>
               </section>
             )}
 
@@ -330,8 +330,8 @@ export default function FeedbackPage() {
                   <button type="button" onClick={() => setShowTranscript((v) => !v)} className="btn btn-ghost btn-sm" aria-expanded={showTranscript}>{showTranscript ? "Hide transcript" : "View transcript"}</button>
                 </div>
                 {showTranscript && (
-                  <div className="mt-2 max-h-80 divide-y divide-line overflow-y-auto">
-                    {rec.transcript.slice(-20).map((m, i) => (
+                  <div className="mt-2 divide-y divide-line">
+                    {rec.transcript.map((m, i) => (
                       <div key={i} className="py-2.5">
                         <div className="text-xs font-semibold">{m.role === "ai" ? rec.interviewerName || "Interviewer" : "You"}</div>
                         <p className="mt-0.5 break-words whitespace-pre-wrap text-[13px] leading-5 text-neutral-700">{m.text}</p>
@@ -345,7 +345,7 @@ export default function FeedbackPage() {
         </section>
       </div>
 
-      <footer className="mt-3 flex shrink-0 flex-wrap items-center gap-3 border-t border-line pt-3">
+      <footer className="mt-6 flex flex-wrap items-center gap-3 border-t border-line pt-4">
         {recUrl && (
           <div className="flex flex-wrap items-center gap-3">
             <video controls src={recUrl} className="h-16 w-auto max-w-[260px] rounded-md border border-line bg-black" />

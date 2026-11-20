@@ -10,7 +10,7 @@ function Stat({ label, value, sub }: { label: string; value: string; sub: string
   return (
     <div className="min-w-[130px]">
       <div className="text-xs font-medium text-neutral-600">{label}</div>
-      <div className="tnum mt-1 font-display text-2xl font-semibold leading-none tracking-tight">{value}</div>
+      <div className="tnum mt-1 text-2xl font-medium leading-none tracking-tight">{value}</div>
       <div className="mt-1.5 text-xs leading-5 text-neutral-600">{sub}</div>
     </div>
   );
@@ -38,25 +38,25 @@ function TrendChart({ analytics }: { analytics: Analytics }) {
   return (
     <div>
       <div>
-        <h2 className="font-display text-h2 font-semibold">Score trend</h2>
+        <h2 className="text-h2 font-medium">Score trend</h2>
         <p className="mt-0.5 text-xs leading-5 text-neutral-600">Overall score per session, numbered in the order you did them{range ? ` · ${range}` : ""}</p>
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} className="mt-2 w-full" role="img" aria-label="Overall score trend over time">
         {[0, 5, 10].map((g) => (
           <g key={g}>
-            <line x1={padL} x2={W - padR} y1={y(g)} y2={y(g)} stroke="#2a2a2e" strokeWidth="1" />
-            <text x={padL - 8} y={y(g) + 4} textAnchor="end" fontSize="12" fill="#909090">{g}</text>
+            <line x1={padL} x2={W - padR} y1={y(g)} y2={y(g)} stroke="#e8e2d6" strokeWidth="1" />
+            <text x={padL - 8} y={y(g) + 4} textAnchor="end" fontSize="12" fill="#756c5e">{g}</text>
           </g>
         ))}
-        {pts.length > 1 && <polyline points={line} fill="none" stroke="#b8f2a3" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />}
+        {pts.length > 1 && <polyline points={line} fill="none" stroke="#b3400a" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />}
         {pts.map((p, i) => (
           <g key={p.date + i}>
-            <circle cx={x(i)} cy={y(p.overall)} r="4.5" fill="#b8f2a3" stroke="#131315" strokeWidth="2" />
-            <text x={labelX(i)} y={y(p.overall) - 10} textAnchor="middle" fontSize="12" fontWeight="600" fill="#ffffff" style={{ fontVariantNumeric: "tabular-nums" }}>
+            <circle cx={x(i)} cy={y(p.overall)} r="4.5" fill="#b3400a" stroke="#fdfbf7" strokeWidth="2" />
+            <text x={labelX(i)} y={y(p.overall) - 10} textAnchor="middle" fontSize="12" fontWeight="600" fill="#1f1b16" style={{ fontVariantNumeric: "tabular-nums" }}>
               {p.overall}
             </text>
             {(i % labelStep === 0 || i === pts.length - 1) && (
-              <text x={labelX(i)} y={H - 8} textAnchor="middle" fontSize="12" fill="#909090">
+              <text x={labelX(i)} y={H - 8} textAnchor="middle" fontSize="12" fill="#756c5e">
                 {p.label}
               </text>
             )}
@@ -91,13 +91,13 @@ export default function ProgressPage() {
   const enough = (analytics?.total ?? 0) >= 3;
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-ink">
+    <div className="min-h-dvh bg-paper">
       <TopNav active="progress" />
-      <main className="mx-auto flex min-h-0 w-full max-w-[1340px] flex-1 flex-col px-5">
+      <main className="mx-auto w-full max-w-7xl px-5 pb-5 sm:px-8">
 
-      <div className="flex shrink-0 flex-wrap items-end justify-between gap-2 pt-4">
+      <div className="flex flex-wrap items-end justify-between gap-2 pt-8">
         <div>
-          <h1 className="font-display text-3xl font-semibold tracking-tight">Your progress</h1>
+          <h1 className="text-[32px] font-medium leading-tight tracking-tight">Your progress</h1>
           <p className="mt-1 text-sm text-neutral-600">Computed from the interviews stored in this browser. Nothing here is estimated.</p>
         </div>
       </div>
@@ -106,16 +106,16 @@ export default function ProgressPage() {
         <p className="pt-8 text-sm text-neutral-600">Loading your history...</p>
       ) : analytics.total === 0 ? (
         <div className="card card-pad mt-4 max-w-xl">
-          <h2 className="font-display text-h2 font-semibold">No interviews yet</h2>
+          <h2 className="text-h2 font-medium">No interviews yet</h2>
           <p className="mt-2 text-sm leading-6 text-neutral-600">
             Finish one interview and your scores, streak and topic averages appear here, computed from the sessions stored in
             this browser.
           </p>
-          <Link href="/" className="btn btn-accent mt-4">Start your first interview</Link>
+          <Link href="/setup" className="btn btn-primary mt-4">Start your first interview</Link>
         </div>
       ) : (
         <>
-          <div className="card card-pad mt-4 shrink-0">
+          <div className="card card-pad mt-6">
             <div className="flex flex-wrap gap-x-10 gap-y-4">
               <Stat label="Interviews finished" value={String(analytics.total)} sub={`${analytics.technicalCount} technical, ${analytics.generalCount} live or resume`} />
               <Stat label="Average overall" value={`${analytics.averageOverall}/10`} sub="Across every session on this device" />
@@ -137,11 +137,11 @@ export default function ProgressPage() {
             </div>
           )}
 
-          <div className="mt-4 grid min-h-0 flex-1 gap-4 pb-4 lg:grid-cols-2">
-            <div className="card card-pad min-h-0 overflow-y-auto">
+          <div className="mt-4 grid items-start gap-4 lg:grid-cols-2">
+            <div className="card card-pad">
               {enough && <TrendChart analytics={analytics} />}
               <div className={enough ? "mt-3 border-t border-line pt-3" : ""}>
-                <h2 className="font-display text-h2 font-semibold">This week</h2>
+                <h2 className="text-h2 font-medium">This week</h2>
                 <p className="mt-1 text-xs leading-4 text-neutral-600">Three sessions aimed at your weakest areas, picked from your own scores.</p>
                 <ol className="mt-2 space-y-2.5">
                   {analytics.plan.map((item, i) => (
@@ -157,15 +157,15 @@ export default function ProgressPage() {
                 </ol>
               </div>
             </div>
-            <div className="card card-pad min-h-0 overflow-y-auto">
-              <h2 className="font-display text-h2 font-semibold">By scoring axis</h2>
+            <div className="card card-pad">
+              <h2 className="text-h2 font-medium">By scoring axis</h2>
               <div className="mt-1 divide-y divide-line">
                 {analytics.axisAverages.map((a) => (
                   <AverageRow key={a.name} name={a.name} average={a.average} count={a.count} />
                 ))}
               </div>
               <div className="mt-5 border-t border-line pt-5">
-                <h2 className="font-display text-h2 font-semibold">By topic</h2>
+                <h2 className="text-h2 font-medium">By topic</h2>
                 {analytics.topicAverages.length ? (
                   <div className="mt-1 divide-y divide-line">
                     {analytics.topicAverages.map((a) => (
@@ -186,9 +186,7 @@ export default function ProgressPage() {
           </div>
         </>
       )}
-      <div className="mt-auto">
-        <Footer />
-      </div>
+      <Footer />
       </main>
     </div>
   );

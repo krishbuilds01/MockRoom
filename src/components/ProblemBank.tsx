@@ -48,7 +48,7 @@ export function CompanyCell({ companies }: { companies: string[] }) {
   const extra = companies.length - shown.length;
   return (
     <span className="flex items-center gap-2.5">
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-tile text-xs font-bold text-white" aria-hidden="true">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-tile text-xs font-medium text-neutral-900" aria-hidden="true">
         {companies[0]?.charAt(0)}
       </span>
       <span className="min-w-0">
@@ -136,9 +136,9 @@ export default function ProblemBank({
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => chooseFormat(t.key)}
-                className={`relative pb-3 text-[15px] ${isActive ? "font-semibold text-white" : "font-medium text-neutral-600 transition hover:text-white"}`}
+                className={`relative pb-3 text-[15px] transition-colors ${isActive ? "font-medium text-neutral-900" : "text-neutral-600 hover:text-neutral-900"}`}
               >
-                {t.label} <span className="tnum text-[13px] text-neutral-500">{counts.get(t.key)}</span>
+                {t.label} <span className="tnum font-mono text-[13px] text-neutral-500">{counts.get(t.key)}</span>
                 {isActive && <span className="absolute inset-x-0 bottom-0 h-[2px] bg-accent" aria-hidden="true" />}
               </button>
             );
@@ -187,15 +187,15 @@ export default function ProblemBank({
                 type="button"
                 aria-pressed={isActive}
                 onClick={() => setCompany(isActive ? "All" : c.name)}
-                className={`flex items-center gap-2 rounded-full border py-1.5 pl-1.5 pr-3 text-[13px] font-medium transition ${
+                className={`flex items-center gap-2 rounded-lg border py-1.5 pl-1.5 pr-3 text-[13px] font-medium transition-colors ${
                   isActive ? "border-accent bg-accent-soft text-accent" : "border-line bg-panel2 text-neutral-700 hover:border-line2"
                 }`}
               >
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-tile text-[11px] font-bold text-white" aria-hidden="true">
+                <span className="flex h-6 w-6 items-center justify-center rounded-md bg-tile text-[11px] font-medium text-neutral-900" aria-hidden="true">
                   {c.name.charAt(0)}
                 </span>
                 {c.name}
-                <span className="tnum text-neutral-500">{c.count}</span>
+                <span className="tnum font-mono text-neutral-500">{c.count}</span>
               </button>
             );
           })}
@@ -206,15 +206,15 @@ export default function ProblemBank({
         {filtered.length} matching problem{filtered.length === 1 ? "" : "s"}
       </p>
 
-      <div className="card mt-2">
-        <table className="w-full border-collapse text-sm">
+      <div className="card mt-2 overflow-x-auto">
+        <table className="w-full min-w-[640px] border-collapse text-sm">
           <thead>
             <tr className="border-b border-line text-left">
-              <th scope="col" className="bg-panel px-4 py-3 text-xs font-semibold uppercase tracking-wide text-neutral-500">Problem</th>
-              <th scope="col" className="hidden bg-panel px-4 py-3 text-xs font-semibold uppercase tracking-wide text-neutral-500 sm:table-cell">Company</th>
-              <th scope="col" className="hidden bg-panel px-4 py-3 text-xs font-semibold uppercase tracking-wide text-neutral-500 lg:table-cell">Stage</th>
-              <th scope="col" className="hidden bg-panel px-4 py-3 text-xs font-semibold uppercase tracking-wide text-neutral-500 md:table-cell">Topics</th>
-              <th scope="col" className="bg-panel px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-neutral-500"><span className="sr-only">Action</span></th>
+              <th scope="col" className="bg-panel px-4 py-3 text-xs font-medium text-neutral-500">Problem</th>
+              <th scope="col" className="hidden bg-panel px-4 py-3 text-xs font-medium text-neutral-500 sm:table-cell">Company</th>
+              <th scope="col" className="hidden bg-panel px-4 py-3 text-xs font-medium text-neutral-500 lg:table-cell">Stage</th>
+              <th scope="col" className="hidden bg-panel px-4 py-3 text-xs font-medium text-neutral-500 md:table-cell">Topics</th>
+              <th scope="col" className="bg-panel px-4 py-3 text-right text-xs font-medium text-neutral-500"><span className="sr-only">Action</span></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -224,7 +224,7 @@ export default function ProblemBank({
               return (
                 <tr key={slug} ref={isFocus ? focusRef : undefined} className={isFocus ? "bg-accent-soft" : "transition hover:bg-panel2"}>
                   <td className="px-4 py-3.5">
-                    <div className="font-semibold text-white">{p.title}</div>
+                    <div className="font-medium text-neutral-900">{p.title}</div>
                     {p.difficulty && (
                       <div className="mt-1.5">
                         <DifficultyPill difficulty={p.difficulty} />
@@ -251,7 +251,7 @@ export default function ProblemBank({
                     {comingSoon ? (
                       <span className="badge">Coming soon</span>
                     ) : (
-                      <Link href={startHref(p)} className="text-sm font-semibold text-accent hover:underline">
+                      <Link href={startHref(p)} className="text-sm font-medium text-accent hover:underline">
                         Start →
                       </Link>
                     )}

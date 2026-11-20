@@ -11,12 +11,12 @@ async function FocusBank({ searchParams }: { searchParams: Promise<{ focus?: str
 
 export default function SystemDesignPage({ searchParams }: { searchParams: Promise<{ focus?: string }> }) {
   return (
-    <div className="min-h-dvh bg-ink">
+    <div className="min-h-dvh bg-paper">
       <TopNav active="system-design" />
-      <main className="mx-auto w-full max-w-[1340px] px-5 pb-5">
+      <main className="mx-auto w-full max-w-7xl px-5 pb-5 sm:px-8">
         <header className="pt-8">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="font-display text-4xl font-bold tracking-tight text-white">System design</h1>
+            <h1 className="text-[32px] font-medium leading-tight tracking-tight text-neutral-900">System design</h1>
             <span className="badge badge-mid">Coming soon</span>
           </div>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">

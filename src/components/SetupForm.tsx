@@ -134,7 +134,7 @@ export default function SetupForm() {
                   : "rounded-lg border border-line bg-panel px-3 py-2.5 text-left transition hover:border-line2"
               }
             >
-              <span className="block text-sm font-semibold text-white">{p.name}</span>
+              <span className="block text-sm font-medium text-neutral-900">{p.name}</span>
               <span className="block text-xs text-neutral-600">{p.gender} interviewer</span>
             </button>
           ))}
@@ -173,7 +173,7 @@ export default function SetupForm() {
             onChange={(e) => setResumeText(e.target.value)}
             rows={6}
             placeholder="Paste your resume here: projects, skills, experience. Plain text works best."
-            className="input mt-2 resize-none leading-6"
+            className="input mt-2 resize-y leading-6"
           />
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <label className="btn btn-ghost btn-sm cursor-pointer">
@@ -188,7 +188,7 @@ export default function SetupForm() {
         </div>
       )}
 
-      <button type="button" onClick={start} disabled={resumeBusy} className="btn btn-accent mt-5 h-[52px] w-full text-[15px] font-semibold">
+      <button type="button" onClick={start} disabled={resumeBusy} className="btn btn-primary mt-5 h-12 w-full text-[15px]">
         {type === "resume" ? (resumeBusy ? "Building your questions..." : "Start resume interview") : "Start interview"}
       </button>
       <p className="mt-4 border-t border-line pt-3 text-[13px] leading-5 text-neutral-600">
