@@ -4,8 +4,8 @@ import { chunkForSpeech, speakSentenceBrowser } from "./voice";
 
 export type VoiceSource = "gemini" | "edge" | "browser" | null;
 
-const FIRST_CHUNK_DEADLINE_MS = 2500;
-const LATER_CHUNK_GRACE_MS = 2000;
+const FIRST_CHUNK_DEADLINE_MS = 9000;
+const LATER_CHUNK_GRACE_MS = 6000;
 const CACHE_LIMIT = 60;
 const SILENT_WAV =
   "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=";
