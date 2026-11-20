@@ -1067,7 +1067,7 @@ function TechnicalRoom() {
             <Camera small audio onStream={onCameraStream} recording={recordOn} />
           </div>
           {canRecord && (
-            <div className="mt-4 flex items-center justify-between gap-3 rounded-lg border border-line bg-panel2 px-3 py-2.5">
+            <div className="mt-4 flex items-center justify-between gap-3 border-t border-line pt-4">
               <div className="min-w-0">
                 <div className="text-xs font-semibold">Record my session</div>
                 <p className="mt-0.5 text-xs leading-4 text-stone-600">{recordOn ? "Recording. Watch it back on the feedback page." : "Self-review video, stored only in this browser."}</p>
@@ -1143,10 +1143,10 @@ function TechnicalRoom() {
             )}
             {!runOut && !runError && <p className="mt-3 text-xs text-stone-600">No runs yet. We start with your introduction and clarifying questions, then your approach, then code.</p>}
             {runOut && (
-              <div className="mt-3 space-y-2">
+              <div className="mt-3 space-y-3">
                 <div className={`text-sm font-semibold ${runOut.passed === runOut.total ? "text-emerald-700" : "text-amber-700"}`}>{runOut.passed} / {runOut.total} passed</div>
                 {runOut.results.map((r) => (
-                  <div key={r.index} className="break-words rounded-lg border border-line bg-panel2 p-3 font-mono text-xs leading-5">
+                  <div key={r.index} className="break-words border-t border-line pt-3 font-mono text-xs leading-5 first:border-t-0 first:pt-0">
                     <div className="flex items-center gap-2">
                       <span className={`chip ${r.passed ? "chip-pass" : "chip-fail"}`}>{r.passed ? "PASS" : "FAIL"}</span>
                       <span className="text-stone-700">Case {r.index + 1}{r.hidden ? " (hidden)" : ""}</span>
@@ -1179,21 +1179,23 @@ function TechnicalRoom() {
                 )}
               </div>
             </div>
-            <div ref={transcriptBoxRef} className="max-h-[46dvh] flex-1 space-y-3 overflow-y-auto p-4 lg:max-h-none lg:min-h-0" aria-live="polite">
-              {transcript.map((m, i) => (
-                <div key={i} className={`break-words whitespace-pre-wrap rounded-xl px-3 py-2.5 text-[13px] leading-5 ${m.role === "ai" ? "border border-line bg-panel2 text-stone-900" : "ml-4 bg-accent text-white"}`}>
-                  <div className="mb-1 text-xs font-semibold uppercase tracking-wide opacity-60">{m.role === "ai" ? interviewer.name : "You"}</div>
-                  {m.text}
-                </div>
-              ))}
+            <div ref={transcriptBoxRef} className="max-h-[46dvh] flex-1 overflow-y-auto p-4 lg:max-h-none lg:min-h-0" aria-live="polite">
+              <div className="divide-y divide-line">
+                {transcript.map((m, i) => (
+                  <div key={i} className="py-2.5">
+                    <div className="text-xs font-semibold">{m.role === "ai" ? interviewer.name : "You"}</div>
+                    <p className={`mt-0.5 break-words whitespace-pre-wrap text-[13px] leading-5 ${m.role === "ai" ? "text-stone-900" : "text-stone-700"}`}>{m.text}</p>
+                  </div>
+                ))}
+              </div>
               {waiting && (
-                <div className="flex items-center gap-1.5 text-xs text-stone-600" role="status">
+                <div className="flex items-center gap-1.5 pt-2.5 text-xs text-stone-600" role="status">
                   <span className="dot dot-pulse bg-stone-400" />
                   {interviewer.name} is thinking...
                 </div>
               )}
               {transcript.length === 0 && (
-                <p className="text-[13px] leading-5 text-stone-600">Connecting to your interviewer. {interviewer.name} will introduce {interviewer.reflexivePronoun} in a moment.</p>
+                <p className="pt-2.5 text-[13px] leading-5 text-stone-600">Connecting to your interviewer. {interviewer.name} will introduce {interviewer.reflexivePronoun} in a moment.</p>
               )}
             </div>
             <div className="shrink-0 border-t border-line p-3">

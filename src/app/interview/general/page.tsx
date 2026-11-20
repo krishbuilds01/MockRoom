@@ -800,7 +800,7 @@ function GeneralRoom() {
             <Camera audio onStream={onCameraStream} recording={recordOn} />
           </div>
           {canRecord && (
-            <div className="card card-pad flex items-center justify-between gap-3">
+            <div className="flex items-center justify-between gap-3 border-t border-line pt-4">
               <div className="min-w-0">
                 <div className="text-sm font-semibold">Record my session</div>
                 <p className="mt-0.5 text-xs leading-5 text-stone-600">
@@ -819,7 +819,7 @@ function GeneralRoom() {
               </button>
             </div>
           )}
-          <div className="card card-pad text-xs leading-5 text-stone-600">
+          <div className="border-t border-line pt-4 text-xs leading-5 text-stone-600">
             Speak your answer with the mic, or type it. One follow-up per question, a second if the first answer is thin.
             {liveActive && <div className="mt-2 font-medium text-emerald-700">Live conversation is on: {interviewer.name} leads and listens continuously. Use the button above to end live and return to standard mode at any time.</div>}
             {phase === "done" && <div className="mt-2 font-medium text-stone-900">Interview complete. Click End Interview to see your feedback.</div>}
@@ -843,8 +843,8 @@ function GeneralRoom() {
             {live.status === "connecting" && <span className="badge">Connecting live voice</span>}
             {liveOn && live.status === "fallback" && <span className="badge badge-mid">Live unavailable, standard mode</span>}
           </div>
-          <div ref={transcriptBoxRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto p-5" aria-live="polite">
-            <div className="rounded-xl border border-line bg-panel p-4">
+          <div ref={transcriptBoxRef} className="min-h-0 flex-1 overflow-y-auto p-5" aria-live="polite">
+            <div className="border-b border-line pb-4">
               <div className="text-xs font-semibold uppercase tracking-wider text-stone-600">Session brief</div>
               <dl className="mt-3 space-y-2 text-[13px] leading-5">
                 <div className="flex gap-2">
@@ -869,20 +869,22 @@ function GeneralRoom() {
                 </div>
               </dl>
             </div>
-            {transcript.map((m, i) => (
-              <div key={i} className={`max-w-[85%] break-words whitespace-pre-wrap rounded-xl px-4 py-3 text-sm leading-6 ${m.role === "ai" ? "border border-line bg-panel2 text-stone-900" : "ml-auto bg-accent text-white"}`}>
-                <div className="mb-1 text-xs font-semibold uppercase tracking-wide opacity-60">{m.role === "ai" ? interviewer.name : "You"}</div>
-                {m.text}
-              </div>
-            ))}
+            <div className="divide-y divide-line">
+              {transcript.map((m, i) => (
+                <div key={i} className="py-3">
+                  <div className="text-[13px] font-semibold">{m.role === "ai" ? interviewer.name : "You"}</div>
+                  <p className={`mt-0.5 break-words whitespace-pre-wrap text-sm leading-6 ${m.role === "ai" ? "text-stone-900" : "text-stone-700"}`}>{m.text}</p>
+                </div>
+              ))}
+            </div>
             {waiting && !liveActive && (
-              <div className="flex items-center gap-1.5 text-xs text-stone-600" role="status">
+              <div className="flex items-center gap-1.5 pt-3 text-xs text-stone-600" role="status">
                 <span className="dot dot-pulse bg-stone-400" />
                 {interviewer.name} is thinking...
               </div>
             )}
             {transcript.length === 0 && (
-              <p className="text-sm leading-6 text-stone-600">Connecting to your interviewer. {interviewer.name} will introduce {interviewer.reflexivePronoun} in a moment.</p>
+              <p className="pt-3 text-sm leading-6 text-stone-600">Connecting to your interviewer. {interviewer.name} will introduce {interviewer.reflexivePronoun} in a moment.</p>
             )}
           </div>
           <div className="shrink-0 border-t border-line p-4">
