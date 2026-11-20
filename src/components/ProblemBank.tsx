@@ -94,7 +94,7 @@ export default function ProblemBank({
     return problemBank.filter((p) => {
       if (format !== "all" && p.format !== format) return false;
       if (company !== "All" && !p.companies.includes(company)) return false;
-      if (difficulty !== "All" && p.difficulty !== difficulty) return false;
+      if (format !== "system-design" && difficulty !== "All" && p.difficulty !== difficulty) return false;
       if (topic !== "All" && !p.topics.includes(topic)) return false;
       if (q && !p.title.toLowerCase().includes(q) && !p.companies.some((c) => c.toLowerCase().includes(q))) return false;
       return true;
@@ -110,6 +110,7 @@ export default function ProblemBank({
   function chooseFormat(f: FormatFilter) {
     setFormat(f);
     setTopic("All");
+    if (f === "system-design") setDifficulty("All");
   }
 
   function resetFilters() {
@@ -160,12 +161,14 @@ export default function ProblemBank({
             <option key={c.name} value={c.name}>{c.name}</option>
           ))}
         </select>
-        <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} className="select" aria-label="Filter by difficulty">
-          <option value="All">All difficulties</option>
-          <option value="Easy">Easy</option>
-          <option value="Medium">Medium</option>
-          <option value="Hard">Hard</option>
-        </select>
+        {format !== "system-design" && (
+          <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} className="select" aria-label="Filter by difficulty">
+            <option value="All">All difficulties</option>
+            <option value="Easy">Easy</option>
+            <option value="Medium">Medium</option>
+            <option value="Hard">Hard</option>
+          </select>
+        )}
         <select value={topic} onChange={(e) => setTopic(e.target.value)} className="select" aria-label="Filter by topic">
           <option value="All">All topics</option>
           {topics.map((t) => (
