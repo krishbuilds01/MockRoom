@@ -119,7 +119,7 @@ export default function SetupForm() {
           <button type="button" onClick={() => setType("resume")} aria-pressed={type === "resume"} className={type === "resume" ? "btn btn-primary btn-sm w-full" : "btn btn-ghost btn-sm w-full"}>My resume</button>
         </div>
       </div>
-      <div className="mt-4 border-t border-line pt-4">
+      <div className="mt-5 border-t border-line pt-5">
         <div className="text-[13px] font-medium text-neutral-700">Interviewer</div>
         <div className="mt-2 grid grid-cols-2 gap-2" role="group" aria-label="Interviewer">
           {INTERVIEWERS.map((p) => (
@@ -140,7 +140,7 @@ export default function SetupForm() {
           ))}
         </div>
       </div>
-      <div className="mt-4 border-t border-line pt-4">
+      <div className="mt-5 border-t border-line pt-5">
         <div className="text-[13px] font-medium text-neutral-700">Difficulty</div>
         <div className="mt-2 grid grid-cols-3 gap-2" role="group" aria-label="Difficulty">
           {["Easy", "Mid", "Hard"].map((d) => (
@@ -148,14 +148,14 @@ export default function SetupForm() {
           ))}
         </div>
       </div>
-      <div className="mt-4 border-t border-line pt-4">
+      <div className="mt-5 border-t border-line pt-5">
         <div id="company-label" className="text-[13px] font-medium text-neutral-700">Company</div>
         <div className="mt-2" aria-labelledby="company-label">
           <CompanySelect value={companyId} onChange={setCompanyId} />
         </div>
       </div>
       {type === "technical" && (
-        <div className="mt-4 border-t border-line pt-4">
+        <div className="mt-5 border-t border-line pt-5">
           <div className="text-[13px] font-medium text-neutral-700">Topic</div>
           <div className="mt-2 grid grid-cols-3 gap-2" role="group" aria-label="Topic">
             {topics.map((t) => (
@@ -165,7 +165,7 @@ export default function SetupForm() {
         </div>
       )}
       {type === "resume" && (
-        <div className="mt-4 border-t border-line pt-4">
+        <div className="mt-5 border-t border-line pt-5">
           <label htmlFor="resume-text" className="text-[13px] font-medium text-neutral-700">Your resume</label>
           <textarea
             id="resume-text"
@@ -188,7 +188,7 @@ export default function SetupForm() {
         </div>
       )}
 
-      <button type="button" onClick={start} disabled={resumeBusy} className="btn btn-primary mt-5 h-12 w-full text-[15px]">
+      <button type="button" onClick={start} disabled={resumeBusy} className="btn btn-primary mt-6 h-12 w-full text-[15px]">
         {type === "resume" ? (resumeBusy ? "Building your questions..." : "Start resume interview") : "Start interview"}
       </button>
       <p className="mt-4 border-t border-line pt-3 text-[13px] leading-5 text-neutral-600">
