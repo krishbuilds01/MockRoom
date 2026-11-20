@@ -18,7 +18,7 @@ const rounds = [
 
 export default function SystemDesignPage() {
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col px-5">
+    <main className="mx-auto flex h-dvh w-full max-w-6xl flex-col overflow-hidden px-5">
       <nav className="flex h-16 shrink-0 items-center justify-between border-b border-line">
         <Logo />
         <div className="flex items-center gap-5 text-sm text-neutral-600">
@@ -27,7 +27,7 @@ export default function SystemDesignPage() {
         </div>
       </nav>
 
-      <header className="max-w-2xl pt-8">
+      <header className="max-w-2xl shrink-0 pt-6">
         <span className="badge badge-mid">Coming soon</span>
         <h1 className="mt-4 font-display text-display font-semibold">System design</h1>
         <p className="mt-4 text-[15px] leading-7 text-neutral-600">
@@ -41,7 +41,7 @@ export default function SystemDesignPage() {
         </div>
       </header>
 
-      <section className="mt-10 grid items-start gap-8 border-t border-line pt-8 lg:grid-cols-2">
+      <section className="mt-6 grid shrink-0 items-start gap-8 border-t border-line pt-6 lg:grid-cols-2">
         <div>
           <h2 className="font-display text-h2 font-semibold">What you will practice</h2>
           <div className="mt-2 divide-y divide-line">

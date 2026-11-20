@@ -10,7 +10,7 @@ function Stat({ label, value, sub }: { label: string; value: string; sub: string
   return (
     <div className="min-w-[130px]">
       <div className="text-xs font-medium text-neutral-600">{label}</div>
-      <div className="tnum mt-1 font-display text-3xl font-semibold leading-none tracking-tight">{value}</div>
+      <div className="tnum mt-1 font-display text-2xl font-semibold leading-none tracking-tight">{value}</div>
       <div className="mt-1.5 text-xs leading-5 text-neutral-600">{sub}</div>
     </div>
   );
@@ -19,11 +19,11 @@ function Stat({ label, value, sub }: { label: string; value: string; sub: string
 function TrendChart({ analytics }: { analytics: Analytics }) {
   const pts = analytics.trend.slice(-14);
   const W = 640;
-  const H = 220;
+  const H = 190;
   const padL = 36;
   const padR = 16;
-  const padT = 38;
-  const padB = 32;
+  const padT = 34;
+  const padB = 28;
   const iw = W - padL - padR;
   const ih = H - padT - padB;
   const x = (i: number) => padL + (pts.length === 1 ? iw / 2 : (i / (pts.length - 1)) * iw);
@@ -90,7 +90,7 @@ export default function ProgressPage() {
   const enough = (analytics?.total ?? 0) >= 3;
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col px-5">
+    <main className="mx-auto flex h-dvh w-full max-w-6xl flex-col overflow-hidden px-5">
       <nav className="flex h-16 shrink-0 items-center justify-between border-b border-line">
         <Logo />
         <div className="flex items-center gap-5 text-sm text-neutral-600">
@@ -99,9 +99,9 @@ export default function ProgressPage() {
         </div>
       </nav>
 
-      <div className="flex shrink-0 flex-wrap items-end justify-between gap-2 pt-6">
+      <div className="flex shrink-0 flex-wrap items-end justify-between gap-2 pt-4">
         <div>
-          <h1 className="font-display text-4xl font-semibold tracking-tight">Your progress</h1>
+          <h1 className="font-display text-3xl font-semibold tracking-tight">Your progress</h1>
           <p className="mt-1 text-sm text-neutral-600">Computed from the interviews stored in this browser. Nothing here is estimated.</p>
         </div>
       </div>
@@ -109,7 +109,7 @@ export default function ProgressPage() {
       {!analytics ? (
         <p className="pt-8 text-sm text-neutral-600">Loading your history...</p>
       ) : analytics.total === 0 ? (
-        <div className="card card-pad mt-6 max-w-xl">
+        <div className="card card-pad mt-4 max-w-xl">
           <h2 className="font-display text-h2 font-semibold">No interviews yet</h2>
           <p className="mt-2 text-sm leading-6 text-neutral-600">
             Finish one interview and your scores, streak and topic averages appear here, computed from the sessions stored in
@@ -119,8 +119,8 @@ export default function ProgressPage() {
         </div>
       ) : (
         <>
-          <div className="card card-pad mt-6">
-            <div className="flex flex-wrap gap-x-10 gap-y-5">
+          <div className="card card-pad mt-4 shrink-0">
+            <div className="flex flex-wrap gap-x-10 gap-y-4">
               <Stat label="Interviews finished" value={String(analytics.total)} sub={`${analytics.technicalCount} technical, ${analytics.generalCount} live or resume`} />
               <Stat label="Average overall" value={`${analytics.averageOverall}/10`} sub="Across every session on this device" />
               <Stat label="Practice streak" value={`${analytics.streakDays} day${analytics.streakDays === 1 ? "" : "s"}`} sub={analytics.streakDays > 0 ? "Consecutive days with at least one session" : "Do a session today to start a streak"} />
@@ -141,8 +141,8 @@ export default function ProgressPage() {
             </div>
           )}
 
-          <div className="mt-4 grid items-start gap-4 pb-6 lg:grid-cols-2">
-            <div className="card card-pad">
+          <div className="mt-4 grid min-h-0 flex-1 gap-4 pb-4 lg:grid-cols-2">
+            <div className="card card-pad min-h-0 overflow-y-auto">
               {enough && <TrendChart analytics={analytics} />}
               <div className={enough ? "mt-5 border-t border-line pt-5" : ""}>
                 <h2 className="font-display text-h2 font-semibold">This week</h2>
@@ -163,7 +163,7 @@ export default function ProgressPage() {
                 </ol>
               </div>
             </div>
-            <div className="card card-pad">
+            <div className="card card-pad min-h-0 overflow-y-auto">
               <h2 className="font-display text-h2 font-semibold">By scoring axis</h2>
               <div className="mt-1 divide-y divide-line">
                 {analytics.axisAverages.map((a) => (
