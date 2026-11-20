@@ -819,7 +819,7 @@ function GeneralRoom() {
               <button type="button" onClick={toggleRecord} disabled={!hasStream && !recordOn} aria-pressed={recordOn} className={`btn btn-sm shrink-0 ${recordOn ? "btn-secondary" : "btn-ghost"}`}>
                 {recordOn ? (
                   <>
-                    <span className="dot dot-pulse bg-neutral-900" />
+                    <span className="dot dot-pulse bg-accent" />
                     Recording
                   </>
                 ) : (
@@ -906,7 +906,7 @@ function GeneralRoom() {
               </p>
             ) : !liveActive && micState === "listening" ? (
               <p className="mb-2 flex items-center gap-1.5 text-xs text-neutral-900" role="status">
-                <span className="dot dot-pulse bg-neutral-900" />
+                <span className="dot dot-pulse bg-accent" />
                 Listening, speak now
               </p>
             ) : null}

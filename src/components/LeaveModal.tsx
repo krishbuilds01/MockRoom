@@ -29,7 +29,7 @@ export default function LeaveModal({
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/40 p-4" onClick={onStay}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onStay}>
       <div
         role="dialog"
         aria-modal="true"

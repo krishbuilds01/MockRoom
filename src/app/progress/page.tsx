@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { computeAnalytics, loadHistory, type Analytics } from "@/lib/analytics";
 import { scoreBarClass } from "@/lib/scoreColor";
-import Logo from "@/components/Logo";
+import TopNav from "@/components/TopNav";
 import Footer from "@/components/Footer";
 
 function Stat({ label, value, sub }: { label: string; value: string; sub: string }) {
@@ -43,19 +43,19 @@ function TrendChart({ analytics }: { analytics: Analytics }) {
       <svg viewBox={`0 0 ${W} ${H}`} className="mt-2 w-full" role="img" aria-label="Overall score trend over time">
         {[0, 5, 10].map((g) => (
           <g key={g}>
-            <line x1={padL} x2={W - padR} y1={y(g)} y2={y(g)} stroke="#d2d2d7" strokeWidth="1" />
-            <text x={padL - 8} y={y(g) + 4} textAnchor="end" fontSize="12" fill="#6e6e73">{g}</text>
+            <line x1={padL} x2={W - padR} y1={y(g)} y2={y(g)} stroke="#2a2a2e" strokeWidth="1" />
+            <text x={padL - 8} y={y(g) + 4} textAnchor="end" fontSize="12" fill="#909090">{g}</text>
           </g>
         ))}
-        {pts.length > 1 && <polyline points={line} fill="none" stroke="#0066cc" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />}
+        {pts.length > 1 && <polyline points={line} fill="none" stroke="#b8f2a3" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />}
         {pts.map((p, i) => (
           <g key={p.date + i}>
-            <circle cx={x(i)} cy={y(p.overall)} r="4.5" fill="#0066cc" stroke="#ffffff" strokeWidth="2" />
-            <text x={x(i)} y={y(p.overall) - 10} textAnchor="middle" fontSize="12" fontWeight="600" fill="#1d1d1f" style={{ fontVariantNumeric: "tabular-nums" }}>
+            <circle cx={x(i)} cy={y(p.overall)} r="4.5" fill="#b8f2a3" stroke="#131315" strokeWidth="2" />
+            <text x={x(i)} y={y(p.overall) - 10} textAnchor="middle" fontSize="12" fontWeight="600" fill="#ffffff" style={{ fontVariantNumeric: "tabular-nums" }}>
               {p.overall}
             </text>
             {(i % labelStep === 0 || i === pts.length - 1) && (
-              <text x={x(i)} y={H - 8} textAnchor="middle" fontSize="12" fill="#6e6e73">
+              <text x={x(i)} y={H - 8} textAnchor="middle" fontSize="12" fill="#909090">
                 {p.label}
               </text>
             )}
@@ -90,14 +90,9 @@ export default function ProgressPage() {
   const enough = (analytics?.total ?? 0) >= 3;
 
   return (
-    <main className="mx-auto flex h-dvh w-full max-w-6xl flex-col overflow-hidden px-5">
-      <nav className="flex h-16 shrink-0 items-center justify-between border-b border-line">
-        <Logo />
-        <div className="flex items-center gap-5 text-sm text-neutral-600">
-          <Link href="/" className="hover:text-neutral-900">Home</Link>
-          <Link href="/interview/feedback" className="hover:text-neutral-900">Latest feedback</Link>
-        </div>
-      </nav>
+    <div className="flex h-dvh flex-col overflow-hidden bg-ink">
+      <TopNav active="progress" />
+      <main className="mx-auto flex min-h-0 w-full max-w-[1340px] flex-1 flex-col px-5">
 
       <div className="flex shrink-0 flex-wrap items-end justify-between gap-2 pt-4">
         <div>
@@ -193,6 +188,7 @@ export default function ProgressPage() {
       <div className="mt-auto">
         <Footer />
       </div>
-    </main>
+      </main>
+    </div>
   );
 }

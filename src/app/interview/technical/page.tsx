@@ -1075,7 +1075,7 @@ function TechnicalRoom() {
               <button type="button" onClick={toggleRecord} disabled={!hasStream && !recordOn} aria-pressed={recordOn} className={`btn btn-sm shrink-0 ${recordOn ? "btn-secondary" : "btn-ghost"}`}>
                 {recordOn ? (
                   <>
-                    <span className="dot dot-pulse bg-neutral-900" />
+                    <span className="dot dot-pulse bg-accent" />
                     Recording
                   </>
                 ) : (
@@ -1106,7 +1106,7 @@ function TechnicalRoom() {
             )}
           </div>
           <div className="flex shrink-0 flex-col bg-panel p-3 lg:min-h-0 lg:flex-1">
-            <div className="relative h-[340px] shrink-0 overflow-hidden rounded-xl bg-[#1d1d1f] lg:h-auto lg:min-h-[120px] lg:flex-1">
+            <div className="relative h-[340px] shrink-0 overflow-hidden rounded-xl bg-panel lg:h-auto lg:min-h-[120px] lg:flex-1">
               <Editor
                 height="100%"
                 language={lang}
@@ -1119,9 +1119,9 @@ function TechnicalRoom() {
                     inherit: true,
                     rules: [],
                     colors: {
-                      "editor.background": "#1d1d1f",
-                      "editor.lineHighlightBackground": "#2c2c2e",
-                      "editorGutter.background": "#1d1d1f",
+                      "editor.background": "#1b1b1d",
+                      "editor.lineHighlightBackground": "#29292d",
+                      "editorGutter.background": "#1b1b1d",
                     },
                   });
                 }}
