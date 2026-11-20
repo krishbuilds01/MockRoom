@@ -26,6 +26,7 @@ export default function Home() {
   const [interviewerId, setInterviewerId] = useState("maya");
   const interviewer = getInterviewer(interviewerId);
   const [history, setHistory] = useState<SessionRecord[]>([]);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const [resumeText, setResumeText] = useState("");
   const [resumeSaved, setResumeSaved] = useState(false);
   const [resumeBusy, setResumeBusy] = useState(false);
@@ -34,6 +35,7 @@ export default function Home() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setHistory(loadHistory());
+    setHistoryLoaded(true);
     try {
       const saved = localStorage.getItem(RESUME_STORAGE_KEY);
       if (saved) {
@@ -246,7 +248,18 @@ export default function Home() {
           </p>
         </section>
 
-        {analytics && latest ? (
+        {!historyLoaded ? (
+          <section className="card card-pad" aria-label="Your practice record">
+            <h2 className="text-sm font-semibold">Your practice record</h2>
+            <p className="mt-2 text-[13px] leading-5 text-neutral-600">Loading your sessions...</p>
+            <div className="mt-4 space-y-2.5" aria-hidden="true">
+              <div className="h-3 w-2/3 rounded bg-panel2" />
+              <div className="h-3 w-1/2 rounded bg-panel2" />
+              <div className="h-3 w-3/5 rounded bg-panel2" />
+              <div className="h-3 w-2/5 rounded bg-panel2" />
+            </div>
+          </section>
+        ) : analytics && latest ? (
           <section className="card card-pad" aria-label="Your practice record">
             <h2 className="text-sm font-semibold">Your practice record</h2>
             <dl className="mt-2 divide-y divide-line">
