@@ -55,7 +55,12 @@ function fallback(reason: string) {
   return NextResponse.json({ fallback: true, reason }, { status: 501 });
 }
 
-async function tryModel(model: string, key: string, text: string, voiceName: string): Promise<Buffer | null> {
+async function tryModel(
+  model: string,
+  key: string,
+  text: string,
+  voiceName: string
+): Promise<{ wav: Buffer | null; status: number | null }> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 20000);
   try {
@@ -76,21 +81,21 @@ async function tryModel(model: string, key: string, text: string, voiceName: str
       }),
       signal: controller.signal,
     });
-    if (!res.ok) return null;
+    if (!res.ok) return { wav: null, status: res.status };
     const data = await res.json().catch(() => null);
     const candidate = data?.candidates?.[0];
-    if (!candidate || candidate.finishReason === "MAX_TOKENS") return null;
+    if (!candidate || candidate.finishReason === "MAX_TOKENS") return { wav: null, status: null };
     const parts = candidate?.content?.parts;
-    if (!Array.isArray(parts)) return null;
+    if (!Array.isArray(parts)) return { wav: null, status: null };
     const inline = parts.find(
       (p: { inlineData?: { data?: string } }) => typeof p?.inlineData?.data === "string"
     )?.inlineData?.data;
-    if (!inline) return null;
+    if (!inline) return { wav: null, status: null };
     const pcm = Buffer.from(inline, "base64");
-    if (!pcm.length) return null;
-    return Buffer.concat([wavHeader(pcm.length), pcm]);
+    if (!pcm.length) return { wav: null, status: null };
+    return { wav: Buffer.concat([wavHeader(pcm.length), pcm]), status: null };
   } catch {
-    return null;
+    return { wav: null, status: null };
   } finally {
     clearTimeout(timer);
   }
@@ -102,13 +107,15 @@ export async function POST(req: NextRequest) {
   if (!text) return fallback("empty");
   const requestedVoice = typeof body?.voice === "string" ? body.voice : "";
   const voiceName = ALLOWED_VOICES.has(requestedVoice) ? requestedVoice : VOICE_NAME;
-  if (!geminiAvailable()) return fallback("no-key");
-  const key = process.env.GEMINI_API_KEY as string;
+  const key = process.env.GEMINI_TTS_KEY || process.env.GEMINI_API_KEY;
+  if (!key && !geminiAvailable()) return fallback("no-key");
 
+  let lastStatus: number | null = null;
   for (let i = 0; i < TTS_MODELS.length; i++) {
-    const wav = await tryModel(TTS_MODELS[i], key, text, voiceName);
-    if (wav) {
-      return new NextResponse(new Uint8Array(wav), {
+    const result = await tryModel(TTS_MODELS[i], key as string, text, voiceName);
+    lastStatus = result.status;
+    if (result.wav) {
+      return new NextResponse(new Uint8Array(result.wav), {
         status: 200,
         headers: {
           "Content-Type": "audio/wav",
@@ -118,5 +125,5 @@ export async function POST(req: NextRequest) {
       });
     }
   }
-  return fallback("tts-failed");
+  return fallback(lastStatus ? `tts-failed-${lastStatus}` : "tts-failed");
 }
