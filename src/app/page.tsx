@@ -8,14 +8,22 @@ import { buildResumeQuestionsLocal, postResumeQuestions, RESUME_QUESTIONS_KEY, R
 import { computeAnalytics, loadHistory } from "@/lib/analytics";
 import { markFreshStart } from "@/lib/activeSession";
 import { scoreBarClass } from "@/lib/scoreColor";
+import { countByFormat } from "@/lib/problemBank";
 import { overallScore, type SessionRecord } from "@/lib/interviewer";
-import Logo from "@/components/Logo";
+import { LogoMark } from "@/components/Logo";
+import TopNav from "@/components/TopNav";
 import CompanySelect from "@/components/CompanySelect";
 import Footer from "@/components/Footer";
 
 function sessionTitle(h: SessionRecord): string {
   return h.type === "technical" ? h.problemTitle || "Technical interview" : "Live AI Interview";
 }
+
+const FORMAT_CARDS = [
+  { key: "coding", label: "Coding", line: "Arrays, strings, graphs and DP, practised in the coding room with your code watched live." },
+  { key: "system-design", label: "System design", line: "The design questions real loops are built around. The rooms open soon; the question set is final." },
+  { key: "general", label: "General", line: "Behavioural and fundamentals questions, answered out loud with follow-ups." },
+] as const;
 
 export default function Home() {
   const router = useRouter();
@@ -138,28 +146,46 @@ export default function Home() {
   ];
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-[1120px] flex-col px-5">
-      <nav className="flex h-16 shrink-0 items-center justify-between border-b border-line">
-        <Logo />
-        <div className="flex items-center gap-5 text-sm text-neutral-600">
-          <Link href="/progress" className="hover:text-neutral-900">Progress</Link>
-          <Link href="/interview/feedback" className="hover:text-neutral-900">Latest feedback</Link>
-        </div>
-      </nav>
+    <div className="min-h-dvh bg-ink">
+      <TopNav />
+      <main className="mx-auto w-full max-w-[1120px] px-5">
+        <header className="relative px-1 pb-16 pt-14 text-center xl:pb-36">
+          <div className="pointer-events-none absolute inset-0 hidden xl:block" aria-hidden="true">
+            <span className="pointer-events-auto absolute left-[3%] top-8 flex h-12 w-12 -rotate-6 items-center justify-center rounded-xl border border-line bg-tile text-base font-bold text-white">G</span>
+            <span className="pointer-events-auto absolute right-[4%] top-20 flex h-12 w-12 rotate-6 items-center justify-center rounded-xl border border-line bg-tile text-base font-bold text-white">A</span>
+            <span className="pointer-events-auto absolute bottom-32 right-[9%] flex h-12 w-12 -rotate-3 items-center justify-center rounded-xl border border-line bg-tile text-base font-bold text-white">M</span>
+          </div>
+          <div className="flex justify-center">
+            <LogoMark size={44} />
+          </div>
+          <h1 className="font-display mx-auto mt-6 max-w-3xl text-[42px] font-bold leading-[1.05] tracking-tight text-white sm:text-[64px]">
+            Real questions. A strict
+            <span className="block italic text-accent">interviewer. No mercy.</span>
+          </h1>
+          <p className="mx-auto mt-5 max-w-xl text-[15px] leading-6 text-neutral-600">
+            Coding, system design and general rounds from the companies you are targeting, practised live with Maya or Rohan.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <Link href="/problems" className="btn btn-primary h-12 px-6 text-[15px]">Browse problems</Link>
+            <a href="#setup" className="btn btn-secondary h-12 px-6 text-[15px]">Start an interview →</a>
+          </div>
+          <div className="pointer-events-none absolute inset-x-0 bottom-2 hidden xl:block" aria-hidden="true">
+            <Link href="/problems?format=coding" className="pointer-events-auto absolute bottom-0 left-0 block w-[248px] -rotate-3 rounded-xl border border-line bg-panel p-3.5 text-left transition hover:border-line2">
+              <span className="block text-sm font-semibold text-white">Group Anagrams</span>
+              <span className="mt-0.5 block text-xs text-neutral-600">Medium · Asked at Amazon, Google</span>
+              <span className="mt-2 block text-[13px] font-semibold text-accent">Open question →</span>
+            </Link>
+            <Link href="/problems?format=system-design" className="pointer-events-auto absolute bottom-0 right-0 block w-[264px] rotate-2 rounded-xl border border-line bg-panel p-3.5 text-left transition hover:border-line2">
+              <span className="block text-sm font-semibold text-white">Design a Typeahead Service</span>
+              <span className="mt-0.5 block text-xs text-neutral-600">System design · Asked at Pinterest, Slack</span>
+              <span className="mt-2 block text-[13px] font-semibold text-accent">Open question →</span>
+            </Link>
+          </div>
+        </header>
 
-      <header className="pt-10">
-        <h1 className="font-display text-display font-semibold text-neutral-900">Mock Room</h1>
-        <p className="mt-3 max-w-2xl text-[15px] leading-6 text-neutral-600">
-          One on one interview practice. Maya or Rohan runs your session: 5 questions with follow-ups in the voice room, or one
-          coding problem watched line by line in the coding room. Thin answers get pushed back, hints are recorded, and every
-          session ends with scores out of 10 on problem solving, coding, communication and complexity analysis.
-        </p>
-      </header>
-
-      <div className="mt-8 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <section className="card card-pad" aria-label="Start an interview">
-          <h2 className="text-sm font-semibold">Start an interview</h2>
-          <div className="mt-4">
+        <section id="setup" className="scroll-mt-6" aria-label="Set up your interview">
+          <h2 className="font-display text-h2 font-semibold text-white">Set up your interview</h2>
+          <div className="card card-pad mt-3">
             <div>
               <div className="text-[13px] font-medium text-neutral-700">Mode</div>
               <div className="mt-2 grid grid-cols-3 gap-2" role="group" aria-label="Interview mode">
@@ -179,11 +205,11 @@ export default function Home() {
                     aria-pressed={interviewerId === p.id}
                     className={
                       interviewerId === p.id
-                        ? "rounded-lg border border-neutral-900 bg-panel2 px-3 py-2.5 text-left"
-                        : "rounded-lg border border-line bg-white px-3 py-2.5 text-left transition hover:border-line2"
+                        ? "rounded-lg border border-accent bg-accent-soft px-3 py-2.5 text-left"
+                        : "rounded-lg border border-line bg-panel px-3 py-2.5 text-left transition hover:border-line2"
                     }
                   >
-                    <span className="block text-sm font-semibold text-neutral-900">{p.name}</span>
+                    <span className="block text-sm font-semibold text-white">{p.name}</span>
                     <span className="block text-xs text-neutral-600">{p.gender} interviewer</span>
                   </button>
                 ))}
@@ -236,153 +262,164 @@ export default function Home() {
                 {resumeError && <p className="mt-2 text-xs leading-5 text-red-600" role="alert">{resumeError}</p>}
               </div>
             )}
-          </div>
 
-          <button type="button" onClick={start} disabled={resumeBusy} className="btn btn-accent mt-5 h-[52px] w-full rounded-xl text-[15px] font-semibold">
-            {type === "resume" ? (resumeBusy ? "Building your questions..." : "Start resume interview") : "Start interview"}
-          </button>
-          <p className="mt-4 border-t border-line pt-3 text-[13px] leading-5 text-neutral-600">
-            {type === "resume"
-              ? "Your resume stays in this browser, stored only on this device. It is sent once, only to build your questions."
-              : "Works best in Chrome. Allow camera and mic when asked. No account needed."}
-          </p>
+            <button type="button" onClick={start} disabled={resumeBusy} className="btn btn-accent mt-5 h-[52px] w-full text-[15px] font-semibold">
+              {type === "resume" ? (resumeBusy ? "Building your questions..." : "Start resume interview") : "Start interview"}
+            </button>
+            <p className="mt-4 border-t border-line pt-3 text-[13px] leading-5 text-neutral-600">
+              {type === "resume"
+                ? "Your resume stays in this browser, stored only on this device. It is sent once, only to build your questions."
+                : "Works best in Chrome. Allow camera and mic when asked. No account needed."}
+            </p>
+          </div>
         </section>
 
-        {!historyLoaded ? (
-          <section className="card card-pad" aria-label="Your practice record">
-            <h2 className="text-sm font-semibold">Your practice record</h2>
-            <p className="mt-2 text-[13px] leading-5 text-neutral-600">Loading your sessions...</p>
-            <div className="mt-4 space-y-2.5" aria-hidden="true">
-              <div className="h-3 w-2/3 rounded bg-panel2" />
-              <div className="h-3 w-1/2 rounded bg-panel2" />
-              <div className="h-3 w-3/5 rounded bg-panel2" />
-              <div className="h-3 w-2/5 rounded bg-panel2" />
-            </div>
-          </section>
-        ) : analytics && latest ? (
-          <section className="card card-pad" aria-label="Your practice record">
-            <h2 className="text-sm font-semibold">Your practice record</h2>
-            <dl className="mt-2 divide-y divide-line">
-              <div className="flex items-baseline justify-between gap-3 py-2.5">
-                <dt className="text-[13px] text-neutral-600">Sessions</dt>
-                <dd className="tnum text-sm font-semibold">{analytics.total}</dd>
-              </div>
-              <div className="flex items-baseline justify-between gap-3 py-2.5">
-                <dt className="text-[13px] text-neutral-600">Average overall</dt>
-                <dd className="tnum text-sm font-semibold">{analytics.averageOverall}/10</dd>
-              </div>
-              <div className="flex items-baseline justify-between gap-3 py-2.5">
-                <dt className="text-[13px] text-neutral-600">Practice streak</dt>
-                <dd className="tnum text-sm font-semibold">{analytics.streakDays} day{analytics.streakDays === 1 ? "" : "s"}</dd>
-              </div>
-              <div className="flex items-baseline justify-between gap-3 py-2.5">
-                <dt className="text-[13px] text-neutral-600">Weakest area</dt>
-                <dd className="tnum text-right text-sm font-semibold">{analytics.weakest ? `${analytics.weakest.name} · ${analytics.weakest.average}/10` : "Not yet"}</dd>
-              </div>
-            </dl>
-            <div className="border-t border-line pt-3">
-              <div className="text-[13px] text-neutral-600">Last session</div>
-              <div className="mt-1 text-sm font-medium">{sessionTitle(latest)}</div>
-              <div className="mt-0.5 text-[13px] text-neutral-600">
-                {`${new Date(latest.date).toLocaleDateString()} · Overall `}
-                <span className="tnum font-semibold text-neutral-900">{latestOverall}/10</span>
-                {trendDelta !== null && (
-                  <span className={trendDelta >= 0 ? "font-medium text-accent" : "font-medium text-neutral-600"}>
-                    {` · ${trendDelta >= 0 ? "+" : ""}${trendDelta} vs the one before`}
-                  </span>
-                )}
-              </div>
-              <Link href="/interview/feedback" className="mt-1.5 inline-block text-[13px] font-medium text-neutral-900 underline underline-offset-2">Open the feedback</Link>
-            </div>
-            {chronological.length > 1 && (
-              <div className="mt-4 border-t border-line pt-3">
-                <div className="text-[13px] text-neutral-600">Overall score per session, numbered in the order you did them</div>
-                <div className="mt-2 flex gap-2 border-b border-line2">
-                  {chronological.slice(-10).map((h) => {
-                    const o = overallScore(h.scores);
-                    return (
-                      <div key={h.id} className="flex flex-1 flex-col items-center gap-1.5" title={`${o}/10`}>
-                        <span className="tnum text-xs font-semibold leading-none text-neutral-700">{o}</span>
-                        <div className="relative h-16 w-full rounded-t bg-panel2">
-                          <div className={`absolute inset-x-0 bottom-0 rounded-t ${scoreBarClass(o)}`} style={{ height: `${o * 10}%` }} />
-                        </div>
-                      </div>
-                    );
-                  })}
+        <section className="mt-10" aria-label="Browse by format">
+          <h2 className="font-display text-h2 font-semibold text-white">Browse by format</h2>
+          <div className="mt-3 grid gap-4 sm:grid-cols-3">
+            {FORMAT_CARDS.map((f) => (
+              <Link key={f.key} href={`/problems?format=${f.key}`} className="card card-pad block transition hover:border-line2">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-sm font-semibold text-white">{f.label}</span>
+                  <span className="tnum font-display text-3xl font-semibold text-white">{countByFormat(f.key)}</span>
                 </div>
-                <div className="mt-1.5 flex gap-2">
-                  {chronological.slice(-10).map((h, i, arr) => (
-                    <span key={h.id} className="tnum flex-1 text-center text-xs leading-none text-neutral-600">{`#${chronological.length - arr.length + i + 1}`}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-            <Link href="/progress" className="mt-4 block border-t border-line pt-3 text-[13px] font-medium text-neutral-900 underline underline-offset-2">
-              Progress page: trend, topics and this week&apos;s plan
-            </Link>
-          </section>
-        ) : (
-          <section className="card card-pad" aria-label="Your first session">
-            <h2 className="text-sm font-semibold">No sessions yet</h2>
-            <p className="mt-2 text-[13px] leading-5 text-neutral-600">
-              Your practice record appears here after your first session: scores, streak and weakest areas, computed from the
-              sessions stored in this browser.
-            </p>
-            <ol className="mt-4 space-y-3.5">
-              {firstSteps.map((step, i) => (
-                <li key={step} className="flex items-baseline gap-3 text-[13px] leading-5 text-neutral-600">
-                  <span className="tnum flex h-5 w-5 shrink-0 translate-y-0.5 items-center justify-center rounded-full border border-line2 text-[11px] font-semibold text-neutral-700">{i + 1}</span>
-                  <span>{step}</span>
-                </li>
-              ))}
-            </ol>
-          </section>
-        )}
-      </div>
-
-      <Link href="/system-design" className="mt-6 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-y border-line py-4">
-        <span className="text-sm">
-          <span className="font-semibold">System design</span>{" "}
-          <span className="text-neutral-600">URL shortener, chat system, news feed, rate limiter, file storage.</span>
-        </span>
-        <span className="text-[13px] font-medium text-neutral-600">Coming soon</span>
-      </Link>
-
-      {history.length > 0 && (
-        <section className="mt-8">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="font-display text-h2 font-semibold">Session history</h2>
-            <Link href="/progress" className="text-[13px] font-medium text-neutral-900 underline underline-offset-2">Progress page</Link>
-          </div>
-          <div className="card mt-3 divide-y divide-line">
-            {history.map((h) => (
-              <div key={h.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 text-sm">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 truncate font-medium">
-                    <span className="truncate">{sessionTitle(h)}</span>
-                    <span className={`badge ${h.difficulty === "Easy" ? "badge-easy" : h.difficulty === "Hard" ? "badge-hard" : "badge-mid"}`}>{h.difficulty}</span>
-                    {h.companyName && <span className="badge badge-accent">{h.companyName}</span>}
-                    {h.resumeInterview && <span className="badge">Resume</span>}
-                    {h.incomplete && <span className="badge badge-mid">Incomplete</span>}
-                  </div>
-                  <div className="mt-0.5 text-xs text-neutral-600">{`${new Date(h.date).toLocaleString()} · ${Math.round(h.timeSec / 60)} min${h.targetSec ? ` of ${Math.round(h.targetSec / 60)} target` : ""}${h.interviewerName ? ` · Interviewer: ${h.interviewerName}` : ""}`}</div>
-                </div>
-                <div className="flex items-center gap-4 text-xs text-neutral-600">
-                  {h.type === "technical" && (
-                    <span>Tests <span className="tnum font-semibold text-neutral-900">{h.testsPassed}/{h.totalTests}</span></span>
-                  )}
-                  {(h.hintsUsed ?? 0) > 0 && <span>Hints <span className="tnum font-semibold text-neutral-900">{h.hintsUsed}</span></span>}
-                  <span>Problem Solving <span className="tnum font-semibold text-neutral-900">{h.scores.problemSolving}/10</span></span>
-                  <span>Overall <span className="tnum font-semibold text-neutral-900">{overallScore(h.scores)}/10</span></span>
-                </div>
-              </div>
+                <p className="mt-2 text-sm leading-6 text-neutral-600">{f.line}</p>
+                <span className="mt-3 block text-sm font-semibold text-accent">View problems →</span>
+              </Link>
             ))}
           </div>
-          <p className="mt-2 text-xs text-neutral-600">History is stored only in this browser.</p>
         </section>
-      )}
 
-      <Footer />
-    </main>
+        <section className="mt-10" aria-label="Your practice record">
+          <h2 className="font-display text-h2 font-semibold text-white">Your practice record</h2>
+          {!historyLoaded ? (
+            <div className="card card-pad mt-3">
+              <p className="text-[13px] leading-5 text-neutral-600">Loading your sessions...</p>
+              <div className="mt-4 space-y-2.5" aria-hidden="true">
+                <div className="h-3 w-2/3 rounded bg-panel2" />
+                <div className="h-3 w-1/2 rounded bg-panel2" />
+                <div className="h-3 w-3/5 rounded bg-panel2" />
+                <div className="h-3 w-2/5 rounded bg-panel2" />
+              </div>
+            </div>
+          ) : analytics && latest ? (
+            <div className="card card-pad mt-3">
+              <dl className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                <div>
+                  <dt className="text-[13px] text-neutral-600">Sessions</dt>
+                  <dd className="tnum mt-1 text-xl font-semibold text-white">{analytics.total}</dd>
+                </div>
+                <div>
+                  <dt className="text-[13px] text-neutral-600">Average overall</dt>
+                  <dd className="tnum mt-1 text-xl font-semibold text-white">{analytics.averageOverall}/10</dd>
+                </div>
+                <div>
+                  <dt className="text-[13px] text-neutral-600">Practice streak</dt>
+                  <dd className="tnum mt-1 text-xl font-semibold text-white">{analytics.streakDays} day{analytics.streakDays === 1 ? "" : "s"}</dd>
+                </div>
+                <div>
+                  <dt className="text-[13px] text-neutral-600">Weakest area</dt>
+                  <dd className="tnum mt-1 text-xl font-semibold text-white">{analytics.weakest ? `${analytics.weakest.name} · ${analytics.weakest.average}/10` : "Not yet"}</dd>
+                </div>
+              </dl>
+              <div className="mt-4 grid gap-6 border-t border-line pt-4 lg:grid-cols-2">
+                <div>
+                  <div className="text-[13px] text-neutral-600">Last session</div>
+                  <div className="mt-1 text-sm font-medium text-white">{sessionTitle(latest)}</div>
+                  <div className="mt-0.5 text-[13px] text-neutral-600">
+                    {`${new Date(latest.date).toLocaleDateString()} · Overall `}
+                    <span className="tnum font-semibold text-white">{latestOverall}/10</span>
+                    {trendDelta !== null && (
+                      <span className={trendDelta >= 0 ? "font-medium text-accent" : "font-medium text-neutral-600"}>
+                        {` · ${trendDelta >= 0 ? "+" : ""}${trendDelta} vs the one before`}
+                      </span>
+                    )}
+                  </div>
+                  <Link href="/interview/feedback" className="mt-1.5 inline-block text-[13px] font-semibold text-accent hover:underline">Open the feedback</Link>
+                  <Link href="/progress" className="mt-4 block text-[13px] font-medium text-neutral-700 underline underline-offset-2 hover:text-white">
+                    Progress page: trend, topics and this week&apos;s plan
+                  </Link>
+                </div>
+                {chronological.length > 1 && (
+                  <div>
+                    <div className="text-[13px] text-neutral-600">Overall score per session, numbered in the order you did them</div>
+                    <div className="mt-2 flex gap-2 border-b border-line2">
+                      {chronological.slice(-10).map((h) => {
+                        const o = overallScore(h.scores);
+                        return (
+                          <div key={h.id} className="flex flex-1 flex-col items-center gap-1.5" title={`${o}/10`}>
+                            <span className="tnum text-xs font-semibold leading-none text-neutral-700">{o}</span>
+                            <div className="relative h-16 w-full rounded-t bg-panel2">
+                              <div className={`absolute inset-x-0 bottom-0 rounded-t ${scoreBarClass(o)}`} style={{ height: `${o * 10}%` }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-1.5 flex gap-2">
+                      {chronological.slice(-10).map((h, i, arr) => (
+                        <span key={h.id} className="tnum flex-1 text-center text-xs leading-none text-neutral-600">{`#${chronological.length - arr.length + i + 1}`}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="card card-pad mt-3">
+              <h3 className="text-sm font-semibold text-white">No sessions yet</h3>
+              <p className="mt-2 max-w-2xl text-[13px] leading-5 text-neutral-600">
+                Your practice record appears here after your first session: scores, streak and weakest areas, computed from the
+                sessions stored in this browser.
+              </p>
+              <ol className="mt-4 space-y-3.5">
+                {firstSteps.map((step, i) => (
+                  <li key={step} className="flex items-baseline gap-3 text-[13px] leading-5 text-neutral-600">
+                    <span className="tnum flex h-5 w-5 shrink-0 translate-y-0.5 items-center justify-center rounded-full border border-line2 text-[11px] font-semibold text-neutral-700">{i + 1}</span>
+                    <span>{step}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+        </section>
+
+        {history.length > 0 && (
+          <section className="mt-10">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className="font-display text-h2 font-semibold text-white">Session history</h2>
+              <Link href="/progress" className="text-[13px] font-medium text-neutral-700 underline underline-offset-2 hover:text-white">Progress page</Link>
+            </div>
+            <div className="card mt-3 divide-y divide-line">
+              {history.map((h) => (
+                <div key={h.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 text-sm">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 truncate font-medium text-white">
+                      <span className="truncate">{sessionTitle(h)}</span>
+                      <span className={`badge ${h.difficulty === "Easy" ? "badge-easy" : h.difficulty === "Hard" ? "badge-hard" : "badge-mid"}`}>{h.difficulty}</span>
+                      {h.companyName && <span className="badge badge-accent">{h.companyName}</span>}
+                      {h.resumeInterview && <span className="badge">Resume</span>}
+                      {h.incomplete && <span className="badge badge-mid">Incomplete</span>}
+                    </div>
+                    <div className="mt-0.5 text-xs text-neutral-600">{`${new Date(h.date).toLocaleString()} · ${Math.round(h.timeSec / 60)} min${h.targetSec ? ` of ${Math.round(h.targetSec / 60)} target` : ""}${h.interviewerName ? ` · Interviewer: ${h.interviewerName}` : ""}`}</div>
+                  </div>
+                  <div className="flex items-center gap-4 text-xs text-neutral-600">
+                    {h.type === "technical" && (
+                      <span>Tests <span className="tnum font-semibold text-white">{h.testsPassed}/{h.totalTests}</span></span>
+                    )}
+                    {(h.hintsUsed ?? 0) > 0 && <span>Hints <span className="tnum font-semibold text-white">{h.hintsUsed}</span></span>}
+                    <span>Problem Solving <span className="tnum font-semibold text-white">{h.scores.problemSolving}/10</span></span>
+                    <span>Overall <span className="tnum font-semibold text-white">{overallScore(h.scores)}/10</span></span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="mt-2 text-xs text-neutral-600">History is stored only in this browser.</p>
+          </section>
+        )}
+
+        <Footer />
+      </main>
+    </div>
   );
 }
