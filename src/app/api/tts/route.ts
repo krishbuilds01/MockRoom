@@ -6,6 +6,20 @@ export const maxDuration = 30;
 const TTS_MODEL = "gemini-2.5-flash-preview-tts";
 const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 const VOICE_NAME = "Callirrhoe";
+const ALLOWED_VOICES = new Set([
+  "Kore",
+  "Callirrhoe",
+  "Charon",
+  "Orus",
+  "Iapetus",
+  "Sadaltager",
+  "Alnilam",
+  "Zephyr",
+  "Puck",
+  "Fenrir",
+  "Aoede",
+  "Erinome",
+]);
 const SAMPLE_RATE = 24000;
 const STYLE_PREFIX =
   "Speak in a natural, warm, professional interviewer tone, at a relaxed conversational pace, with natural pauses and varied intonation, like a real person talking, not reading: ";
@@ -45,6 +59,8 @@ export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const text = cleanText(body?.text);
   if (!text) return fallback("empty");
+  const requestedVoice = typeof body?.voice === "string" ? body.voice : "";
+  const voiceName = ALLOWED_VOICES.has(requestedVoice) ? requestedVoice : VOICE_NAME;
   if (!geminiAvailable()) return fallback("no-key");
   const key = process.env.GEMINI_API_KEY as string;
 
@@ -62,7 +78,7 @@ export async function POST(req: NextRequest) {
         generationConfig: {
           responseModalities: ["AUDIO"],
           speechConfig: {
-            voiceConfig: { prebuiltVoiceConfig: { voiceName: VOICE_NAME } },
+            voiceConfig: { prebuiltVoiceConfig: { voiceName } },
           },
         },
       }),
