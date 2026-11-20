@@ -1,20 +1,17 @@
+import Link from "next/link";
+
 export default function Footer() {
   return (
-    <footer className="mt-8 shrink-0 border-t border-line py-4 text-xs leading-5 text-neutral-600">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <span>Mock Room. Interview practice with Maya and Rohan.</span>
-        <a
-          href="https://github.com/krishbuilds01/ai-interview-platform"
-          target="_blank"
-          rel="noreferrer"
-          className="font-medium text-neutral-700 underline underline-offset-2 hover:text-neutral-900"
-        >
-          GitHub
-        </a>
+    <footer className="mt-8 shrink-0 border-t border-line py-5 text-xs leading-5 text-neutral-600">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <span className="text-sm font-semibold text-white">Mock Room</span>
+        <nav className="flex items-center gap-5 text-[13px]" aria-label="Footer">
+          <Link href="/problems" className="hover:text-white">Problems</Link>
+          <Link href="/progress" className="hover:text-white">Progress</Link>
+          <Link href="/system-design" className="hover:text-white">System design</Link>
+        </nav>
       </div>
-      <p className="mt-1 max-w-[65ch]">
-        Your interviews and recordings stay in your browser. Nothing is uploaded, and there is no account to create.
-      </p>
+      <p className="mt-2">Built by Krishna. Free to use.</p>
     </footer>
   );
 }
