@@ -44,19 +44,19 @@ function TrendChart({ analytics }: { analytics: Analytics }) {
       <svg viewBox={`0 0 ${W} ${H}`} className="mt-2 w-full" role="img" aria-label="Overall score trend over time">
         {[0, 5, 10].map((g) => (
           <g key={g}>
-            <line x1={padL} x2={W - padR} y1={y(g)} y2={y(g)} stroke="#e8e2d6" strokeWidth="1" />
-            <text x={padL - 8} y={y(g) + 4} textAnchor="end" fontSize="12" fill="#756c5e">{g}</text>
+            <line x1={padL} x2={W - padR} y1={y(g)} y2={y(g)} stroke="#332d24" strokeWidth="1" />
+            <text x={padL - 8} y={y(g) + 4} textAnchor="end" fontSize="12" fill="#a89d88">{g}</text>
           </g>
         ))}
-        {pts.length > 1 && <polyline points={line} fill="none" stroke="#b3400a" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />}
+        {pts.length > 1 && <polyline points={line} fill="none" stroke="#e8702a" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />}
         {pts.map((p, i) => (
           <g key={p.date + i}>
-            <circle cx={x(i)} cy={y(p.overall)} r="4.5" fill="#b3400a" stroke="#fdfbf7" strokeWidth="2" />
-            <text x={labelX(i)} y={y(p.overall) - 10} textAnchor="middle" fontSize="12" fontWeight="600" fill="#1f1b16" style={{ fontVariantNumeric: "tabular-nums" }}>
+            <circle cx={x(i)} cy={y(p.overall)} r="4.5" fill="#e8702a" stroke="#201c16" strokeWidth="2" />
+            <text x={labelX(i)} y={y(p.overall) - 10} textAnchor="middle" fontSize="12" fontWeight="600" fill="#f2ede3" style={{ fontVariantNumeric: "tabular-nums" }}>
               {p.overall}
             </text>
             {(i % labelStep === 0 || i === pts.length - 1) && (
-              <text x={labelX(i)} y={H - 8} textAnchor="middle" fontSize="12" fill="#756c5e">
+              <text x={labelX(i)} y={H - 8} textAnchor="middle" fontSize="12" fill="#a89d88">
                 {p.label}
               </text>
             )}

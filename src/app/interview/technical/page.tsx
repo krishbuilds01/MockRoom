@@ -1088,7 +1088,7 @@ function TechnicalRoom() {
           </div>
         </section>
 
-        <section className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-line bg-panel shadow-[0_1px_2px_rgba(31,27,22,0.04)]">
+        <section className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-line bg-panel shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
           <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-line bg-panel px-4 py-2.5">
             <div className="flex gap-2" role="group" aria-label="Language">
               {LANGS.map((l) => (
@@ -1108,22 +1108,22 @@ function TechnicalRoom() {
             )}
           </div>
           <div className="bg-panel p-3">
-            <div className="relative h-[380px] overflow-hidden rounded-[10px] border border-line bg-white sm:h-[440px] lg:h-[520px]">
+            <div className="relative h-[380px] overflow-hidden rounded-[10px] border border-line bg-[#1b1813] sm:h-[440px] lg:h-[520px]">
               <Editor
                 height="100%"
                 language={lang}
                 value={code}
                 onChange={onCodeChange}
-                theme="interviewai-light"
+                theme="interviewai-dark"
                 beforeMount={(monaco) => {
-                  monaco.editor.defineTheme("interviewai-light", {
-                    base: "vs",
+                  monaco.editor.defineTheme("interviewai-dark", {
+                    base: "vs-dark",
                     inherit: true,
                     rules: [],
                     colors: {
-                      "editor.background": "#ffffff",
-                      "editor.lineHighlightBackground": "#f4f1ea",
-                      "editorGutter.background": "#ffffff",
+                      "editor.background": "#1b1813",
+                      "editor.lineHighlightBackground": "#26221b",
+                      "editorGutter.background": "#1b1813",
                     },
                   });
                 }}

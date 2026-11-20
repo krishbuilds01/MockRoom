@@ -88,7 +88,7 @@ export default function CompanySelect({
         onClick={() => (open ? setOpen(false) : openList())}
       >
         <span className="truncate">{selected?.name}</span>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#756c5e" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={`shrink-0 transition-transform ${open ? "rotate-180" : ""}`}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a89d88" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={`shrink-0 transition-transform ${open ? "rotate-180" : ""}`}>
           <path d="m6 9 6 6 6-6" />
         </svg>
       </button>
@@ -97,7 +97,7 @@ export default function CompanySelect({
           ref={listRef}
           role="listbox"
           aria-label="Company"
-          className="absolute inset-x-0 top-full z-30 mt-1.5 max-h-64 overflow-y-auto rounded-[10px] border border-line bg-panel p-1 shadow-[0_8px_24px_rgba(31,27,22,0.08)]"
+          className="absolute inset-x-0 top-full z-30 mt-1.5 max-h-64 overflow-y-auto rounded-[10px] border border-line bg-panel p-1 shadow-[0_8px_24px_rgba(0,0,0,0.45)]"
         >
           {companies.map((c, i) => (
             <li

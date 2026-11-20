@@ -3,35 +3,35 @@
 @theme {
   --font-sans: var(--font-inter), ui-sans-system, system-ui, sans-serif;
 
-  --color-paper: #f7f4ee;
-  --color-ink: #1f1b16;
-  --color-panel: #fdfbf7;
-  --color-panel2: #f4f1ea;
-  --color-tile: #efe9df;
-  --color-line: #e8e2d6;
-  --color-line2: #d5ccb8;
-  --color-accent: #b3400a;
-  --color-accent-strong: #93350a;
-  --color-accent-soft: #f9ead9;
+  --color-paper: #171410;
+  --color-ink: #f2ede3;
+  --color-panel: #201c16;
+  --color-panel2: #26221b;
+  --color-tile: #2e2921;
+  --color-line: #332d24;
+  --color-line2: #4a4335;
+  --color-accent: #e8702a;
+  --color-accent-strong: #f07f3a;
+  --color-accent-soft: #3a2413;
 
-  --color-neutral-50: #faf8f3;
-  --color-neutral-100: #f4f1ea;
-  --color-neutral-200: #e8e2d6;
-  --color-neutral-300: #d5ccb8;
-  --color-neutral-400: #98907f;
-  --color-neutral-500: #756c5e;
-  --color-neutral-600: #5e554a;
-  --color-neutral-700: #453f36;
-  --color-neutral-800: #2c2822;
-  --color-neutral-900: #1f1b16;
-  --color-neutral-950: #171410;
+  --color-neutral-50: #1b1813;
+  --color-neutral-100: #221f19;
+  --color-neutral-200: #332d24;
+  --color-neutral-300: #4a4335;
+  --color-neutral-400: #8a8172;
+  --color-neutral-500: #a89d88;
+  --color-neutral-600: #bfb5a1;
+  --color-neutral-700: #d6cdbb;
+  --color-neutral-800: #e9e3d5;
+  --color-neutral-900: #f2ede3;
+  --color-neutral-950: #faf7f0;
 
-  --color-red-50: #fdf1f0;
-  --color-red-100: #fbe3e1;
-  --color-red-200: #f5c6c2;
-  --color-red-300: #eda49e;
-  --color-red-600: #dc2626;
-  --color-red-700: #b3261e;
+  --color-red-50: #3a1d1a;
+  --color-red-100: #47231f;
+  --color-red-200: #5c2e28;
+  --color-red-300: #8a4a42;
+  --color-red-600: #f0705f;
+  --color-red-700: #f28a7a;
 
   --text-display: 4rem;
   --text-display--line-height: 1.05;
@@ -59,7 +59,7 @@ body {
   color: var(--color-ink);
   font-family: var(--font-sans);
   line-height: 1.6;
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 ::selection {
@@ -68,14 +68,14 @@ body {
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #d5ccb8 transparent;
+  scrollbar-color: #4a4335 transparent;
 }
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #d5ccb8;
+  background: #4a4335;
   border-radius: 999px;
   border: 2px solid transparent;
   background-clip: content-box;
@@ -113,7 +113,7 @@ body {
 .btn:disabled {
   background: var(--color-tile);
   border-color: var(--color-line);
-  color: #98907f;
+  color: #8a8172;
   opacity: 1;
   filter: none;
   cursor: not-allowed;
@@ -121,16 +121,16 @@ body {
 }
 .btn-primary {
   background: var(--color-ink);
-  color: #ffffff;
+  color: #211c15;
   font-weight: 500;
 }
 .btn-primary:hover:not(:disabled) {
-  background: #37312a;
+  background: #faf7f0;
 }
 .btn-accent,
 .btn-success {
   background: var(--color-accent);
-  color: #ffffff;
+  color: #241105;
   font-weight: 500;
 }
 .btn-accent:hover:not(:disabled),
@@ -158,7 +158,7 @@ body {
 }
 .btn-danger {
   background: var(--color-red-50);
-  border-color: #eec5c0;
+  border-color: #5c2e28;
   color: var(--color-red-700);
 }
 .btn-danger:hover:not(:disabled) {
@@ -185,10 +185,10 @@ body {
 }
 .input:focus {
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(179, 64, 10, 0.15);
+  box-shadow: 0 0 0 3px rgba(232, 112, 42, 0.22);
 }
 .input::placeholder {
-  color: #98907f;
+  color: #8a8172;
 }
 
 .select {
@@ -196,7 +196,7 @@ body {
   border-radius: 10px;
   border: 1px solid var(--color-line);
   background-color: var(--color-panel);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%235e554a' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23bfb5a1' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 0.75rem center;
   appearance: none;
@@ -212,14 +212,14 @@ body {
 }
 .select:focus {
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(179, 64, 10, 0.15);
+  box-shadow: 0 0 0 3px rgba(232, 112, 42, 0.22);
 }
 
 .card {
   background: var(--color-panel);
   border: 1px solid var(--color-line);
   border-radius: 16px;
-  box-shadow: 0 1px 2px rgba(31, 27, 22, 0.04);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 .card-hero {
   border-radius: 18px;
@@ -248,29 +248,29 @@ body {
   white-space: nowrap;
 }
 .badge-accent {
-  border-color: #eccdb2;
+  border-color: #6e3d1c;
   background: var(--color-accent-soft);
   color: var(--color-accent-strong);
 }
 .badge-easy {
   border-color: transparent;
-  background: #e7f4ec;
-  color: #177245;
+  background: #16382a;
+  color: #6fd598;
 }
 .badge-mid {
   border-color: transparent;
-  background: #faf0dc;
-  color: #8a5a08;
+  background: #3d2f10;
+  color: #e8b95a;
 }
 .badge-hard {
   border-color: transparent;
-  background: #fbe9e7;
-  color: #b3261e;
+  background: #3a1d1a;
+  color: #f28a7a;
 }
 .badge-live {
-  border-color: #bfe3cd;
-  background: #e7f4ec;
-  color: #177245;
+  border-color: #245c3d;
+  background: #16382a;
+  color: #6fd598;
 }
 
 .pill {
@@ -292,16 +292,16 @@ body {
   flex-shrink: 0;
 }
 .diff-easy {
-  background: #e7f4ec;
-  color: #177245;
+  background: #16382a;
+  color: #6fd598;
 }
 .diff-medium {
-  background: #faf0dc;
-  color: #8a5a08;
+  background: #3d2f10;
+  color: #e8b95a;
 }
 .diff-hard {
-  background: #fbe9e7;
-  color: #b3261e;
+  background: #3a1d1a;
+  color: #f28a7a;
 }
 .stage-phone,
 .stage-onsite,
@@ -320,14 +320,14 @@ body {
   letter-spacing: 0.02em;
 }
 .chip-pass {
-  background: #16a34a;
-  color: #ffffff;
+  background: #1e5c38;
+  color: #a7e8c0;
   border: 1px solid transparent;
 }
 .chip-fail {
-  background: #fbe9e7;
-  color: #b3261e;
-  border: 1px solid #f0c4bf;
+  background: #3a1d1a;
+  color: #f28a7a;
+  border: 1px solid #5c2e28;
 }
 
 .panel-head {
@@ -348,7 +348,7 @@ body {
   border-radius: 999px;
   background: var(--color-ink);
   border: 1px solid var(--color-ink);
-  color: #ffffff;
+  color: #211c15;
   font-size: 0.85rem;
   font-weight: 500;
   flex-shrink: 0;

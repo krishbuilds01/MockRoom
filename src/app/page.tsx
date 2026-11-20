@@ -103,7 +103,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="card overflow-hidden shadow-[0_8px_24px_rgba(31,27,22,0.06)]" aria-label="Preview of the coding room">
+          <div className="card overflow-hidden shadow-[0_8px_24px_rgba(0,0,0,0.4)]" aria-label="Preview of the coding room">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-5 py-4">
               <span className="text-sm font-medium text-neutral-900">Technical interview</span>
               <span className="font-mono text-xs text-neutral-500">Group Anagrams · Medium</span>
@@ -112,7 +112,7 @@ export default function Home() {
               <p className="text-sm leading-6 text-neutral-700">
                 Given an array of strings strs, group the anagrams together. You can return the answer in any order.
               </p>
-              <pre className="mt-4 overflow-x-auto rounded-lg bg-ink p-4 font-mono text-[13px] leading-6 text-[#ede8de]">{PREVIEW_CODE}</pre>
+              <pre className="mt-4 overflow-x-auto rounded-lg bg-[#12100d] p-4 font-mono text-[13px] leading-6 text-[#ede8de]">{PREVIEW_CODE}</pre>
               <div className="mt-4 space-y-3 border-t border-line pt-4">
                 {PREVIEW_LINES.map((line) => (
                   <div key={line} className="flex gap-3">
@@ -218,7 +218,7 @@ export default function Home() {
                     {`${new Date(latest.date).toLocaleDateString()} · Overall `}
                     <span className="tnum font-medium text-neutral-900">{latestOverall}/10</span>
                     {trendDelta !== null && (
-                      <span className={trendDelta >= 0 ? "font-medium text-[#177245]" : "font-medium text-neutral-600"}>
+                      <span className={trendDelta >= 0 ? "font-medium text-[#6fd598]" : "font-medium text-neutral-600"}>
                         {` · ${trendDelta >= 0 ? "+" : ""}${trendDelta} vs the one before`}
                       </span>
                     )}
