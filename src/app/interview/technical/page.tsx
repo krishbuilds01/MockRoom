@@ -1075,7 +1075,7 @@ function TechnicalRoom() {
               <button type="button" onClick={toggleRecord} disabled={!hasStream && !recordOn} aria-pressed={recordOn} className={`btn btn-sm shrink-0 ${recordOn ? "btn-secondary" : "btn-ghost"}`}>
                 {recordOn ? (
                   <>
-                    <span className="dot dot-pulse bg-red-500" />
+                    <span className="dot dot-pulse bg-neutral-900" />
                     Recording
                   </>
                 ) : (

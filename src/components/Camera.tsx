@@ -89,7 +89,7 @@ export default function Camera({
       <div className="flex items-center gap-2 border-t border-line bg-panel px-3 py-2 text-xs text-neutral-600">
         {recording ? (
           <>
-            <span className="dot dot-pulse bg-red-500" />
+            <span className="dot dot-pulse bg-neutral-900" />
             Recording
             <span className="text-neutral-600">For your self-review. Stored only in this browser.</span>
           </>

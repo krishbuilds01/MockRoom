@@ -261,7 +261,7 @@ export default function FeedbackPage() {
                     <div key={n.phase} className="py-3 last:pb-0">
                       <div className="text-sm font-semibold">{n.phase}</div>
                       <p className="mt-1 break-words text-[13px] leading-5 text-neutral-700">{n.did}</p>
-                      <p className={`mt-1 text-[13px] leading-5 ${n.flag ? "text-red-700" : "text-neutral-700"}`}>{n.weak}</p>
+                      <p className="mt-1 text-[13px] leading-5 text-neutral-700">{n.weak}</p>
                       <p className="mt-1 text-[13px] leading-5 text-neutral-600">Strong version: {n.strong}</p>
                     </div>
                   ))}

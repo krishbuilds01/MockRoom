@@ -274,7 +274,7 @@ export default function Home() {
                 {`${new Date(latest.date).toLocaleDateString()} · Overall `}
                 <span className="tnum font-semibold text-neutral-900">{latestOverall}/10</span>
                 {trendDelta !== null && (
-                  <span className={trendDelta >= 0 ? "font-medium text-accent" : "font-medium text-red-600"}>
+                  <span className={trendDelta >= 0 ? "font-medium text-accent" : "font-medium text-neutral-600"}>
                     {` · ${trendDelta >= 0 ? "+" : ""}${trendDelta} vs the one before`}
                   </span>
                 )}
