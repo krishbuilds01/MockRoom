@@ -23,7 +23,7 @@ function validRecord(raw: string | null): SessionRecord | null {
   }
 }
 
-function axisNote(rec: SessionRecord, axis: "problemSolving" | "coding" | "communication" | "complexity"): string {
+function axisNote(rec: SessionRecord, axis: "problemSolving" | "coding" | "communication" | "complexity"): string | null {
   const hints = rec.hintsUsed ?? 0;
   if (axis === "problemSolving") {
     if (rec.type === "technical") return `${rec.testsPassed} of ${rec.totalTests} tests passed.`;
@@ -34,9 +34,10 @@ function axisNote(rec: SessionRecord, axis: "problemSolving" | "coding" | "commu
   if (axis === "coding") {
     if (rec.type === "technical") return `${rec.runs} code run${rec.runs === 1 ? "" : "s"}, ${hints} hint${hints === 1 ? "" : "s"} used.`;
     const thin = rec.thinAnswers ?? 0;
-    return thin ? `${thin} answer${thin === 1 ? " was" : "s were"} marked thin.` : "No answers marked thin.";
+    return thin ? `${thin} answer${thin === 1 ? " was" : "s were"} marked thin.` : null;
   }
   if (axis === "communication") {
+    if ((rec.aiAsked ?? 0) === 0) return null;
     return `${rec.aiAnswered ?? 0} of ${rec.aiAsked ?? 0} interviewer follow-ups answered.`;
   }
   if (rec.type === "technical") {
@@ -46,7 +47,7 @@ function axisNote(rec: SessionRecord, axis: "problemSolving" | "coding" | "commu
         ? "Your stated complexity did not match the expected answer."
         : "The complexity round was not completed.";
   }
-  return "Scored from the depth of your answers across the question set.";
+  return null;
 }
 
 export default function FeedbackPage() {
@@ -131,7 +132,7 @@ export default function FeedbackPage() {
 
   const axes = [
     { label: "Problem Solving", value: rec.scores.problemSolving, note: axisNote(rec, "problemSolving") },
-    { label: rec.type === "technical" ? "Coding" : "Technical Depth", value: rec.scores.coding, note: axisNote(rec, "coding") },
+    { label: "Coding", value: rec.scores.coding, note: axisNote(rec, "coding") },
     { label: "Communication", value: rec.scores.communication, note: axisNote(rec, "communication") },
     { label: "Complexity Analysis", value: rec.scores.complexity, note: axisNote(rec, "complexity") },
   ];
@@ -220,7 +221,7 @@ export default function FeedbackPage() {
                     </div>
                     <span className="tnum w-12 shrink-0 text-right text-sm font-semibold">{a.value}/10</span>
                   </div>
-                  <p className="mt-1 text-[13px] leading-5 text-stone-600 sm:pl-[188px]">{a.note}</p>
+                  {a.note && <p className="mt-1 text-[13px] leading-5 text-stone-600 sm:pl-[188px]">{a.note}</p>}
                 </div>
               ))}
             </div>
@@ -233,7 +234,7 @@ export default function FeedbackPage() {
                 {rec.scores.strengths.length ? (
                   <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-stone-700">{rec.scores.strengths.map((s) => <li key={s}>{s}</li>)}</ul>
                 ) : (
-                  <p className="mt-3 text-sm leading-6 text-stone-600">No clear strengths recorded this session. The phase notes below show where the marks went.</p>
+                  <p className="mt-3 text-sm leading-6 text-stone-600">{notes.length ? "No clear strengths recorded this session. The phase notes below show where the marks went." : "No clear strengths recorded this session."}</p>
                 )}
               </div>
               <div className="md:border-l md:border-line md:pl-6">
