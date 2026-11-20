@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import TopNav from "@/components/TopNav";
 import ProblemBank from "@/components/ProblemBank";
+import Footer from "@/components/Footer";
 import { problemBank, type BankFormat } from "@/lib/problemBank";
 
 type FormatFilter = BankFormat | "all";
@@ -14,10 +15,10 @@ async function BankSection({ searchParams }: { searchParams: Promise<{ format?: 
 
 export default function ProblemsPage({ searchParams }: { searchParams: Promise<{ format?: string }> }) {
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-ink">
+    <div className="min-h-dvh bg-ink">
       <TopNav active="problems" />
-      <main className="mx-auto flex min-h-0 w-full max-w-[1340px] flex-1 flex-col px-5 pb-5">
-        <header className="shrink-0 pt-8">
+      <main className="mx-auto w-full max-w-[1340px] px-5 pb-5">
+        <header className="pt-8">
           <h1 className="font-display text-4xl font-bold tracking-tight text-white">Interview problems</h1>
           <p className="tnum mt-2 text-sm text-neutral-600">
             {problemBank.length} problems · coding, system design and general rounds, with the companies that ask them.
@@ -26,6 +27,7 @@ export default function ProblemsPage({ searchParams }: { searchParams: Promise<{
         <Suspense fallback={<p className="pt-6 text-sm text-neutral-600">Loading problems...</p>}>
           <BankSection searchParams={searchParams} />
         </Suspense>
+        <Footer />
       </main>
     </div>
   );

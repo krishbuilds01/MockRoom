@@ -124,9 +124,9 @@ export default function ProblemBank({
   const comingSoon = fixedFormat === "system-design";
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div>
       {!fixedFormat && (
-        <div className="mt-6 flex shrink-0 flex-wrap gap-x-7 gap-y-1 border-b border-line" role="tablist" aria-label="Problem format">
+        <div className="mt-6 flex flex-wrap gap-x-7 gap-y-1 border-b border-line" role="tablist" aria-label="Problem format">
           {FORMAT_TABS.map((t) => {
             const isActive = format === t.key;
             return (
@@ -146,7 +146,7 @@ export default function ProblemBank({
         </div>
       )}
 
-      <div className="mt-4 flex shrink-0 flex-wrap items-center gap-2">
+      <div className="mt-4 flex flex-wrap items-center gap-2">
         <input
           type="search"
           value={query}
@@ -178,7 +178,7 @@ export default function ProblemBank({
       </div>
 
       {showShortcuts && !fixedFormat && (
-        <div className="mt-3 flex shrink-0 flex-wrap gap-2" aria-label="Company shortcuts">
+        <div className="mt-3 flex flex-wrap gap-2" aria-label="Company shortcuts">
           {companies.map((c) => {
             const isActive = company === c.name;
             return (
@@ -202,19 +202,19 @@ export default function ProblemBank({
         </div>
       )}
 
-      <p className="tnum mt-4 shrink-0 text-[13px] text-neutral-600" role="status">
+      <p className="tnum mt-4 text-[13px] text-neutral-600" role="status">
         {filtered.length} matching problem{filtered.length === 1 ? "" : "s"}
       </p>
 
-      <div className="card mt-2 min-h-0 flex-1 overflow-y-auto">
+      <div className="card mt-2">
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="border-b border-line text-left">
-              <th scope="col" className="sticky top-0 bg-panel px-4 py-3 text-xs font-semibold uppercase tracking-wide text-neutral-500">Problem</th>
-              <th scope="col" className="sticky top-0 hidden bg-panel px-4 py-3 text-xs font-semibold uppercase tracking-wide text-neutral-500 sm:table-cell">Company</th>
-              <th scope="col" className="sticky top-0 hidden bg-panel px-4 py-3 text-xs font-semibold uppercase tracking-wide text-neutral-500 lg:table-cell">Stage</th>
-              <th scope="col" className="sticky top-0 hidden bg-panel px-4 py-3 text-xs font-semibold uppercase tracking-wide text-neutral-500 md:table-cell">Topics</th>
-              <th scope="col" className="sticky top-0 bg-panel px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-neutral-500"><span className="sr-only">Action</span></th>
+              <th scope="col" className="bg-panel px-4 py-3 text-xs font-semibold uppercase tracking-wide text-neutral-500">Problem</th>
+              <th scope="col" className="hidden bg-panel px-4 py-3 text-xs font-semibold uppercase tracking-wide text-neutral-500 sm:table-cell">Company</th>
+              <th scope="col" className="hidden bg-panel px-4 py-3 text-xs font-semibold uppercase tracking-wide text-neutral-500 lg:table-cell">Stage</th>
+              <th scope="col" className="hidden bg-panel px-4 py-3 text-xs font-semibold uppercase tracking-wide text-neutral-500 md:table-cell">Topics</th>
+              <th scope="col" className="bg-panel px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-neutral-500"><span className="sr-only">Action</span></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
