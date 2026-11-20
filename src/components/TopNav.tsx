@@ -9,10 +9,10 @@ const LINKS = [
 
 export default function TopNav({ active }: { active?: string }) {
   return (
-    <header className="shrink-0 border-b border-line bg-ink">
-      <div className="mx-auto flex h-20 w-full max-w-[1340px] items-center justify-between gap-4 px-5">
+    <header className="border-b border-line bg-paper">
+      <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-5 sm:px-8">
         <Logo />
-        <nav className="hidden items-center gap-8 sm:flex" aria-label="Main">
+        <nav className="hidden items-center gap-8 self-stretch sm:flex" aria-label="Main">
           {LINKS.map((l) => {
             const isActive = active === l.key;
             return (
@@ -20,10 +20,10 @@ export default function TopNav({ active }: { active?: string }) {
                 key={l.key}
                 href={l.href}
                 aria-current={isActive ? "page" : undefined}
-                className={`relative py-2 text-sm ${isActive ? "font-semibold text-white" : "font-medium text-neutral-600 transition hover:text-white"}`}
+                className={`relative flex items-center text-sm transition-colors ${isActive ? "font-medium text-neutral-900" : "text-neutral-600 hover:text-neutral-900"}`}
               >
                 {l.label}
-                {isActive && <span className="absolute inset-x-0 -bottom-[21px] h-[2px] bg-accent" aria-hidden="true" />}
+                {isActive && <span className="absolute inset-x-0 bottom-0 h-[2px] bg-accent" aria-hidden="true" />}
               </Link>
             );
           })}
@@ -32,6 +32,18 @@ export default function TopNav({ active }: { active?: string }) {
           Start interview
         </Link>
       </div>
+      <nav className="mx-auto flex w-full max-w-7xl items-center gap-6 px-5 pb-3 sm:hidden" aria-label="Main mobile">
+        {LINKS.map((l) => (
+          <Link
+            key={l.key}
+            href={l.href}
+            aria-current={active === l.key ? "page" : undefined}
+            className={`text-sm ${active === l.key ? "font-medium text-neutral-900" : "text-neutral-600"}`}
+          >
+            {l.label}
+          </Link>
+        ))}
+      </nav>
     </header>
   );
 }

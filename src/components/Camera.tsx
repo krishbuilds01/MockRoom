@@ -95,7 +95,7 @@ export default function Camera({
           </>
         ) : (
           <>
-            <span className={`dot ${on ? "dot-pulse bg-accent" : "bg-neutral-400"}`} />
+            <span className={`dot ${on ? "bg-[#16a34a]" : "bg-neutral-400"}`} />
             {on ? "Camera on" : "Camera off"}
             <span className="text-neutral-600">Preview only, nothing is recorded</span>
           </>

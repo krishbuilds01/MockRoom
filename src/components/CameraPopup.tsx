@@ -60,7 +60,7 @@ export default function CameraPopup({
       role="region"
       aria-label="Camera preview. Drag to move it."
       title="Drag to move"
-      className="fixed z-40 w-[240px] cursor-move touch-none select-none"
+      className="fixed z-40 w-[240px] max-w-[calc(100vw-2rem)] cursor-move touch-none select-none drop-shadow-[0_8px_24px_rgba(31,27,22,0.18)]"
       style={pos ? { left: pos.x, top: pos.y } : { right: 16, bottom: 16 }}
     >
       <Camera small audio={audio} onStream={onStream} recording={recording} />
