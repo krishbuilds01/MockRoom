@@ -133,7 +133,7 @@ export default function FeedbackPage() {
         {rec.incomplete && <span className="badge badge-mid">Incomplete session</span>}
       </div>
       <p className="mt-2 text-sm text-stone-600">
-        {`${rec.type === "technical" ? rec.problemTitle || "Technical interview" : "Live AI Interview"} · ${new Date(rec.date).toLocaleString()}`}
+        {`${rec.type === "technical" ? rec.problemTitle || "Technical interview" : "Live AI Interview"} · ${new Date(rec.date).toLocaleString()}${rec.interviewerName ? ` · Interviewer: ${rec.interviewerName}` : ""}`}
       </p>
       {rec.incomplete && (
         <p className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3.5 py-2.5 text-xs leading-5 text-amber-800" role="note">
@@ -276,7 +276,7 @@ export default function FeedbackPage() {
         <div className="mt-4 max-h-96 space-y-2.5 overflow-y-auto">
           {rec.transcript.slice(-20).map((m, i) => (
             <div key={i} className={`max-w-[85%] break-words whitespace-pre-wrap rounded-xl px-3.5 py-2.5 text-sm leading-6 ${m.role === "ai" ? "border border-line bg-panel2 text-stone-900" : "ml-auto bg-accent text-white"}`}>
-              <div className="mb-0.5 text-xs font-semibold uppercase tracking-wide opacity-60">{m.role === "ai" ? "Alex" : "You"}</div>
+              <div className="mb-0.5 text-xs font-semibold uppercase tracking-wide opacity-60">{m.role === "ai" ? rec.interviewerName || "Interviewer" : "You"}</div>
               {m.text}
             </div>
           ))}

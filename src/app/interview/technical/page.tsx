@@ -53,6 +53,7 @@ import {
 } from "@/lib/interviewer";
 import { postInterview, type InterviewApiResponse } from "@/lib/interviewApi";
 import { companyTechnicalContext, getCompany } from "@/lib/companies";
+import { getInterviewer } from "@/lib/interviewers";
 import { sanitizeAiText } from "@/lib/sanitize";
 import { useVoice } from "@/lib/useVoice";
 import { useSpeaker } from "@/lib/useSpeaker";
@@ -95,6 +96,7 @@ function TechnicalRoom() {
   const params = useSearchParams();
   const difficulty = params.get("difficulty") || "Mid";
   const company = getCompany(params.get("company"));
+  const interviewer = getInterviewer(params.get("interviewer"));
   const topic = params.get("topic") || "HashMap";
   const router = useRouter();
   function computeProblem(): Problem {
@@ -141,6 +143,7 @@ function TechnicalRoom() {
     topic,
     company: company.id,
     problemId: urlProblem.id,
+    interviewer: interviewer.id,
   });
   const sessionConfigRef = useRef({
     difficulty,
@@ -148,6 +151,8 @@ function TechnicalRoom() {
     companyId: company.id,
     companyName: company.id !== "any" ? company.name : undefined,
     targetSec: targetSecFor("technical", difficulty, urlProblem),
+    interviewerId: interviewer.id,
+    interviewerName: interviewer.name,
   });
 
   const codeRef = useRef(code);
@@ -191,11 +196,14 @@ function TechnicalRoom() {
   useEffect(() => {
     gateRef.current = gate.gated;
   }, [gate]);
-  const speaker = useSpeaker({
-    onStart: () => dispatchGate({ type: "speech-start" }),
-    onEnd: () => dispatchGate({ type: "speech-end" }),
-    onAboutToEnd: () => dispatchGate({ type: "speech-about-to-end" }),
-  });
+  const speaker = useSpeaker(
+    {
+      onStart: () => dispatchGate({ type: "speech-start" }),
+      onEnd: () => dispatchGate({ type: "speech-end" }),
+      onAboutToEnd: () => dispatchGate({ type: "speech-about-to-end" }),
+    },
+    interviewer.voice
+  );
   const voice = useVoice((text) => setInput(text), gateRef);
   useEffect(() => {
     voice.applyGate(gate.gated);
@@ -295,7 +303,7 @@ function TechnicalRoom() {
     setWaiting(true);
     const seq = ++seqRef.current;
     try {
-      const api = await postInterview({ ...body, companyContext: companyTechnicalContext(company) });
+      const api = await postInterview({ ...body, companyContext: companyTechnicalContext(company), interviewer: interviewer.id });
       if (!mountedRef.current || seq !== seqRef.current) return null;
       return api;
     } finally {
@@ -316,6 +324,8 @@ function TechnicalRoom() {
       companyId: company.id,
       companyName: company.id !== "any" ? company.name : undefined,
       targetSec: targetSecFor("technical", difficulty, prob),
+      interviewerId: interviewer.id,
+      interviewerName: interviewer.name,
     };
     writeActiveSession("technical", {
       fingerprint,
@@ -326,7 +336,7 @@ function TechnicalRoom() {
     lastAiRef.current = Date.now();
     lastChangeRef.current = Date.now();
     lastProgressRef.current = Date.now();
-    const openingBase = techOpeningText(prob, difficulty, Math.round(sessionConfigRef.current.targetSec / 60));
+    const openingBase = techOpeningText(prob, difficulty, Math.round(sessionConfigRef.current.targetSec / 60), interviewer.name);
     commitAi(company.openingLine ? openingBase.replace("Before we start, introduce yourself", `${company.openingLine} Before we start, introduce yourself`) : openingBase, true);
   }
 
@@ -839,6 +849,8 @@ function TechnicalRoom() {
       id: sessionIdRef.current,
       type: "technical",
       difficulty: sessionConfigRef.current.difficulty,
+      interviewerId: sessionConfigRef.current.interviewerId,
+      interviewerName: sessionConfigRef.current.interviewerName,
       companyId: sessionConfigRef.current.companyId,
       companyName: sessionConfigRef.current.companyName,
       topic: sessionConfigRef.current.topic,
@@ -972,10 +984,10 @@ function TechnicalRoom() {
     opening: "Your introduction",
     clarifying: "Ask a clarifying question",
     approach: "Data structure, main pass, return value",
-    coding: "Answer, or ask Alex",
+    coding: `Answer, or ask ${interviewer.name}`,
     dryrun: "Trace your code here",
     review: "Time and space complexity",
-    candidate: "Ask Alex, or say none",
+    candidate: `Ask ${interviewer.name}, or say none`,
     done: "Interview complete",
   };
 
@@ -990,6 +1002,7 @@ function TechnicalRoom() {
               <span className="badge">{problem.title}</span>
               <span className={`badge ${problem.difficulty === "Easy" ? "badge-easy" : problem.difficulty === "Hard" ? "badge-hard" : "badge-mid"}`}>{problem.difficulty}</span>
               {company.id !== "any" && <span className="badge badge-accent">{company.name}</span>}
+              <span className="badge">{interviewer.name}</span>
               <span className="badge badge-accent">{PHASE_LABELS[phase]}</span>
             </div>
             <div className="tnum mt-1 text-xs text-stone-600">
@@ -1088,7 +1101,7 @@ function TechnicalRoom() {
               <div className="w-full text-xs text-stone-600">
                 {phaseIdx < 3
                   ? "Run and Submit unlock once your approach is accepted and the coding phase starts."
-                  : "Already submitted. Run and Submit are closed, finish the remaining steps with Alex on the right."}
+                  : `Already submitted. Run and Submit are closed, finish the remaining steps with ${interviewer.name} on the right.`}
               </div>
             )}
           </div>
@@ -1154,9 +1167,9 @@ function TechnicalRoom() {
           <aside className="card flex w-full shrink-0 flex-col overflow-hidden lg:h-full lg:w-[340px]">
             <div className="shrink-0 border-b border-line px-4 py-3">
               <div className="flex items-center gap-3">
-                <span className="avatar">A</span>
+                <span className="avatar">{interviewer.name.charAt(0)}</span>
                 <div className="min-w-0">
-                  <div className="text-sm font-semibold leading-5">Alex</div>
+                  <div className="text-sm font-semibold leading-5">{interviewer.name}</div>
                   <div className="text-xs leading-4 text-stone-600">Interviewer · AI: {engineLabel} · Voice: {voiceLabel}</div>
                 </div>
                 {speaker.speaking && (
@@ -1169,18 +1182,18 @@ function TechnicalRoom() {
             <div ref={transcriptBoxRef} className="max-h-[46dvh] flex-1 space-y-3 overflow-y-auto p-4 lg:max-h-none lg:min-h-0" aria-live="polite">
               {transcript.map((m, i) => (
                 <div key={i} className={`break-words whitespace-pre-wrap rounded-xl px-3 py-2.5 text-[13px] leading-5 ${m.role === "ai" ? "border border-line bg-panel2 text-stone-900" : "ml-4 bg-accent text-white"}`}>
-                  <div className="mb-1 text-xs font-semibold uppercase tracking-wide opacity-60">{m.role === "ai" ? "Alex" : "You"}</div>
+                  <div className="mb-1 text-xs font-semibold uppercase tracking-wide opacity-60">{m.role === "ai" ? interviewer.name : "You"}</div>
                   {m.text}
                 </div>
               ))}
               {waiting && (
                 <div className="flex items-center gap-1.5 text-xs text-stone-600" role="status">
                   <span className="dot dot-pulse bg-stone-400" />
-                  Alex is thinking...
+                  {interviewer.name} is thinking...
                 </div>
               )}
               {transcript.length === 0 && (
-                <p className="text-[13px] leading-5 text-stone-600">Connecting to your interviewer. Alex will introduce himself in a moment.</p>
+                <p className="text-[13px] leading-5 text-stone-600">Connecting to your interviewer. {interviewer.name} will introduce {interviewer.reflexivePronoun} in a moment.</p>
               )}
             </div>
             <div className="shrink-0 border-t border-line p-3">
@@ -1192,7 +1205,7 @@ function TechnicalRoom() {
               {micState === "paused" ? (
                 <p className="mb-2 flex items-center gap-1.5 text-xs text-stone-600" role="status">
                   <span className="dot bg-stone-400" />
-                  Mic paused while Alex speaks
+                  Mic paused while {interviewer.name} speaks
                 </p>
               ) : micState === "listening" ? (
                 <p className="mb-2 flex items-center gap-1.5 text-xs text-emerald-700" role="status">
@@ -1204,7 +1217,7 @@ function TechnicalRoom() {
                 <label htmlFor="tech-panel-input" className="sr-only">Message to the interviewer</label>
                 <input id="tech-panel-input" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submitPanel()} placeholder={inputPlaceholder[phase]} className="input min-w-0 flex-1" />
                 {micState === "paused" ? (
-                  <button type="button" onClick={onMicClick} aria-label="Interrupt Alex and turn your mic on" className="btn btn-ghost btn-sm">
+                  <button type="button" onClick={onMicClick} aria-label={`Interrupt ${interviewer.name} and turn your mic on`} className="btn btn-ghost btn-sm">
                     <span className="dot bg-stone-400" />
                     Mic paused
                   </button>

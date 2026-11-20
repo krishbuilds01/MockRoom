@@ -20,10 +20,10 @@ import {
   saveSession,
   shouldAutosavePartial,
   wordCount,
-  INTERVIEWER_NAME,
   type Msg,
   type SessionRecord,
 } from "@/lib/interviewer";
+import { getInterviewer } from "@/lib/interviewers";
 import { targetSecFor } from "@/lib/problems";
 import { companyContext, companyQuestions, getCompany } from "@/lib/companies";
 import { buildResumeQuestionsLocal, RESUME_QUESTIONS_KEY, RESUME_STORAGE_KEY, type ResumeQuestion } from "@/lib/resume";
@@ -59,12 +59,12 @@ function isBehavioural(q: string): boolean {
   return /(time you|describe a time|disagreed|weakest|a hard bug)/i.test(q);
 }
 
-function liveSystemInstruction(difficulty: string, targetMinutes: number, questions: string[], companyLine?: string): string {
+function liveSystemInstruction(difficulty: string, targetMinutes: number, questions: string[], companyLine: string | undefined, interviewerName: string): string {
   return [
-    `You are ${INTERVIEWER_NAME}, a senior software engineer conducting a live voice interview. Speak naturally, warmly and professionally, in short turns, one question at a time.`,
+    `You are ${interviewerName}, a senior software engineer conducting a live voice interview. Speak naturally, warmly and professionally, in short turns, one question at a time.`,
     ...(companyLine ? [companyLine] : []),
     `This is a ${difficulty} level interview of about ${targetMinutes} minutes. Run the whole interview yourself, in this exact order:`,
-    `1. Introduce yourself as ${INTERVIEWER_NAME}, explain the format in two short sentences, and ask the candidate to introduce themselves in a few lines.`,
+    `1. Introduce yourself as ${interviewerName}, explain the format in two short sentences, and ask the candidate to introduce themselves in a few lines.`,
     `2. Then ask these ${questions.length} main questions, one at a time, in this order: ${questions.map((q, i) => `Question ${i + 1}: "${q}"`).join(" ")}`,
     "After each main answer, ask one strict follow-up that digs into what they said. If an answer is thin or vague, say so plainly, demand a concrete example with specifics, and ask a second follow-up if it is still thin. For behavioural questions, ask them to structure the answer as situation, task, action, result.",
     `3. After the last question and its follow-ups, ask: "Do you have any questions for me?" Answer one question about the role or the team briefly and sensibly, in character.`,
@@ -80,6 +80,7 @@ function GeneralRoom() {
   const difficulty = params.get("difficulty") || "Mid";
   const router = useRouter();
   const company = getCompany(params.get("company"));
+  const interviewer = getInterviewer(params.get("interviewer"));
   const resumeMode = params.get("resume") === "1";
   function computeQset(): ResumeQuestion[] {
     const fallback = () =>
@@ -128,8 +129,8 @@ function GeneralRoom() {
   const deadRef = useRef(false);
   const deadAtRef = useRef(0);
   const deadUrlRef = useRef("");
-  const fingerprint = configFingerprint({ room: "general", difficulty, company: company.id, resume: resumeMode });
-  const sessionConfigRef = useRef({ difficulty, companyId: company.id, companyName: company.id !== "any" ? company.name : undefined, resume: resumeMode, targetSec });
+  const fingerprint = configFingerprint({ room: "general", difficulty, company: company.id, resume: resumeMode, interviewer: interviewer.id });
+  const sessionConfigRef = useRef({ difficulty, companyId: company.id, companyName: company.id !== "any" ? company.name : undefined, resume: resumeMode, targetSec, interviewerId: interviewer.id, interviewerName: interviewer.name });
   const statsRef = useRef({ answers: 0, words: 0, thin: 0, followUpsAsked: 0, followUpsAnswered: 0, introPushes: 0, askedEnd: false });
   const introRef = useRef("");
   const qaRef = useRef<{ question: string; answer?: string; target?: string }[]>([]);
@@ -150,11 +151,14 @@ function GeneralRoom() {
   useEffect(() => {
     gateRef.current = gate.gated;
   }, [gate]);
-  const speaker = useSpeaker({
-    onStart: () => dispatchGate({ type: "speech-start" }),
-    onEnd: () => dispatchGate({ type: "speech-end" }),
-    onAboutToEnd: () => dispatchGate({ type: "speech-about-to-end" }),
-  });
+  const speaker = useSpeaker(
+    {
+      onStart: () => dispatchGate({ type: "speech-start" }),
+      onEnd: () => dispatchGate({ type: "speech-end" }),
+      onAboutToEnd: () => dispatchGate({ type: "speech-about-to-end" }),
+    },
+    interviewer.voice
+  );
   const voice = useVoice((text) => setInput(text), gateRef);
   useEffect(() => {
     voice.applyGate(gate.gated);
@@ -263,7 +267,7 @@ function GeneralRoom() {
     setWaiting(true);
     const seq = ++seqRef.current;
     try {
-      const api = await postInterview({ ...body, companyContext: companyContext(company) });
+      const api = await postInterview({ ...body, companyContext: companyContext(company), interviewer: interviewer.id });
       if (!mountedRef.current || seq !== seqRef.current) return null;
       return api;
     } finally {
@@ -284,6 +288,8 @@ function GeneralRoom() {
       companyName: company.id !== "any" ? company.name : undefined,
       resume: resumeMode,
       targetSec,
+      interviewerId: interviewer.id,
+      interviewerName: interviewer.name,
     };
     writeActiveSession("general", {
       fingerprint,
@@ -291,7 +297,7 @@ function GeneralRoom() {
       hasContent: false,
       incompleteSaved: false,
     });
-    const base = generalOpeningText(difficulty, Math.round(targetSec / 60), qs.length);
+    const base = generalOpeningText(difficulty, Math.round(targetSec / 60), qs.length, interviewer.name);
     if (resumeMode) {
       sayNow(
         base.replace(
@@ -549,7 +555,7 @@ function GeneralRoom() {
       : company.id !== "any"
         ? `This session mirrors a ${company.name} interview loop. Style: ${company.style} Strictness: ${company.strictnessNote} Open in that style.`
         : undefined;
-    const ok = await live.connect(liveSystemInstruction(difficulty, Math.round(targetSec / 60), questions, companyLine));
+    const ok = await live.connect(liveSystemInstruction(difficulty, Math.round(targetSec / 60), questions, companyLine, interviewer.name), interviewer.id);
     if (ok) {
       setLiveOn(true);
       liveIntroDoneRef.current = !!introRef.current;
@@ -597,6 +603,8 @@ function GeneralRoom() {
       id: sessionIdRef.current,
       type: "general",
       difficulty: sessionConfigRef.current.difficulty,
+      interviewerId: sessionConfigRef.current.interviewerId,
+      interviewerName: sessionConfigRef.current.interviewerName,
       companyId: sessionConfigRef.current.companyId,
       companyName: sessionConfigRef.current.companyName,
       resumeInterview: sessionConfigRef.current.resume || undefined,
@@ -725,7 +733,7 @@ function GeneralRoom() {
   const inputPlaceholder: Record<Phase, string> = {
     intro: "Your introduction",
     main: "Your answer",
-    candidate: "Ask Alex, or say none",
+    candidate: `Ask ${interviewer.name}, or say none`,
     done: "Interview complete",
   };
 
@@ -813,7 +821,7 @@ function GeneralRoom() {
           )}
           <div className="card card-pad text-xs leading-5 text-stone-600">
             Speak your answer with the mic, or type it. One follow-up per question, a second if the first answer is thin.
-            {liveActive && <div className="mt-2 font-medium text-emerald-700">Live conversation is on: Alex leads and listens continuously. Use the button above to end live and return to standard mode at any time.</div>}
+            {liveActive && <div className="mt-2 font-medium text-emerald-700">Live conversation is on: {interviewer.name} leads and listens continuously. Use the button above to end live and return to standard mode at any time.</div>}
             {phase === "done" && <div className="mt-2 font-medium text-stone-900">Interview complete. Click End Interview to see your feedback.</div>}
           </div>
         </div>
@@ -821,9 +829,9 @@ function GeneralRoom() {
         <section className="card flex min-h-[54dvh] flex-col overflow-hidden lg:h-full lg:min-h-0">
           <div className="panel-head shrink-0">
             <div className="flex items-center gap-3">
-              <span className="avatar">A</span>
+              <span className="avatar">{interviewer.name.charAt(0)}</span>
               <div>
-                <div className="text-sm font-semibold leading-5">Alex</div>
+                <div className="text-sm font-semibold leading-5">{interviewer.name}</div>
                 <div className="text-xs leading-4 text-stone-600">Your interviewer</div>
               </div>
               {(speaker.speaking || liveSpeaking) && (
@@ -840,8 +848,12 @@ function GeneralRoom() {
               <div className="text-xs font-semibold uppercase tracking-wider text-stone-600">Session brief</div>
               <dl className="mt-3 space-y-2 text-[13px] leading-5">
                 <div className="flex gap-2">
+                  <dt className="w-16 shrink-0 font-medium text-stone-600">Interviewer</dt>
+                  <dd>{`${interviewer.name} · ${interviewer.gender}`}</dd>
+                </div>
+                <div className="flex gap-2">
                   <dt className="w-16 shrink-0 font-medium text-stone-600">Format</dt>
-                  <dd>{resumeMode ? "Questions built from your resume, each with follow-ups" : `${qset.length} questions with follow-ups, then your questions for Alex`}</dd>
+                  <dd>{resumeMode ? "Questions built from your resume, each with follow-ups" : `${qset.length} questions with follow-ups, then your questions for ${interviewer.name}`}</dd>
                 </div>
                 <div className="flex gap-2">
                   <dt className="w-16 shrink-0 font-medium text-stone-600">Target</dt>
@@ -859,18 +871,18 @@ function GeneralRoom() {
             </div>
             {transcript.map((m, i) => (
               <div key={i} className={`max-w-[85%] break-words whitespace-pre-wrap rounded-xl px-4 py-3 text-sm leading-6 ${m.role === "ai" ? "border border-line bg-panel2 text-stone-900" : "ml-auto bg-accent text-white"}`}>
-                <div className="mb-1 text-xs font-semibold uppercase tracking-wide opacity-60">{m.role === "ai" ? "Alex" : "You"}</div>
+                <div className="mb-1 text-xs font-semibold uppercase tracking-wide opacity-60">{m.role === "ai" ? interviewer.name : "You"}</div>
                 {m.text}
               </div>
             ))}
             {waiting && !liveActive && (
               <div className="flex items-center gap-1.5 text-xs text-stone-600" role="status">
                 <span className="dot dot-pulse bg-stone-400" />
-                Alex is thinking...
+                {interviewer.name} is thinking...
               </div>
             )}
             {transcript.length === 0 && (
-              <p className="text-sm leading-6 text-stone-600">Connecting to your interviewer. Alex will introduce himself in a moment.</p>
+              <p className="text-sm leading-6 text-stone-600">Connecting to your interviewer. {interviewer.name} will introduce {interviewer.reflexivePronoun} in a moment.</p>
             )}
           </div>
           <div className="shrink-0 border-t border-line p-4">
@@ -879,7 +891,7 @@ function GeneralRoom() {
             {!liveActive && micState === "paused" ? (
               <p className="mb-2 flex items-center gap-1.5 text-xs text-stone-600" role="status">
                 <span className="dot bg-stone-400" />
-                Mic paused while Alex speaks
+                Mic paused while {interviewer.name} speaks
               </p>
             ) : !liveActive && micState === "listening" ? (
               <p className="mb-2 flex items-center gap-1.5 text-xs text-red-600" role="status">
@@ -894,7 +906,7 @@ function GeneralRoom() {
                 liveGated ? (
                   <span className="flex items-center gap-1.5 rounded-lg border border-line bg-panel2 px-4 text-sm text-stone-600" role="status">
                     <span className="dot bg-stone-400" />
-                    Mic paused while Alex speaks
+                    Mic paused while {interviewer.name} speaks
                   </span>
                 ) : (
                   <span className="flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-4 text-sm text-emerald-700" role="status">
@@ -903,7 +915,7 @@ function GeneralRoom() {
                   </span>
                 )
               ) : micState === "paused" ? (
-                <button type="button" onClick={onMicClick} aria-label="Interrupt Alex and turn your mic on" className="btn btn-ghost btn-sm">
+                <button type="button" onClick={onMicClick} aria-label={`Interrupt ${interviewer.name} and turn your mic on`} className="btn btn-ghost btn-sm">
                   <span className="dot bg-stone-400" />
                   Mic paused
                 </button>

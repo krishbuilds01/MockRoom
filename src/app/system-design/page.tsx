@@ -11,8 +11,8 @@ const topics = [
 ];
 
 const rounds = [
-  { title: "Requirements first", text: "Alex makes you pin down scale, users, and constraints before any boxes and arrows. Guessing the scale is where most candidates lose this round." },
-  { title: "Design out loud", text: "You talk through the high-level design while Alex probes the weak joints: the hot key, the single point of failure, the table that outgrows its server." },
+  { title: "Requirements first", text: "Your interviewer makes you pin down scale, users, and constraints before any boxes and arrows. Guessing the scale is where most candidates lose this round." },
+  { title: "Design out loud", text: "You talk through the high-level design while your interviewer probes the weak joints: the hot key, the single point of failure, the table that outgrows its server." },
   { title: "Scored like the rest", text: "Feedback on the same four axes as every other room here, with the exact places your design would have broken." },
 ];
 
@@ -33,7 +33,7 @@ export default function SystemDesignPage() {
           <h1 className="mt-4 font-display text-display font-semibold">System design, interviewed properly.</h1>
           <p className="mt-4 max-w-[65ch] text-[15px] leading-7 text-stone-600">
             The third room is being built. It will run the way real design rounds run: you get a problem, you pin down the
-            requirements, you design out loud, and Alex pushes on scale, storage, and failure cases until the design
+            requirements, you design out loud, and your interviewer pushes on scale, storage, and failure cases until the design
             either holds or folds. No whiteboard theatre, no model answers handed over.
           </p>
           <div className="mt-6 flex flex-wrap gap-2">

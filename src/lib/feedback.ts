@@ -28,8 +28,9 @@ export interface PhaseNote {
   flag: boolean;
 }
 
-function hrefFor(p: Problem): string {
+function hrefFor(p: Problem, interviewerId?: string): string {
   const q = new URLSearchParams({ difficulty: p.difficulty, topic: p.topic, problem: p.id });
+  if (interviewerId) q.set("interviewer", interviewerId);
   return `/interview/technical?${q.toString()}`;
 }
 
@@ -69,7 +70,7 @@ export function recommendNext(rec: SessionRecord, problem?: Problem): NextStep[]
         difficulty: problem.difficulty,
         topic: problem.topic,
         reason: "Retry this problem first. A problem you failed teaches more the second time, timed and without hints.",
-        href: hrefFor(problem),
+        href: hrefFor(problem, rec.interviewerId),
       });
       const easier = problems.find((p) => p.topic === problem.topic && p.id !== problem.id);
       if (easier) {
@@ -79,7 +80,7 @@ export function recommendNext(rec: SessionRecord, problem?: Problem): NextStep[]
           difficulty: easier.difficulty,
           topic: easier.topic,
           reason: `Rebuild the ${problem.topic} pattern with ${easier.title}, then come back to ${problem.title}.`,
-          href: hrefFor(easier),
+          href: hrefFor(easier, rec.interviewerId),
         });
       }
     } else {
@@ -94,13 +95,13 @@ export function recommendNext(rec: SessionRecord, problem?: Problem): NextStep[]
             difficulty: p.difficulty,
             topic: p.topic,
             reason: `You passed ${problem.title}. ${p.title} is the next step up in the sequence.`,
-            href: hrefFor(p),
+            href: hrefFor(p, rec.interviewerId),
           });
         }
       }
       if (!out.length) {
         const other = problems.find((p) => p.difficulty === "Hard" && p.id !== problem.id);
-        if (other) out.push({ problemId: other.id, title: other.title, difficulty: other.difficulty, topic: other.topic, reason: "You are at the top of the sequence. Stay sharp with another Hard problem.", href: hrefFor(other) });
+        if (other) out.push({ problemId: other.id, title: other.title, difficulty: other.difficulty, topic: other.topic, reason: "You are at the top of the sequence. Stay sharp with another Hard problem.", href: hrefFor(other, rec.interviewerId) });
       }
     }
     if ((rec.complexityCorrect ?? true) === false) {
@@ -111,15 +112,15 @@ export function recommendNext(rec: SessionRecord, problem?: Problem): NextStep[]
         difficulty: drill.difficulty,
         topic: drill.topic,
         reason: "Complexity drill: solve this and state the time and space complexity out loud before you submit.",
-        href: hrefFor(drill),
+        href: hrefFor(drill, rec.interviewerId),
       });
     }
   } else {
     const start = problems.find((p) => p.difficulty === "Easy") || problems[0];
     const mid = problems.find((p) => p.difficulty === "Mid") || problems[2];
     out.push(
-      { problemId: start.id, title: start.title, difficulty: start.difficulty, topic: start.topic, reason: "Move from talking to coding: start the technical track with an Easy problem and full approach explanation.", href: hrefFor(start) },
-      { problemId: mid.id, title: mid.title, difficulty: mid.difficulty, topic: mid.topic, reason: "Then a Mid problem, where thin answers and missing complexity start costing real marks.", href: hrefFor(mid) }
+      { problemId: start.id, title: start.title, difficulty: start.difficulty, topic: start.topic, reason: "Move from talking to coding: start the technical track with an Easy problem and full approach explanation.", href: hrefFor(start, rec.interviewerId) },
+      { problemId: mid.id, title: mid.title, difficulty: mid.difficulty, topic: mid.topic, reason: "Then a Mid problem, where thin answers and missing complexity start costing real marks.", href: hrefFor(mid, rec.interviewerId) }
     );
   }
   const seen = new Set<string>();

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { topics } from "@/lib/problems";
+import { INTERVIEWERS, getInterviewer } from "@/lib/interviewers";
 import { buildResumeQuestionsLocal, postResumeQuestions, RESUME_QUESTIONS_KEY, RESUME_STORAGE_KEY } from "@/lib/resume";
 import { loadHistory } from "@/lib/analytics";
 import { markFreshStart } from "@/lib/activeSession";
@@ -44,30 +45,31 @@ function FeatureIcon({ name }: { name: string }) {
   );
 }
 
-const features = [
-  {
-    icon: "mic",
-    title: "Live voice interview",
-    text: "Alex speaks and listens like a person, and pushes back when an answer is thin.",
-  },
-  {
-    icon: "code",
-    title: "Alex watches your code",
-    text: "In the coding room Alex reads your code as you write it, deletions included, and asks about the lines that matter.",
-  },
-  {
-    icon: "chart",
-    title: "Feedback that teaches",
-    text: "Scores, phase by phase notes, your weak areas, and the exact problems to practise next.",
-  },
-];
-
 export default function Home() {
   const router = useRouter();
   const [type, setType] = useState<"general" | "technical" | "resume">("technical");
   const [difficulty, setDifficulty] = useState("Mid");
   const [companyId, setCompanyId] = useState("any");
   const [topic, setTopic] = useState("HashMap");
+  const [interviewerId, setInterviewerId] = useState("kore");
+  const interviewer = getInterviewer(interviewerId);
+  const features = [
+    {
+      icon: "mic",
+      title: "Live voice interview",
+      text: `${interviewer.name} speaks and listens like a person, and pushes back when an answer is thin.`,
+    },
+    {
+      icon: "code",
+      title: `${interviewer.name} watches your code`,
+      text: `In the coding room ${interviewer.name} reads your code as you write it, deletions included, and asks about the lines that matter.`,
+    },
+    {
+      icon: "chart",
+      title: "Feedback that teaches",
+      text: "Scores, phase by phase notes, your weak areas, and the exact problems to practise next.",
+    },
+  ];
   const [history, setHistory] = useState<SessionRecord[]>([]);
   const [resumeText, setResumeText] = useState("");
   const [resumeSaved, setResumeSaved] = useState(false);
@@ -109,12 +111,12 @@ export default function Home() {
       return;
     }
     if (type === "technical") {
-      const q = new URLSearchParams({ difficulty, topic });
+      const q = new URLSearchParams({ difficulty, topic, interviewer: interviewerId });
       if (companyId !== "any") q.set("company", companyId);
       markFreshStart("technical");
       router.push(`/interview/technical?${q}`);
     } else {
-      const q = new URLSearchParams({ difficulty });
+      const q = new URLSearchParams({ difficulty, interviewer: interviewerId });
       if (companyId !== "any") q.set("company", companyId);
       markFreshStart("general");
       router.push(`/interview/general?${q}`);
@@ -130,12 +132,12 @@ export default function Home() {
     setResumeError("");
     setResumeBusy(true);
     try {
-      const result = (await postResumeQuestions(text)) || { questions: buildResumeQuestionsLocal(text), engine: "local" as const };
+      const result = (await postResumeQuestions(text, interviewerId)) || { questions: buildResumeQuestionsLocal(text), engine: "local" as const };
       try {
         sessionStorage.setItem(RESUME_QUESTIONS_KEY, JSON.stringify(result.questions));
         localStorage.setItem(RESUME_STORAGE_KEY, text);
       } catch {}
-      const q = new URLSearchParams({ difficulty, resume: "1" });
+      const q = new URLSearchParams({ difficulty, resume: "1", interviewer: interviewerId });
       if (companyId !== "any") q.set("company", companyId);
       markFreshStart("general");
       router.push(`/interview/general?${q}`);
@@ -192,7 +194,7 @@ export default function Home() {
               With an AI that pushes back.
             </h1>
             <p className="mt-4 max-w-xl text-[15px] leading-6 text-stone-600">
-              One on one with Alex, a strict AI interviewer who talks and listens like a person, watches your code as you write it,
+              One on one with {interviewer.name}, a strict AI interviewer who talks and listens like a person, watches your code as you write it,
               challenges vague answers, and records every hint. Every session ends with feedback that teaches: phase by phase notes,
               your weak areas, and the exact problems to do next.
             </p>
@@ -200,7 +202,7 @@ export default function Home() {
           <ol className="mt-8 space-y-3.5">
             {[
               "Set up in ten seconds: mode, difficulty, company and topic.",
-              "Interview with Alex: introduction, questions, live coding, then your questions for him.",
+              `Interview with ${interviewer.name}: introduction, questions, live coding, then your questions for ${interviewer.objectPronoun}.`,
               "Get scored feedback with phase by phase notes and a plan for what to fix next.",
             ].map((step, i) => (
               <li key={step} className="flex items-baseline gap-3 text-sm leading-6 text-stone-600">
@@ -234,6 +236,27 @@ export default function Home() {
                   <button type="button" onClick={() => setType("technical")} aria-pressed={type === "technical"} className={type === "technical" ? "btn btn-primary btn-sm w-full" : "btn btn-ghost btn-sm w-full"}>Technical</button>
                   <button type="button" onClick={() => setType("general")} aria-pressed={type === "general"} className={type === "general" ? "btn btn-primary btn-sm w-full" : "btn btn-ghost btn-sm w-full"}>Live voice</button>
                   <button type="button" onClick={() => setType("resume")} aria-pressed={type === "resume"} className={type === "resume" ? "btn btn-primary btn-sm w-full" : "btn btn-ghost btn-sm w-full"}>My resume</button>
+                </div>
+              </div>
+              <div>
+                <div className="text-[13px] font-medium text-stone-700">Interviewer</div>
+                <div className="mt-2 grid grid-cols-2 gap-2" role="group" aria-label="Interviewer">
+                  {INTERVIEWERS.map((p) => (
+                    <button
+                      type="button"
+                      key={p.id}
+                      onClick={() => setInterviewerId(p.id)}
+                      aria-pressed={interviewerId === p.id}
+                      className={
+                        interviewerId === p.id
+                          ? "rounded-lg border border-emerald-600 bg-accent-soft px-3 py-2.5 text-left"
+                          : "rounded-lg border border-line bg-white px-3 py-2.5 text-left transition hover:border-line2"
+                      }
+                    >
+                      <span className="block text-sm font-semibold text-stone-900">{p.name}</span>
+                      <span className="block text-xs text-stone-600">{p.gender} interviewer</span>
+                    </button>
+                  ))}
                 </div>
               </div>
               <div>
@@ -370,7 +393,7 @@ export default function Home() {
                     {h.resumeInterview && <span className="badge">Resume</span>}
                     {h.incomplete && <span className="badge badge-mid">Incomplete</span>}
                   </div>
-                  <div className="mt-0.5 text-xs text-stone-600">{`${new Date(h.date).toLocaleString()} · ${Math.round(h.timeSec / 60)} min${h.targetSec ? ` of ${Math.round(h.targetSec / 60)} target` : ""}`}</div>
+                  <div className="mt-0.5 text-xs text-stone-600">{`${new Date(h.date).toLocaleString()} · ${Math.round(h.timeSec / 60)} min${h.targetSec ? ` of ${Math.round(h.targetSec / 60)} target` : ""}${h.interviewerName ? ` · Interviewer: ${h.interviewerName}` : ""}`}</div>
                 </div>
                 <div className="flex items-center gap-4 text-xs text-stone-600">
                   {h.type === "technical" && (
