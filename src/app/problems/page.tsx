@@ -1,14 +1,18 @@
+import { Suspense } from "react";
 import TopNav from "@/components/TopNav";
 import ProblemBank from "@/components/ProblemBank";
 import { problemBank, type BankFormat } from "@/lib/problemBank";
 
 type FormatFilter = BankFormat | "all";
 
-export default async function ProblemsPage({ searchParams }: { searchParams: Promise<{ format?: string }> }) {
+async function BankSection({ searchParams }: { searchParams: Promise<{ format?: string }> }) {
   const sp = await searchParams;
   const initialFormat: FormatFilter =
     sp.format === "coding" || sp.format === "system-design" || sp.format === "general" ? sp.format : "all";
+  return <ProblemBank initialFormat={initialFormat} />;
+}
 
+export default function ProblemsPage({ searchParams }: { searchParams: Promise<{ format?: string }> }) {
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-ink">
       <TopNav active="problems" />
@@ -19,7 +23,9 @@ export default async function ProblemsPage({ searchParams }: { searchParams: Pro
             {problemBank.length} problems · coding, system design and general rounds, with the companies that ask them.
           </p>
         </header>
-        <ProblemBank initialFormat={initialFormat} />
+        <Suspense fallback={<p className="pt-6 text-sm text-neutral-600">Loading problems...</p>}>
+          <BankSection searchParams={searchParams} />
+        </Suspense>
       </main>
     </div>
   );
