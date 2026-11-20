@@ -8,8 +8,8 @@ export interface InterviewerProfile {
 }
 
 export const INTERVIEWERS: InterviewerProfile[] = [
-  { id: "kore", name: "Kore", gender: "Female", voice: "Kore", objectPronoun: "her", reflexivePronoun: "herself" },
-  { id: "iapetus", name: "Iapetus", gender: "Male", voice: "Orus", objectPronoun: "him", reflexivePronoun: "himself" },
+  { id: "maya", name: "Maya", gender: "Female", voice: "Kore", objectPronoun: "her", reflexivePronoun: "herself" },
+  { id: "rohan", name: "Rohan", gender: "Male", voice: "Orus", objectPronoun: "him", reflexivePronoun: "himself" },
 ];
 
 export const DEFAULT_INTERVIEWER: InterviewerProfile = INTERVIEWERS[0];

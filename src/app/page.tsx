@@ -51,7 +51,7 @@ export default function Home() {
   const [difficulty, setDifficulty] = useState("Mid");
   const [companyId, setCompanyId] = useState("any");
   const [topic, setTopic] = useState("HashMap");
-  const [interviewerId, setInterviewerId] = useState("kore");
+  const [interviewerId, setInterviewerId] = useState("maya");
   const interviewer = getInterviewer(interviewerId);
   const features = [
     {
