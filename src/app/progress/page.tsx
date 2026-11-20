@@ -19,11 +19,11 @@ function Stat({ label, value, sub }: { label: string; value: string; sub: string
 function TrendChart({ analytics }: { analytics: Analytics }) {
   const pts = analytics.trend.slice(-14);
   const W = 640;
-  const H = 190;
+  const H = 112;
   const padL = 36;
   const padR = 16;
-  const padT = 34;
-  const padB = 28;
+  const padT = 26;
+  const padB = 24;
   const iw = W - padL - padR;
   const ih = H - padT - padB;
   const x = (i: number) => padL + (pts.length === 1 ? iw / 2 : (i / (pts.length - 1)) * iw);
@@ -40,7 +40,7 @@ function TrendChart({ analytics }: { analytics: Analytics }) {
         <h2 className="font-display text-h2 font-semibold">Score trend</h2>
         <span className="text-xs text-neutral-600">Overall score per session, numbered in the order you did them{range ? ` · ${range}` : ""}</span>
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="mt-4 w-full" role="img" aria-label="Overall score trend over time">
+      <svg viewBox={`0 0 ${W} ${H}`} className="mt-2 w-full" role="img" aria-label="Overall score trend over time">
         {[0, 5, 10].map((g) => (
           <g key={g}>
             <line x1={padL} x2={W - padR} y1={y(g)} y2={y(g)} stroke="#d2d2d7" strokeWidth="1" />
@@ -144,20 +144,18 @@ export default function ProgressPage() {
           <div className="mt-4 grid min-h-0 flex-1 gap-4 pb-4 lg:grid-cols-2">
             <div className="card card-pad min-h-0 overflow-y-auto">
               {enough && <TrendChart analytics={analytics} />}
-              <div className={enough ? "mt-5 border-t border-line pt-5" : ""}>
+              <div className={enough ? "mt-3 border-t border-line pt-3" : ""}>
                 <h2 className="font-display text-h2 font-semibold">This week</h2>
-                <p className="mt-1 text-xs leading-5 text-neutral-600">Three sessions aimed at your weakest areas, picked from your own scores.</p>
-                <ol className="mt-3 space-y-3.5">
+                <p className="mt-1 text-xs leading-4 text-neutral-600">Three sessions aimed at your weakest areas, picked from your own scores.</p>
+                <ol className="mt-2 space-y-2.5">
                   {analytics.plan.map((item, i) => (
-                    <li key={item.title} className="flex gap-3">
-                      <span className="tnum w-5 shrink-0 text-sm font-semibold text-neutral-500">{i + 1}</span>
+                    <li key={item.title} className="flex items-center gap-3">
+                      <span className="tnum w-5 shrink-0 self-start pt-0.5 text-sm font-semibold text-neutral-500">{i + 1}</span>
                       <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <span className="text-sm font-semibold">{item.title}</span>
-                          <Link href={item.href} className="btn btn-primary btn-sm">Start</Link>
-                        </div>
+                        <div className="text-sm font-semibold">{item.title}</div>
                         <p className="mt-0.5 text-sm leading-5 text-neutral-600">{item.reason}</p>
                       </div>
+                      <Link href={item.href} className="btn btn-primary btn-sm shrink-0">Start</Link>
                     </li>
                   ))}
                 </ol>
