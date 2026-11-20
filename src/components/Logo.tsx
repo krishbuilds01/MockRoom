@@ -12,9 +12,9 @@ export function LogoMark({ size = 32 }: { size?: number }) {
 
 export default function Logo() {
   return (
-    <Link href="/" className="flex items-center gap-2.5" aria-label="InterviewAI home">
+    <Link href="/" className="flex items-center gap-2.5" aria-label="Mock Room home">
       <LogoMark />
-      <span className="font-display text-lg font-semibold tracking-tight">InterviewAI</span>
+      <span className="font-display text-lg font-semibold tracking-tight">Mock Room</span>
     </Link>
   );
 }

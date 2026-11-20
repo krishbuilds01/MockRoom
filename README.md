@@ -1,4 +1,4 @@
-# InterviewAI
+# Mock Room
 
 Interview practice with two named AI interviewers, Maya and Rohan. Run a live voice interview (5 questions, follow-ups, pushback on thin answers) or a technical coding interview where the interviewer watches your code as you write it and asks about the lines you add and delete. Scores are out of 10 on four axes, hints are recorded, and every session ends with a scorecard that names your weak areas and your next problems.
 

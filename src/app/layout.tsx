@@ -6,14 +6,14 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const fraunces = Fraunces({ subsets: ["latin"], variable: "--font-fraunces", weight: ["500", "600", "700"] });
 
 export const metadata: Metadata = {
-  title: "InterviewAI - Strict AI Interview Practice",
+  title: "Mock Room - Strict AI Interview Practice",
   description:
     "Practice live interviews with a strict AI interviewer: voice conversations, a coding room that watches your code, company style loops, resume based interviews, and feedback that names exactly what to fix.",
   keywords: ["AI interview practice", "mock interview", "coding interview", "technical interview preparation"],
   openGraph: {
-    title: "InterviewAI - Strict AI Interview Practice",
+    title: "Mock Room - Strict AI Interview Practice",
     description:
-      "A strict AI interviewer that watches your code, pushes back on vague answers, and gives feedback that actually teaches.",
+      "A strict AI interviewer that watches your code, pushes back on vague answers, and scores every session out of 10.",
     type: "website",
   },
 };

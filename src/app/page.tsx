@@ -146,7 +146,7 @@ export default function Home() {
       </nav>
 
       <header className="pt-10">
-        <h1 className="font-display text-display font-semibold text-stone-900">Get That Job</h1>
+        <h1 className="font-display text-display font-semibold text-stone-900">Mock Room</h1>
         <p className="mt-3 max-w-2xl text-[15px] leading-6 text-stone-600">
           One on one interview practice. Maya or Rohan runs your session: 5 questions with follow-ups in the voice room, or one
           coding problem watched line by line in the coding room. Thin answers get pushed back, hints are recorded, and every

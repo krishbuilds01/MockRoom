@@ -6,9 +6,9 @@ import { scoreBarClass } from "@/lib/scoreColor";
 import Logo from "@/components/Logo";
 import Footer from "@/components/Footer";
 
-function StatCard({ label, value, sub }: { label: string; value: string; sub: string }) {
+function Stat({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
-    <div className="card card-pad">
+    <div className="min-w-[130px]">
       <div className="text-xs font-medium text-stone-600">{label}</div>
       <div className="tnum mt-1 font-display text-3xl font-semibold leading-none tracking-tight">{value}</div>
       <div className="mt-1.5 text-xs leading-5 text-stone-600">{sub}</div>
@@ -30,7 +30,7 @@ function TrendChart({ analytics }: { analytics: Analytics }) {
   const y = (v: number) => padT + ih - (v / 11) * ih;
   const line = pts.map((p, i) => `${x(i)},${y(p.overall)}`).join(" ");
   return (
-    <div className="card card-pad">
+    <div>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="font-display text-h2 font-semibold">Score trend</h2>
         <span className="text-xs text-stone-600">Overall score per session, oldest to newest</span>
@@ -63,7 +63,7 @@ function TrendChart({ analytics }: { analytics: Analytics }) {
 
 function AverageRow({ name, average, count }: { name: string; average: number; count: number }) {
   return (
-    <div className="flex items-center gap-3 py-2">
+    <div className="flex items-center gap-3 py-2.5">
       <span className="w-40 shrink-0 truncate text-sm text-stone-700">{name}</span>
       <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-line">
         <div className={`h-full rounded-full ${scoreBarClass(average)}`} style={{ width: `${average * 10}%` }} />
@@ -104,64 +104,71 @@ export default function ProgressPage() {
       {!analytics ? (
         <p className="pt-8 text-sm text-stone-600">Loading your history...</p>
       ) : analytics.total === 0 ? (
-        <div className="card card-hero card-pad mt-6 max-w-xl">
+        <div className="card card-pad mt-6 max-w-xl">
           <h2 className="font-display text-h2 font-semibold">No interviews yet</h2>
           <p className="mt-2 text-sm leading-6 text-stone-600">
-            Finish one interview and this page starts tracking your scores, your streak, and the topics that need work.
+            Finish one interview and your scores, streak and topic averages appear here, computed from the sessions stored in
+            this browser.
           </p>
           <Link href="/" className="btn btn-accent mt-4">Start your first interview</Link>
         </div>
       ) : (
         <>
-          <div className="mt-6 grid shrink-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Interviews finished" value={String(analytics.total)} sub={`${analytics.technicalCount} technical, ${analytics.generalCount} live or resume`} />
-            <StatCard label="Average overall" value={`${analytics.averageOverall}/10`} sub="Across every session on this device" />
-            <StatCard label="Practice streak" value={`${analytics.streakDays} day${analytics.streakDays === 1 ? "" : "s"}`} sub={analytics.streakDays > 0 ? "Consecutive days with at least one session" : "Do a session today to start a streak"} />
-            <StatCard
-              label="Strongest area"
-              value={analytics.strongest ? `${analytics.strongest.average}/10` : "Not yet"}
-              sub={analytics.strongest ? analytics.strongest.name : "Finish a session first"}
-            />
+          <div className="card card-pad mt-6">
+            <div className="flex flex-wrap gap-x-10 gap-y-5">
+              <Stat label="Interviews finished" value={String(analytics.total)} sub={`${analytics.technicalCount} technical, ${analytics.generalCount} live or resume`} />
+              <Stat label="Average overall" value={`${analytics.averageOverall}/10`} sub="Across every session on this device" />
+              <Stat label="Practice streak" value={`${analytics.streakDays} day${analytics.streakDays === 1 ? "" : "s"}`} sub={analytics.streakDays > 0 ? "Consecutive days with at least one session" : "Do a session today to start a streak"} />
+              <Stat
+                label="Strongest area"
+                value={analytics.strongest ? `${analytics.strongest.average}/10` : "Not yet"}
+                sub={analytics.strongest ? analytics.strongest.name : "Finish a session first"}
+              />
+            </div>
           </div>
 
           {!enough && (
-            <div className="card card-pad mt-4 shrink-0 border-amber-300 bg-amber-50" role="note">
+            <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3" role="note">
               <p className="text-sm leading-6 text-amber-800">
-                Finish {3 - analytics.total} more interview{analytics.total === 2 ? "" : "s"} to unlock trends. Averages from one or two sessions swing too much to mean anything, so this page waits for real data.
+                You have {analytics.total} session{analytics.total === 1 ? "" : "s"} so far. Trends appear at 3 sessions, because
+                averages from one or two swing too much to mean anything.
               </p>
             </div>
           )}
 
-          <div className="mt-4 grid min-h-0 flex-1 gap-4 pb-6 lg:grid-cols-2 lg:overflow-hidden">
-            <div className="min-h-0 space-y-4 lg:overflow-y-auto lg:pr-1">
+          <div className="mt-4 grid items-start gap-4 pb-6 lg:grid-cols-2">
+            <div className="card card-pad">
               {enough && <TrendChart analytics={analytics} />}
-              <div className="card card-pad">
+              <div className={enough ? "mt-5 border-t border-line pt-5" : ""}>
                 <h2 className="font-display text-h2 font-semibold">This week</h2>
                 <p className="mt-1 text-xs leading-5 text-stone-600">Three sessions aimed at your weakest areas, picked from your own scores.</p>
-                <div className="mt-3 space-y-2">
-                  {analytics.plan.map((item) => (
-                    <div key={item.title} className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-line bg-panel2 px-4 py-3">
-                      <span className="text-sm font-semibold">{item.title}</span>
-                      <span className="min-w-0 flex-1 text-sm leading-5 text-stone-600">{item.reason}</span>
-                      <Link href={item.href} className="btn btn-primary btn-sm">Start</Link>
-                    </div>
+                <ol className="mt-3 space-y-3.5">
+                  {analytics.plan.map((item, i) => (
+                    <li key={item.title} className="flex gap-3">
+                      <span className="tnum w-5 shrink-0 text-sm font-semibold text-stone-500">{i + 1}</span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="text-sm font-semibold">{item.title}</span>
+                          <Link href={item.href} className="btn btn-primary btn-sm">Start</Link>
+                        </div>
+                        <p className="mt-0.5 text-sm leading-5 text-stone-600">{item.reason}</p>
+                      </div>
+                    </li>
                   ))}
-                </div>
+                </ol>
               </div>
             </div>
-            <div className="min-h-0 space-y-4 lg:overflow-y-auto lg:pr-1">
-              <div className="card card-pad">
-                <h2 className="font-display text-h2 font-semibold">By scoring axis</h2>
-                <div className="mt-2 divide-y divide-line">
-                  {analytics.axisAverages.map((a) => (
-                    <AverageRow key={a.name} name={a.name} average={a.average} count={a.count} />
-                  ))}
-                </div>
+            <div className="card card-pad">
+              <h2 className="font-display text-h2 font-semibold">By scoring axis</h2>
+              <div className="mt-1 divide-y divide-line">
+                {analytics.axisAverages.map((a) => (
+                  <AverageRow key={a.name} name={a.name} average={a.average} count={a.count} />
+                ))}
               </div>
-              <div className="card card-pad">
+              <div className="mt-5 border-t border-line pt-5">
                 <h2 className="font-display text-h2 font-semibold">By topic</h2>
                 {analytics.topicAverages.length ? (
-                  <div className="mt-2 divide-y divide-line">
+                  <div className="mt-1 divide-y divide-line">
                     {analytics.topicAverages.map((a) => (
                       <AverageRow key={a.name} name={a.name} average={a.average} count={a.count} />
                     ))}
@@ -170,9 +177,9 @@ export default function ProgressPage() {
                   <p className="mt-2 text-sm leading-6 text-stone-600">No technical sessions yet, so there are no topic scores. Topic averages appear after your first coding interview.</p>
                 )}
                 {analytics.weakest && (
-                  <p className="mt-3 text-sm leading-6 text-stone-600">
+                  <p className="mt-3 border-t border-line pt-3 text-sm leading-6 text-stone-600">
                     Weakest right now: <span className="font-semibold text-stone-900">{analytics.weakest.name}</span> at{" "}
-                    <span className="tnum font-semibold text-stone-900">{analytics.weakest.average}/10</span>. That is where the plan on the left points.
+                    <span className="tnum font-semibold text-stone-900">{analytics.weakest.average}/10</span>.
                   </p>
                 )}
               </div>

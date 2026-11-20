@@ -315,7 +315,7 @@ export default function FeedbackPage() {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-sm font-semibold">Your session recording</h2>
                 <div className="flex gap-2">
-                  <a href={recUrl} download={`get-that-job-session-${rec.id}.webm`} className="btn btn-ghost btn-sm">Download</a>
+                  <a href={recUrl} download={`mock-room-session-${rec.id}.webm`} className="btn btn-ghost btn-sm">Download</a>
                   <button type="button" onClick={removeRecording} className="btn btn-ghost btn-sm">Delete</button>
                 </div>
               </div>
