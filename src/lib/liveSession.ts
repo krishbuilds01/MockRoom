@@ -60,7 +60,7 @@ export class LiveSession {
     this.cb.onStatus?.(s);
   }
 
-  async connect(systemInstruction: string): Promise<boolean> {
+  async connect(systemInstruction: string, interviewerId?: string): Promise<boolean> {
     this.closedByUser = false;
     this.setStatus("connecting");
     let tokenInfo: TokenResponse;
@@ -68,7 +68,7 @@ export class LiveSession {
       const res = await fetch("/api/live-token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ systemInstruction }),
+        body: JSON.stringify({ systemInstruction, interviewer: interviewerId }),
       });
       if (!res.ok) throw new Error("token");
       tokenInfo = (await res.json()) as TokenResponse;
@@ -378,7 +378,7 @@ export function useLiveSession(cb: LiveCallbacks) {
     cbRef.current = cb;
   });
 
-  const connect = useCallback(async (systemInstruction: string) => {
+  const connect = useCallback(async (systemInstruction: string, interviewerId?: string) => {
     if (!sessionRef.current) {
       sessionRef.current = new LiveSession({
         onAiTurn: (t) => cbRef.current.onAiTurn(t),
@@ -390,7 +390,7 @@ export function useLiveSession(cb: LiveCallbacks) {
     }
     const session = sessionRef.current;
     setStatusState("connecting");
-    const ok = await session.connect(systemInstruction);
+    const ok = await session.connect(systemInstruction, interviewerId);
     setStatusState(ok ? "live" : "fallback");
     return ok;
   }, []);

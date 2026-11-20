@@ -12,6 +12,7 @@ import {
   isThinAnswer,
 } from "@/lib/interviewer";
 import { problems, type Problem } from "@/lib/problems";
+import { getInterviewer } from "@/lib/interviewers";
 
 type Mode =
   | "general"
@@ -55,6 +56,7 @@ function difficultyRule(difficulty: string): string {
 }
 
 function buildPrompt(mode: Mode, body: Record<string, unknown>): string {
+  const interviewer = getInterviewer(body.interviewer);
   const difficulty = trunc(body.difficulty, 20) || "Mid";
   const topic = trunc(body.topic, 60);
   const problemTitle = trunc(body.problemTitle, 120);
@@ -69,7 +71,7 @@ function buildPrompt(mode: Mode, body: Record<string, unknown>): string {
   const testsTotal = typeof body.testsTotal === "number" ? body.testsTotal : null;
 
   const base = [
-    "You are a tough, experienced interviewer at a top tech company running a live one on one interview. Your name is Alex, and the candidate knows you as Alex. You are fair, but you are strict and hard to impress. You do not hand out praise for basics.",
+    `You are a tough, experienced interviewer at a top tech company running a live one on one interview. Your name is ${interviewer.name}, and the candidate knows you as ${interviewer.name}. You are fair, but you are strict and hard to impress. You do not hand out praise for basics.`,
     "Sound like a real person talking: use natural contractions, and vary your short acknowledgements (Right, Okay, Got it, Fair enough, Hmm). Never start two replies the same way. Do not use filler words.",
     "Speak in short plain sentences. Ask only ONE question at a time. Keep your whole reply under 60 words.",
     "No markdown, no lists, no headings, no code blocks. Your reply will be spoken aloud.",
@@ -125,7 +127,7 @@ function buildPrompt(mode: Mode, body: Record<string, unknown>): string {
     base.push("Judge the trace hard. If it is vague or skips variable values step by step, say exactly which step was skipped and what value they should have named. If it is a real step by step trace that lands on the expected output, acknowledge it in a few words. 1 or 2 sentences, under 45 words. Do not ask about complexity, that comes next in the flow.");
   } else if (mode === "candidate-question") {
     base.push(`The interview is over and the candidate is asking you a question about the role, the team, or the company: "${message}"`);
-    base.push("Answer in character as Alex, a senior engineer on a small product team. Give a brief, sensible, generic answer: small product team owning an area end to end, TypeScript and React stack, code review culture, hiring manager round next, decision within about a week. Do not invent a company name, salary, or specific promises. 2 sentences at most, under 45 words.");
+    base.push(`Answer in character as ${interviewer.name}, a senior engineer on a small product team. Give a brief, sensible, generic answer: small product team owning an area end to end, TypeScript and React stack, code review culture, hiring manager round next, decision within about a week. Do not invent a company name, salary, or specific promises. 2 sentences at most, under 45 words.`);
   }
   return base.filter(Boolean).join("\n");
 }

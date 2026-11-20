@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { askGemini, geminiAvailable } from "@/lib/gemini";
 import { buildResumeQuestionsLocal, type ResumeQuestion } from "@/lib/resume";
+import { getInterviewer } from "@/lib/interviewers";
 
 export const maxDuration = 30;
 
-function buildPrompt(text: string): string {
+function buildPrompt(text: string, interviewerName: string): string {
   return [
-    "You are Alex, a strict senior interviewer. Read the candidate's resume below and write interview questions that test whether the resume is real and understood by its owner.",
+    `You are ${interviewerName}, a strict senior interviewer. Read the candidate's resume below and write interview questions that test whether the resume is real and understood by its owner.`,
     "Return ONLY a JSON array, no markdown, no code fences, no commentary. Each item is an object with two string fields: \"question\" and \"target\" (the project name or skill the question tests).",
     "Write 6 to 8 questions. Mix, in this order of priority:",
     "1. Project deep dives: name the actual project from the resume and ask why a specific technology or design choice was made there, and what breaks at ten times the scale.",
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Paste at least a few lines of your resume so there is something real to ask about." }, { status: 400 });
   }
   if (geminiAvailable()) {
-    const reply = await askGemini(buildPrompt(text));
+    const reply = await askGemini(buildPrompt(text, getInterviewer(body.interviewer).name));
     if (reply) {
       const questions = parseQuestions(reply);
       if (questions) return NextResponse.json({ questions, engine: "gemini" });

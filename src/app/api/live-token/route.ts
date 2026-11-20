@@ -1,19 +1,21 @@
 import { NextResponse } from "next/server";
+import { getInterviewer } from "@/lib/interviewers";
 
 export const maxDuration = 30;
 
 export const LIVE_MODEL =
   process.env.GEMINI_LIVE_MODEL || "gemini-2.5-flash-native-audio-preview-12-2025";
-export const LIVE_VOICE = "Callirrhoe";
 
 type TokenBody = {
   systemInstruction?: string;
+  interviewer?: string;
 };
 
 async function mintToken(
   key: string,
   version: string,
   systemInstruction: string,
+  voiceName: string,
   withConstraints: boolean,
 ): Promise<{ name: string } | null> {
   const now = Date.now();
@@ -30,7 +32,7 @@ async function mintToken(
           responseModalities: ["AUDIO"],
           speechConfig: {
             voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: LIVE_VOICE },
+              prebuiltVoiceConfig: { voiceName },
             },
           },
         },
@@ -73,6 +75,7 @@ export async function POST(req: Request) {
     body = {};
   }
   const systemInstruction = (body.systemInstruction || "").slice(0, 6000);
+  const voice = getInterviewer(body.interviewer).voice;
 
   const attempts: Array<[string, boolean]> = [
     ["v1beta", true],
@@ -81,12 +84,12 @@ export async function POST(req: Request) {
     ["v1alpha", false],
   ];
   for (const [version, constrained] of attempts) {
-    const token = await mintToken(key, version, systemInstruction, constrained);
+    const token = await mintToken(key, version, systemInstruction, voice, constrained);
     if (token) {
       return NextResponse.json({
         token: token.name,
         model: LIVE_MODEL,
-        voice: LIVE_VOICE,
+        voice,
         apiVersion: version,
         constrained,
         expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),

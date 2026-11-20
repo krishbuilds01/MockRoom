@@ -241,14 +241,14 @@ export function buildResumeQuestionsLocal(text: string): ResumeQuestion[] {
   return out.slice(0, 8);
 }
 
-export async function postResumeQuestions(text: string): Promise<{ questions: ResumeQuestion[]; engine: "gemini" | "local" } | null> {
+export async function postResumeQuestions(text: string, interviewerId?: string): Promise<{ questions: ResumeQuestion[]; engine: "gemini" | "local" } | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 35000);
   try {
     const res = await fetch("/api/resume-questions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({ text, interviewer: interviewerId }),
       signal: controller.signal,
     });
     if (!res.ok) return null;

@@ -26,7 +26,7 @@ export type SpeakerCallbacks = {
   onAboutToEnd?: () => void;
 };
 
-export function useSpeaker(callbacks?: SpeakerCallbacks) {
+export function useSpeaker(callbacks?: SpeakerCallbacks, voiceName?: string) {
   const [voiceSource, setVoiceSource] = useState<VoiceSource>(null);
   const [speaking, setSpeaking] = useState(false);
   const tokenRef = useRef(0);
@@ -157,7 +157,7 @@ export function useSpeaker(callbacks?: SpeakerCallbacks) {
           const res = await fetch("/api/tts", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text }),
+            body: JSON.stringify(voiceName ? { text, voice: voiceName } : { text }),
           });
           if (!res.ok || !(res.headers.get("Content-Type") || "").includes("audio")) {
             ttsDownRef.current = true;
@@ -173,7 +173,7 @@ export function useSpeaker(callbacks?: SpeakerCallbacks) {
         }
       })();
     },
-    [cachePut]
+    [cachePut, voiceName]
   );
 
   const playUrl = useCallback(
