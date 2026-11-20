@@ -2,7 +2,7 @@
 import { Suspense, useEffect, useReducer, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import Camera from "@/components/Camera";
+import CameraPopup from "@/components/CameraPopup";
 import LeaveModal from "@/components/LeaveModal";
 import ConfirmModal from "@/components/ConfirmModal";
 import SpeakingWave from "@/components/SpeakingWave";
@@ -804,11 +804,8 @@ function GeneralRoom() {
         </div>
       </header>
 
-      <div className="mt-4 grid min-h-0 flex-1 gap-4 overflow-y-auto lg:grid-cols-[320px_1fr] lg:overflow-hidden">
-        <div className="space-y-4 lg:h-full lg:overflow-y-auto">
-          <div>
-            <Camera audio onStream={onCameraStream} recording={recordOn} />
-          </div>
+      <div className="mt-4 grid min-h-0 flex-1 gap-4 overflow-hidden lg:grid-cols-[320px_1fr]">
+        <div className="space-y-4 lg:h-full lg:overflow-hidden">
           {canRecord && (
             <div className="flex items-center justify-between gap-3 border-t border-line pt-4">
               <div className="min-w-0">
@@ -853,7 +850,7 @@ function GeneralRoom() {
             {live.status === "connecting" && <span className="badge">Connecting live voice</span>}
             {liveOn && live.status === "fallback" && <span className="badge badge-mid">Live unavailable, standard mode</span>}
           </div>
-          <div ref={transcriptBoxRef} className="min-h-0 flex-1 overflow-y-auto p-5" aria-live="polite">
+          <div ref={transcriptBoxRef} className="min-h-0 flex-1 p-5" aria-live="polite">
             <div className="border-b border-line pb-4">
               <div className="text-xs font-semibold uppercase tracking-wider text-neutral-600">Session brief</div>
               <dl className="mt-3 space-y-2 text-[13px] leading-5">
@@ -879,8 +876,11 @@ function GeneralRoom() {
                 </div>
               </dl>
             </div>
+            {transcript.length > 6 && (
+              <p className="pt-3 text-xs text-neutral-500">{transcript.length - 6} earlier message{transcript.length - 6 === 1 ? "" : "s"}</p>
+            )}
             <div className="divide-y divide-line">
-              {transcript.map((m, i) => (
+              {transcript.slice(-6).map((m, i) => (
                 <div key={i} className="py-3">
                   <div className="text-[13px] font-semibold">{m.role === "ai" ? interviewer.name : "You"}</div>
                   <p className={`mt-0.5 break-words whitespace-pre-wrap text-sm leading-6 ${m.role === "ai" ? "text-neutral-900" : "text-neutral-700"}`}>{m.text}</p>
@@ -939,6 +939,7 @@ function GeneralRoom() {
           </div>
         </section>
       </div>
+      <CameraPopup audio onStream={onCameraStream} recording={recordOn} />
       <LeaveModal open={leaveOpen} onStay={() => setLeaveOpen(false)} onLeave={leaveAndSave} />
       <ConfirmModal
         open={endOpen}

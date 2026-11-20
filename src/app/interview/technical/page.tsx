@@ -3,7 +3,7 @@ import { Suspense, useEffect, useReducer, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import Camera from "@/components/Camera";
+import CameraPopup from "@/components/CameraPopup";
 import LeaveModal from "@/components/LeaveModal";
 import ConfirmModal from "@/components/ConfirmModal";
 import SpeakingWave from "@/components/SpeakingWave";
@@ -1044,47 +1044,46 @@ function TechnicalRoom() {
         </div>
       )}
 
-      <div className="mt-3 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto lg:flex-row lg:overflow-hidden">
-        <section className="card w-full shrink-0 overflow-y-auto p-5 lg:h-full lg:w-[330px]">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-lg font-semibold tracking-tight">{problem.title}</h1>
-            <span className={`badge ${problem.difficulty === "Easy" ? "badge-easy" : problem.difficulty === "Hard" ? "badge-hard" : "badge-mid"}`}>{problem.difficulty}</span>
-            <span className="badge">{problem.topic}</span>
-          </div>
-          <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-neutral-700">{problem.statement}</p>
-          <h3 className="mt-5 text-sm font-semibold">Examples</h3>
-          {problem.examples.map((ex, i) => (
-            <div key={i} className="mt-2 break-words rounded-lg border border-line bg-panel2 p-3 font-mono text-xs leading-5">
-              <div>Input: {ex.input}</div>
-              <div>Output: {ex.output}</div>
-              {ex.explanation && <div className="text-neutral-600">{ex.explanation}</div>}
+      <div className="mt-3 flex min-h-0 flex-1 flex-col gap-3 overflow-hidden lg:flex-row">
+        <section className="card flex w-full shrink-0 flex-col overflow-hidden lg:h-full lg:w-[330px]">
+          <div className="min-h-0 flex-1 overflow-y-auto p-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-base font-semibold tracking-tight">{problem.title}</h1>
+              <span className={`badge ${problem.difficulty === "Easy" ? "badge-easy" : problem.difficulty === "Hard" ? "badge-hard" : "badge-mid"}`}>{problem.difficulty}</span>
+              <span className="badge">{problem.topic}</span>
             </div>
-          ))}
-          <h3 className="mt-5 text-sm font-semibold">Constraints</h3>
-          <ul className="mt-2 list-disc pl-5 text-xs leading-5 text-neutral-600">
-            {problem.constraints.map((c) => <li key={c}>{c}</li>)}
-          </ul>
-          <div className="mt-5">
-            <Camera small audio onStream={onCameraStream} recording={recordOn} />
-          </div>
-          {canRecord && (
-            <div className="mt-4 flex items-center justify-between gap-3 border-t border-line pt-4">
-              <div className="min-w-0">
-                <div className="text-xs font-semibold">Record my session</div>
-                <p className="mt-0.5 text-xs leading-4 text-neutral-600">{recordOn ? "Recording. Watch it back on the feedback page." : "Self-review video, stored only in this browser."}</p>
+            <p className="mt-2.5 whitespace-pre-wrap text-[13px] leading-5 text-neutral-700">{problem.statement}</p>
+            <h3 className="mt-4 text-[13px] font-semibold">Examples</h3>
+            {problem.examples.map((ex, i) => (
+              <div key={i} className="mt-2 break-words rounded-lg border border-line bg-panel2 p-2.5 font-mono text-xs leading-5">
+                <div>Input: {ex.input}</div>
+                <div>Output: {ex.output}</div>
+                {ex.explanation && <div className="text-neutral-600">{ex.explanation}</div>}
               </div>
-              <button type="button" onClick={toggleRecord} disabled={!hasStream && !recordOn} aria-pressed={recordOn} className={`btn btn-sm shrink-0 ${recordOn ? "btn-secondary" : "btn-ghost"}`}>
-                {recordOn ? (
-                  <>
-                    <span className="dot dot-pulse bg-accent" />
-                    Recording
-                  </>
-                ) : (
-                  "Record"
-                )}
-              </button>
-            </div>
-          )}
+            ))}
+            <h3 className="mt-4 text-[13px] font-semibold">Constraints</h3>
+            <ul className="mt-1.5 list-disc pl-5 text-xs leading-5 text-neutral-600">
+              {problem.constraints.map((c) => <li key={c}>{c}</li>)}
+            </ul>
+            {canRecord && (
+              <div className="mt-4 flex items-center justify-between gap-3 border-t border-line pt-4">
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold">Record my session</div>
+                  <p className="mt-0.5 text-xs leading-4 text-neutral-600">{recordOn ? "Recording. Watch it back on the feedback page." : "Self-review video, stored only in this browser."}</p>
+                </div>
+                <button type="button" onClick={toggleRecord} disabled={!hasStream && !recordOn} aria-pressed={recordOn} className={`btn btn-sm shrink-0 ${recordOn ? "btn-secondary" : "btn-ghost"}`}>
+                  {recordOn ? (
+                    <>
+                      <span className="dot dot-pulse bg-accent" />
+                      Recording
+                    </>
+                  ) : (
+                    "Record"
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
         </section>
 
         <section className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-line bg-panel lg:h-full lg:min-h-0">
@@ -1131,34 +1130,34 @@ function TechnicalRoom() {
             </div>
           </div>
 
-          <div className="max-h-[280px] shrink-0 overflow-y-auto border-t border-line bg-panel p-4 lg:max-h-[30%]">
+          <div className="shrink-0 border-t border-line bg-panel p-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h3 className="text-sm font-semibold">Test cases {lastKind === "submit" ? "(last submit)" : lastKind === "run" ? "(last run)" : ""}</h3>
               <span className="text-xs text-neutral-600">Run checks {visibleTests} visible cases. Submit checks all {problem.tests.length} cases including hidden, then starts the dry run.</span>
             </div>
             {runError && (
-              <div className="mt-3 flex items-start justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700" role="alert">
+              <div className="mt-2 flex items-start justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700" role="alert">
                 <span>{runError}</span>
                 <button type="button" onClick={() => setRunError("")} aria-label="Dismiss error" className="shrink-0 text-red-700">x</button>
               </div>
             )}
-            {!runOut && !runError && <p className="mt-3 text-xs text-neutral-600">No runs yet. We start with your introduction and clarifying questions, then your approach, then code.</p>}
+            {!runOut && !runError && <p className="mt-2 text-xs text-neutral-600">No runs yet. We start with your introduction and clarifying questions, then your approach, then code.</p>}
             {runOut && (
-              <div className="mt-3 space-y-3">
-                <div className={`text-sm font-semibold ${runOut.passed === runOut.total ? "text-accent" : "text-neutral-700"}`}>{runOut.passed} / {runOut.total} passed</div>
-                {runOut.results.map((r) => (
-                  <div key={r.index} className="break-words border-t border-line pt-3 font-mono text-xs leading-5 first:border-t-0 first:pt-0">
-                    <div className="flex items-center gap-2">
-                      <span className={`chip ${r.passed ? "chip-pass" : "chip-fail"}`}>{r.passed ? "PASS" : "FAIL"}</span>
-                      <span className="text-neutral-700">Case {r.index + 1}{r.hidden ? " (hidden)" : ""}</span>
+              <div className="mt-2">
+                <div className={`text-[13px] font-semibold ${runOut.passed === runOut.total ? "text-accent" : "text-neutral-700"}`}>{runOut.passed} / {runOut.total} passed</div>
+                <div className="mt-1.5">
+                  {runOut.results.map((r) => (
+                    <div key={r.index} className="flex items-center gap-2 border-t border-line py-1.5 font-mono text-xs first:border-t-0">
+                      <span className={`chip shrink-0 ${r.passed ? "chip-pass" : "chip-fail"}`}>{r.passed ? "PASS" : "FAIL"}</span>
+                      <span className="shrink-0 text-neutral-700">Case {r.index + 1}{r.hidden ? " (hidden)" : ""}</span>
+                      <span className="min-w-0 flex-1 truncate text-neutral-600" title={`Input args: ${JSON.stringify(r.args)} · Expected: ${JSON.stringify(r.expected)} · Got: ${JSON.stringify(r.got)}`}>
+                        args {JSON.stringify(r.args)} · got {JSON.stringify(r.got)} · expected {JSON.stringify(r.expected)}
+                      </span>
+                      {r.error && <span className="max-w-[30%] truncate text-red-700" title={r.error}>Error: {r.error}</span>}
                     </div>
-                    <div className="mt-1.5 text-neutral-600">Input args: {JSON.stringify(r.args)}</div>
-                    <div className="text-neutral-600">Expected: {JSON.stringify(r.expected)}</div>
-                    <div>Got: {JSON.stringify(r.got)}</div>
-                    {r.error && <div className="text-red-700">Error: {r.error}</div>}
-                  </div>
-                ))}
-                {runOut.stderr && <pre className="max-h-28 overflow-auto whitespace-pre-wrap rounded-lg bg-panel2 p-3 text-xs text-red-700">{runOut.stderr}</pre>}
+                  ))}
+                </div>
+                {runOut.stderr && <pre className="mt-2 whitespace-pre-wrap rounded-lg bg-panel2 p-3 text-xs text-red-700">{runOut.stderr}</pre>}
               </div>
             )}
           </div>
@@ -1180,9 +1179,12 @@ function TechnicalRoom() {
                 )}
               </div>
             </div>
-            <div ref={transcriptBoxRef} className="max-h-[46dvh] flex-1 overflow-y-auto p-4 lg:max-h-none lg:min-h-0" aria-live="polite">
+            <div ref={transcriptBoxRef} className="flex-1 p-4 lg:min-h-0" aria-live="polite">
+              {transcript.length > 6 && (
+                <p className="pb-1 text-xs text-neutral-500">{transcript.length - 6} earlier message{transcript.length - 6 === 1 ? "" : "s"}</p>
+              )}
               <div className="divide-y divide-line">
-                {transcript.map((m, i) => (
+                {transcript.slice(-6).map((m, i) => (
                   <div key={i} className="py-2.5">
                     <div className="text-xs font-semibold">{m.role === "ai" ? interviewer.name : "You"}</div>
                     <p className={`mt-0.5 break-words whitespace-pre-wrap text-[13px] leading-5 ${m.role === "ai" ? "text-neutral-900" : "text-neutral-700"}`}>{m.text}</p>
@@ -1233,6 +1235,7 @@ function TechnicalRoom() {
           </aside>
         )}
       </div>
+      <CameraPopup audio onStream={onCameraStream} recording={recordOn} />
       <LeaveModal open={leaveOpen} onStay={() => setLeaveOpen(false)} onLeave={leaveAndSave} />
       <ConfirmModal
         open={endOpen}
