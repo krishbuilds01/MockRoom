@@ -1013,7 +1013,7 @@ function TechnicalRoom() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => setShowAi(!showAi)} className="btn btn-ghost btn-sm lg:hidden">{showAi ? "Hide AI panel" : "Show AI panel"}</button>
+            <span className="lg:hidden"><button type="button" onClick={() => setShowAi(!showAi)} className="btn btn-ghost btn-sm">{showAi ? "Hide AI panel" : "Show AI panel"}</button></span>
             <button type="button" onClick={() => { const next = !muted; setMuted(next); if (next) speaker.stop(); }} aria-label="Toggle AI voice" className="btn btn-ghost btn-sm">{muted ? "Unmute AI" : "Mute AI"}</button>
             <button type="button" onClick={() => setEndOpen(true)} className="btn btn-ghost btn-sm">End interview</button>
           </div>

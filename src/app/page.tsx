@@ -136,7 +136,7 @@ export default function Home() {
             </Link>
           </div>
           <div className="card mt-6 overflow-x-auto">
-            <table className="w-full min-w-[560px] border-collapse text-sm">
+            <table className="w-full border-collapse text-sm sm:min-w-[560px]">
               <tbody className="divide-y divide-line">
                 {featured.map((p) => (
                   <tr key={p.title} className="transition-colors hover:bg-panel2">

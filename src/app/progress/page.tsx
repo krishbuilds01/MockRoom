@@ -137,8 +137,8 @@ export default function ProgressPage() {
             </div>
           )}
 
-          <div className="mt-4 grid items-start gap-4 lg:grid-cols-2">
-            <div className="card card-pad">
+          <div className="mt-4 grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+            <div className="card card-pad min-w-0">
               {enough && <TrendChart analytics={analytics} />}
               <div className={enough ? "mt-3 border-t border-line pt-3" : ""}>
                 <h2 className="text-h2 font-medium">This week</h2>
@@ -157,7 +157,7 @@ export default function ProgressPage() {
                 </ol>
               </div>
             </div>
-            <div className="card card-pad">
+            <div className="card card-pad min-w-0">
               <h2 className="text-h2 font-medium">By scoring axis</h2>
               <div className="mt-1 divide-y divide-line">
                 {analytics.axisAverages.map((a) => (

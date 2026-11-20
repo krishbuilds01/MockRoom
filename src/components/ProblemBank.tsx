@@ -207,7 +207,7 @@ export default function ProblemBank({
       </p>
 
       <div className="card mt-2 overflow-x-auto">
-        <table className="w-full min-w-[640px] border-collapse text-sm">
+        <table className="w-full border-collapse text-sm sm:min-w-[640px]">
           <thead>
             <tr className="border-b border-line text-left">
               <th scope="col" className="bg-panel px-4 py-3 text-xs font-medium text-neutral-500">Problem</th>
