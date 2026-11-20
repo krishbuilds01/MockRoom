@@ -17,16 +17,17 @@ function Stat({ label, value, sub }: { label: string; value: string; sub: string
 }
 
 function TrendChart({ analytics }: { analytics: Analytics }) {
-  const pts = analytics.trend.slice(-14);
+  const pts = analytics.trend;
   const W = 640;
   const H = 112;
-  const padL = 36;
-  const padR = 16;
+  const padL = 48;
+  const padR = 20;
   const padT = 26;
   const padB = 24;
   const iw = W - padL - padR;
   const ih = H - padT - padB;
   const x = (i: number) => padL + (pts.length === 1 ? iw / 2 : (i / (pts.length - 1)) * iw);
+  const labelX = (i: number) => Math.min(Math.max(x(i), padL + 6), W - padR - 6);
   const y = (v: number) => padT + ih - (v / 11) * ih;
   const line = pts.map((p, i) => `${x(i)},${y(p.overall)}`).join(" ");
   const labelStep = Math.max(1, Math.ceil(pts.length / 7));
@@ -36,9 +37,9 @@ function TrendChart({ analytics }: { analytics: Analytics }) {
   const range = firstDay === lastDay ? firstDay : `${firstDay} to ${lastDay}`;
   return (
     <div>
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
+      <div>
         <h2 className="font-display text-h2 font-semibold">Score trend</h2>
-        <span className="text-xs text-neutral-600">Overall score per session, numbered in the order you did them{range ? ` · ${range}` : ""}</span>
+        <p className="mt-0.5 text-xs leading-5 text-neutral-600">Overall score per session, numbered in the order you did them{range ? ` · ${range}` : ""}</p>
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} className="mt-2 w-full" role="img" aria-label="Overall score trend over time">
         {[0, 5, 10].map((g) => (
@@ -51,11 +52,11 @@ function TrendChart({ analytics }: { analytics: Analytics }) {
         {pts.map((p, i) => (
           <g key={p.date + i}>
             <circle cx={x(i)} cy={y(p.overall)} r="4.5" fill="#b8f2a3" stroke="#131315" strokeWidth="2" />
-            <text x={x(i)} y={y(p.overall) - 10} textAnchor="middle" fontSize="12" fontWeight="600" fill="#ffffff" style={{ fontVariantNumeric: "tabular-nums" }}>
+            <text x={labelX(i)} y={y(p.overall) - 10} textAnchor="middle" fontSize="12" fontWeight="600" fill="#ffffff" style={{ fontVariantNumeric: "tabular-nums" }}>
               {p.overall}
             </text>
             {(i % labelStep === 0 || i === pts.length - 1) && (
-              <text x={x(i)} y={H - 8} textAnchor="middle" fontSize="12" fill="#909090">
+              <text x={labelX(i)} y={H - 8} textAnchor="middle" fontSize="12" fill="#909090">
                 {p.label}
               </text>
             )}
