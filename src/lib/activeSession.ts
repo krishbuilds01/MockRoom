@@ -1,3 +1,5 @@
+import { DEFAULT_INTERVIEWER } from "./interviewers";
+
 export interface SessionConfig {
   room: "general" | "technical";
   difficulty: string;
@@ -5,6 +7,7 @@ export interface SessionConfig {
   company?: string;
   resume?: boolean;
   problemId?: string;
+  interviewer?: string;
 }
 
 export interface StoredActiveSession {
@@ -28,6 +31,7 @@ export function configFingerprint(cfg: SessionConfig): string {
     cfg.company || "any",
     cfg.resume ? "resume" : "standard",
     cfg.problemId || "",
+    cfg.interviewer || DEFAULT_INTERVIEWER.id,
   ].join("|");
 }
 

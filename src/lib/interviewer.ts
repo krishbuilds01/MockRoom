@@ -49,8 +49,6 @@ export function pickAck(seed: number): string {
   return acks[Math.abs(seed) % acks.length];
 }
 
-export const INTERVIEWER_NAME = "Alex";
-
 export function aOrAn(word: string): string {
   return /^[aeiou]/i.test(word.trim()) ? "an" : "a";
 }
@@ -59,12 +57,12 @@ export function hasComplexityStatement(text: string): boolean {
   return /(o\([^)]+\)|quadratic|linear|constant time|constant space|logarithmic|exponential)/i.test(text);
 }
 
-export function techOpeningText(problem: Problem, difficulty: string, targetMin: number): string {
-  return `Hi, I am ${INTERVIEWER_NAME}, your interviewer today. This is ${aOrAn(difficulty)} ${difficulty} session of about ${targetMin} minutes: I set the problem, we talk it through, you code while I watch, then a dry run, complexity, and your questions for me.\n\nI am strict. Vague answers get pushed back, and hints are recorded. First, introduce yourself in a few lines: your background, and what you have been building.`;
+export function techOpeningText(problem: Problem, difficulty: string, targetMin: number, interviewerName: string): string {
+  return `Hi, I am ${interviewerName}, your interviewer today. This is ${aOrAn(difficulty)} ${difficulty} session of about ${targetMin} minutes: I set the problem, we talk it through, you code while I watch, then a dry run, complexity, and your questions for me.\n\nI am strict. Vague answers get pushed back, and hints are recorded. First, introduce yourself in a few lines: your background, and what you have been building.`;
 }
 
-export function generalOpeningText(difficulty: string, targetMin: number, count: number): string {
-  return `Hi, I am ${INTERVIEWER_NAME}, your interviewer today. You introduce yourself, then I ask ${count} questions with follow-ups, and we finish with your questions for me. About ${targetMin} minutes.\n\nThis is ${aOrAn(difficulty)} ${difficulty} session, so I will be direct: short, vague answers get pushed back. First, introduce yourself in a few lines: your background, and what you have been working on.`;
+export function generalOpeningText(difficulty: string, targetMin: number, count: number, interviewerName: string): string {
+  return `Hi, I am ${interviewerName}, your interviewer today. You introduce yourself, then I ask ${count} questions with follow-ups, and we finish with your questions for me. About ${targetMin} minutes.\n\nThis is ${aOrAn(difficulty)} ${difficulty} session, so I will be direct: short, vague answers get pushed back. First, introduce yourself in a few lines: your background, and what you have been working on.`;
 }
 
 export function introReaction(intro: string, seed: number): string {
@@ -618,6 +616,8 @@ export interface SessionRecord {
   id: string;
   type: "general" | "technical";
   difficulty: string;
+  interviewerId?: string;
+  interviewerName?: string;
   companyId?: string;
   companyName?: string;
   resumeInterview?: boolean;
