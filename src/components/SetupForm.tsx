@@ -7,6 +7,14 @@ import { buildResumeQuestionsLocal, postResumeQuestions, RESUME_QUESTIONS_KEY, R
 import { markFreshStart } from "@/lib/activeSession";
 import CompanySelect from "@/components/CompanySelect";
 
+const labelCls = "text-[13px] font-medium text-neutral-600";
+const segBtn =
+  "flex h-11 w-full items-center justify-center rounded-[10px] border px-3 text-sm transition focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2";
+const segOn = `${segBtn} border-accent bg-accent font-medium text-[#131315] hover:bg-accent-strong`;
+const segOff = `${segBtn} border-line bg-panel2 text-neutral-700 hover:border-line2 hover:text-neutral-900`;
+const pickerBtn =
+  "min-h-11 rounded-[10px] border px-3.5 py-2.5 text-left transition focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2";
+
 export default function SetupForm() {
   const router = useRouter();
   const [type, setType] = useState<"general" | "technical" | "resume">("technical");
@@ -110,17 +118,17 @@ export default function SetupForm() {
   }
 
   return (
-    <div className="card card-pad">
+    <div className="card p-6 sm:p-7">
       <div>
-        <div className="text-[13px] font-medium text-neutral-700">Mode</div>
-        <div className="mt-2 grid grid-cols-3 gap-2" role="group" aria-label="Interview mode">
-          <button type="button" onClick={() => setType("technical")} aria-pressed={type === "technical"} className={type === "technical" ? "btn btn-primary btn-sm w-full" : "btn btn-ghost btn-sm w-full"}>Technical</button>
-          <button type="button" onClick={() => setType("general")} aria-pressed={type === "general"} className={type === "general" ? "btn btn-primary btn-sm w-full" : "btn btn-ghost btn-sm w-full"}>Live voice</button>
-          <button type="button" onClick={() => setType("resume")} aria-pressed={type === "resume"} className={type === "resume" ? "btn btn-primary btn-sm w-full" : "btn btn-ghost btn-sm w-full"}>My resume</button>
+        <div className={labelCls}>Format</div>
+        <div className="mt-2 grid grid-cols-3 gap-2" role="group" aria-label="Interview format">
+          <button type="button" onClick={() => setType("technical")} aria-pressed={type === "technical"} className={type === "technical" ? segOn : segOff}>Technical</button>
+          <button type="button" onClick={() => setType("general")} aria-pressed={type === "general"} className={type === "general" ? segOn : segOff}>Live voice</button>
+          <button type="button" onClick={() => setType("resume")} aria-pressed={type === "resume"} className={type === "resume" ? segOn : segOff}>My resume</button>
         </div>
       </div>
-      <div className="mt-5 border-t border-line pt-5">
-        <div className="text-[13px] font-medium text-neutral-700">Interviewer</div>
+      <div className="mt-6">
+        <div className={labelCls}>Interviewer</div>
         <div className="mt-2 grid grid-cols-2 gap-2" role="group" aria-label="Interviewer">
           {INTERVIEWERS.map((p) => (
             <button
@@ -130,43 +138,43 @@ export default function SetupForm() {
               aria-pressed={interviewerId === p.id}
               className={
                 interviewerId === p.id
-                  ? "rounded-lg border border-accent bg-accent-soft px-3 py-2.5 text-left"
-                  : "rounded-lg border border-line bg-panel px-3 py-2.5 text-left transition hover:border-line2"
+                  ? `${pickerBtn} border-accent bg-accent-soft`
+                  : `${pickerBtn} border-line bg-panel2 hover:border-line2`
               }
             >
               <span className="block text-sm font-medium text-neutral-900">{p.name}</span>
-              <span className="block text-xs text-neutral-600">{p.gender} interviewer</span>
+              <span className="block text-xs text-neutral-500">{p.gender} interviewer</span>
             </button>
           ))}
         </div>
       </div>
-      <div className="mt-5 border-t border-line pt-5">
-        <div className="text-[13px] font-medium text-neutral-700">Difficulty</div>
+      <div className="mt-6">
+        <div className={labelCls}>Difficulty</div>
         <div className="mt-2 grid grid-cols-3 gap-2" role="group" aria-label="Difficulty">
           {["Easy", "Mid", "Hard"].map((d) => (
-            <button type="button" key={d} onClick={() => setDifficulty(d)} aria-pressed={difficulty === d} className={difficulty === d ? "btn btn-primary btn-sm w-full" : "btn btn-ghost btn-sm w-full"}>{d}</button>
+            <button type="button" key={d} onClick={() => setDifficulty(d)} aria-pressed={difficulty === d} className={difficulty === d ? segOn : segOff}>{d}</button>
           ))}
         </div>
       </div>
-      <div className="mt-5 border-t border-line pt-5">
-        <div id="company-label" className="text-[13px] font-medium text-neutral-700">Company</div>
+      <div className="mt-6">
+        <div id="company-label" className={labelCls}>Company</div>
         <div className="mt-2" aria-labelledby="company-label">
           <CompanySelect value={companyId} onChange={setCompanyId} />
         </div>
       </div>
       {type === "technical" && (
-        <div className="mt-5 border-t border-line pt-5">
-          <div className="text-[13px] font-medium text-neutral-700">Topic</div>
+        <div className="mt-6">
+          <div className={labelCls}>Topic</div>
           <div className="mt-2 grid grid-cols-3 gap-2" role="group" aria-label="Topic">
             {topics.map((t) => (
-              <button type="button" key={t} onClick={() => setTopic(t)} aria-pressed={topic === t} className={topic === t ? "btn btn-primary btn-sm w-full" : "btn btn-ghost btn-sm w-full"}>{t}</button>
+              <button type="button" key={t} onClick={() => setTopic(t)} aria-pressed={topic === t} className={topic === t ? segOn : segOff}>{t}</button>
             ))}
           </div>
         </div>
       )}
       {type === "resume" && (
-        <div className="mt-5 border-t border-line pt-5">
-          <label htmlFor="resume-text" className="text-[13px] font-medium text-neutral-700">Your resume</label>
+        <div className="mt-6">
+          <label htmlFor="resume-text" className={labelCls}>Your resume</label>
           <textarea
             id="resume-text"
             value={resumeText}
@@ -176,22 +184,22 @@ export default function SetupForm() {
             className="input mt-2 resize-y leading-6"
           />
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <label className="btn btn-ghost btn-sm cursor-pointer">
+            <label className="btn btn-ghost cursor-pointer">
               Upload .txt or .md
               <input type="file" accept=".txt,.md,text/plain,text/markdown" onChange={onResumeFile} className="sr-only" />
             </label>
             {resumeSaved && (
-              <button type="button" onClick={deleteSavedResume} className="btn btn-ghost btn-sm">Delete saved resume</button>
+              <button type="button" onClick={deleteSavedResume} className="btn btn-ghost">Delete saved resume</button>
             )}
           </div>
           {resumeError && <p className="mt-2 text-xs leading-5 text-red-600" role="alert">{resumeError}</p>}
         </div>
       )}
 
-      <button type="button" onClick={start} disabled={resumeBusy} className="btn btn-primary mt-6 h-12 w-full text-[15px]">
+      <button type="button" onClick={start} disabled={resumeBusy} className="btn btn-primary mt-8 h-12 w-full text-[15px]">
         {type === "resume" ? (resumeBusy ? "Building your questions..." : "Start resume interview") : "Start interview"}
       </button>
-      <p className="mt-4 border-t border-line pt-3 text-[13px] leading-5 text-neutral-600">
+      <p className="mt-3 text-[13px] leading-5 text-neutral-500">
         {type === "resume"
           ? "Your resume stays in this browser, stored only on this device. It is sent once, only to build your questions."
           : "Works best in Chrome. Allow camera and mic when asked."}
