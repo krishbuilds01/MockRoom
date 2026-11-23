@@ -13,6 +13,7 @@ import {
 } from "@/lib/interviewer";
 import { problems, type Problem } from "@/lib/problems";
 import { getInterviewer } from "@/lib/interviewers";
+import { templateStronger } from "@/lib/stronger";
 
 type Mode =
   | "general"
@@ -24,7 +25,8 @@ type Mode =
   | "intro"
   | "clarifying"
   | "dryrun"
-  | "candidate-question";
+  | "candidate-question"
+  | "rewrite";
 
 function trunc(value: unknown, max: number): string {
   return typeof value === "string" ? value.slice(0, max) : "";
@@ -205,6 +207,61 @@ function localReply(mode: Mode, body: Record<string, unknown>): string {
   return "That completes the session. Your detailed scores, weak areas, and next problems are on the feedback page.";
 }
 
+interface RewritePair {
+  question: string;
+  answer: string;
+}
+
+function parsePairs(body: Record<string, unknown>): RewritePair[] {
+  if (!Array.isArray(body.pairs)) return [];
+  const out: RewritePair[] = [];
+  for (const raw of body.pairs.slice(0, 2)) {
+    if (!raw || typeof raw !== "object") continue;
+    const rec = raw as Record<string, unknown>;
+    const answer = trunc(rec.answer, 900).trim();
+    if (!answer) continue;
+    out.push({ question: trunc(rec.question, 400), answer });
+  }
+  return out;
+}
+
+function rewritePrompt(pairs: RewritePair[]): string {
+  const blocks = pairs
+    .map((p, i) => `Pair ${i + 1}\nQuestion: ${p.question || "(question not recorded)"}\nTheir answer: "${p.answer}"`)
+    .join("\n\n");
+  return [
+    "You rewrite a candidate's own interview answers so the same answer sounds stronger. The pairs below are from a mock interview the candidate just finished.",
+    "Rules: use ONLY the facts, examples, numbers and experience the candidate actually stated. Never invent numbers, results, tools, companies or experience. Keep the candidate's first person voice.",
+    "Improve structure and delivery: direct answer first, then the example or steps, then the result if they mentioned one. Cut filler words and rambling. Plain, natural spoken English, no buzzwords.",
+    "Keep each rewrite close to the length of their answer, at most about one and a half times as long. If an answer is very short, keep the rewrite short: structure is the improvement, not new content.",
+    "Return ONLY a JSON array of strings, one rewritten answer per pair, in the same order. No markdown, no code fences, no extra text.",
+    blocks,
+  ].join("\n");
+}
+
+function parseRewrites(raw: string | null, pairs: RewritePair[]): (string | null)[] {
+  const empty: (string | null)[] = pairs.map(() => null);
+  if (!raw) return empty;
+  const start = raw.indexOf("[");
+  const end = raw.lastIndexOf("]");
+  if (start < 0 || end <= start) return empty;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw.slice(start, end + 1));
+  } catch {
+    return empty;
+  }
+  if (!Array.isArray(parsed)) return empty;
+  return pairs.map((p, i) => {
+    const item: unknown = parsed[i];
+    if (typeof item !== "string") return null;
+    const text = item.replace(/\s+/g, " ").trim();
+    if (!text) return null;
+    if (text.length > Math.max(240, p.answer.length * 2)) return null;
+    return text;
+  });
+}
+
 export async function POST(req: NextRequest) {
   const parsed = (await req.json().catch(() => null)) as unknown;
   const body: Record<string, unknown> =
@@ -220,9 +277,25 @@ export async function POST(req: NextRequest) {
     "clarifying",
     "dryrun",
     "candidate-question",
+    "rewrite",
   ];
   const mode: Mode = modes.includes(body.mode as Mode) ? (body.mode as Mode) : "general";
   const llmAvailable = geminiAvailable();
+
+  if (mode === "rewrite") {
+    const pairs = parsePairs(body);
+    if (!pairs.length) {
+      return NextResponse.json({ reply: "", rewrites: [], engine: llmAvailable ? "gemini" : "local", llmAvailable });
+    }
+    const ai = llmAvailable ? parseRewrites(await askGemini(rewritePrompt(pairs)), pairs) : pairs.map(() => null);
+    const rewrites = pairs.map((p, i) => {
+      const fromAi = ai[i];
+      if (fromAi && fromAi.toLowerCase() !== p.answer.toLowerCase()) return fromAi;
+      const local = templateStronger(p.answer);
+      return local && local.toLowerCase() !== p.answer.toLowerCase() ? local : "";
+    });
+    return NextResponse.json({ reply: "", rewrites, engine: ai.some(Boolean) ? "gemini" : "local", llmAvailable });
+  }
 
   if (llmAvailable) {
     const geminiReply = await askGemini(buildPrompt(mode, body));

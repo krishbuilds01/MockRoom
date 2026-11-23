@@ -1,5 +1,6 @@
 import type { Difficulty, Problem } from "./problems";
 import type { DeliverySummary } from "./delivery";
+import type { StrongerAnswer } from "./stronger";
 import { pushSession } from "./sync";
 
 export interface Msg {
@@ -651,6 +652,7 @@ export interface SessionRecord {
   codeChanged?: boolean;
   qaPairs?: { question: string; answer?: string; target?: string }[];
   delivery?: DeliverySummary;
+  stronger?: StrongerAnswer[];
 }
 
 export function saveSession(rec: SessionRecord) {
