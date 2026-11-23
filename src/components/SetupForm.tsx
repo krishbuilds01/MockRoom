@@ -7,13 +7,17 @@ import { buildResumeQuestionsLocal, postResumeQuestions, RESUME_QUESTIONS_KEY, R
 import { markFreshStart } from "@/lib/activeSession";
 import CompanySelect from "@/components/CompanySelect";
 
-const labelCls = "text-[13px] font-medium text-neutral-600";
+const labelCls = "text-[13px] font-medium leading-[18px] text-neutral-600";
 const segBtn =
-  "flex h-11 w-full items-center justify-center rounded-[10px] border px-3 text-sm transition focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2";
+  "flex h-10 w-full items-center justify-center whitespace-nowrap rounded-[10px] border px-3 text-sm transition focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2";
 const segOn = `${segBtn} border-accent bg-accent font-medium text-[#131315] hover:bg-accent-strong`;
 const segOff = `${segBtn} border-line bg-panel2 text-neutral-700 hover:border-line2 hover:text-neutral-900`;
+const chipBtn =
+  "flex h-9 w-full items-center justify-center whitespace-nowrap rounded-[10px] border px-2 text-[13px] transition focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2";
+const chipOn = `${chipBtn} border-accent bg-accent font-medium text-[#131315] hover:bg-accent-strong`;
+const chipOff = `${chipBtn} border-line bg-panel2 text-neutral-700 hover:border-line2 hover:text-neutral-900`;
 const pickerBtn =
-  "min-h-11 rounded-[10px] border px-3.5 py-2.5 text-left transition focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2";
+  "flex h-11 flex-col items-start justify-center rounded-[10px] border px-3.5 text-left transition focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 sm:h-10 sm:flex-row sm:items-center sm:gap-2";
 
 export default function SetupForm() {
   const router = useRouter();
@@ -118,18 +122,18 @@ export default function SetupForm() {
   }
 
   return (
-    <div className="card p-6 sm:p-7">
+    <div className="card px-5 py-4">
       <div>
         <div className={labelCls}>Format</div>
-        <div className="mt-2 grid grid-cols-3 gap-2" role="group" aria-label="Interview format">
+        <div className="mt-1.5 grid grid-cols-3 gap-2" role="group" aria-label="Interview format">
           <button type="button" onClick={() => setType("technical")} aria-pressed={type === "technical"} className={type === "technical" ? segOn : segOff}>Technical</button>
           <button type="button" onClick={() => setType("general")} aria-pressed={type === "general"} className={type === "general" ? segOn : segOff}>Live voice</button>
           <button type="button" onClick={() => setType("resume")} aria-pressed={type === "resume"} className={type === "resume" ? segOn : segOff}>My resume</button>
         </div>
       </div>
-      <div className="mt-6">
+      <div className="mt-3">
         <div className={labelCls}>Interviewer</div>
-        <div className="mt-2 grid grid-cols-2 gap-2" role="group" aria-label="Interviewer">
+        <div className="mt-1.5 grid grid-cols-2 gap-2" role="group" aria-label="Interviewer">
           {INTERVIEWERS.map((p) => (
             <button
               type="button"
@@ -142,38 +146,38 @@ export default function SetupForm() {
                   : `${pickerBtn} border-line bg-panel2 hover:border-line2`
               }
             >
-              <span className="block text-sm font-medium text-neutral-900">{p.name}</span>
-              <span className="block text-xs text-neutral-500">{p.gender} interviewer</span>
+              <span className="whitespace-nowrap text-sm font-medium text-neutral-900">{p.name}</span>
+              <span className="whitespace-nowrap text-xs text-neutral-500">{p.gender} interviewer</span>
             </button>
           ))}
         </div>
       </div>
-      <div className="mt-6">
+      <div className="mt-3">
         <div className={labelCls}>Difficulty</div>
-        <div className="mt-2 grid grid-cols-3 gap-2" role="group" aria-label="Difficulty">
+        <div className="mt-1.5 grid grid-cols-3 gap-2" role="group" aria-label="Difficulty">
           {["Easy", "Mid", "Hard"].map((d) => (
             <button type="button" key={d} onClick={() => setDifficulty(d)} aria-pressed={difficulty === d} className={difficulty === d ? segOn : segOff}>{d}</button>
           ))}
         </div>
       </div>
-      <div className="mt-6">
+      <div className="mt-3">
         <div id="company-label" className={labelCls}>Company</div>
-        <div className="mt-2" aria-labelledby="company-label">
+        <div className="mt-1.5" aria-labelledby="company-label">
           <CompanySelect value={companyId} onChange={setCompanyId} />
         </div>
       </div>
       {type === "technical" && (
-        <div className="mt-6">
+        <div className="mt-3">
           <div className={labelCls}>Topic</div>
-          <div className="mt-2 grid grid-cols-3 gap-2" role="group" aria-label="Topic">
+          <div className="mt-1.5 grid grid-cols-3 gap-2" role="group" aria-label="Topic">
             {topics.map((t) => (
-              <button type="button" key={t} onClick={() => setTopic(t)} aria-pressed={topic === t} className={topic === t ? segOn : segOff}>{t}</button>
+              <button type="button" key={t} onClick={() => setTopic(t)} aria-pressed={topic === t} className={topic === t ? chipOn : chipOff}>{t}</button>
             ))}
           </div>
         </div>
       )}
       {type === "resume" && (
-        <div className="mt-6">
+        <div className="mt-3">
           <label htmlFor="resume-text" className={labelCls}>Your resume</label>
           <textarea
             id="resume-text"
@@ -181,7 +185,7 @@ export default function SetupForm() {
             onChange={(e) => setResumeText(e.target.value)}
             rows={6}
             placeholder="Paste your resume here: projects, skills, experience. Plain text works best."
-            className="input mt-2 resize-y leading-6"
+            className="input mt-1.5 resize-y leading-6"
           />
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <label className="btn btn-ghost cursor-pointer">
@@ -196,10 +200,10 @@ export default function SetupForm() {
         </div>
       )}
 
-      <button type="button" onClick={start} disabled={resumeBusy} className="btn btn-primary mt-8 h-12 w-full text-[15px]">
+      <button type="button" onClick={start} disabled={resumeBusy} className="btn btn-primary mt-4 h-11 w-full text-[15px]">
         {type === "resume" ? (resumeBusy ? "Building your questions..." : "Start resume interview") : "Start interview"}
       </button>
-      <p className="mt-3 text-[13px] leading-5 text-neutral-500">
+      <p className="mt-2 text-[13px] leading-5 text-neutral-500">
         {type === "resume"
           ? "Your resume stays in this browser, stored only on this device. It is sent once, only to build your questions."
           : "Works best in Chrome. Allow camera and mic when asked."}

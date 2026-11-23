@@ -80,7 +80,7 @@ export default function CompanySelect({
       <button
         ref={btnRef}
         type="button"
-        className="select flex h-11 w-full items-center justify-between gap-2 text-left"
+        className="select flex h-10 w-full items-center justify-between gap-2 text-left"
         style={{ backgroundImage: "none" }}
         aria-haspopup="listbox"
         aria-expanded={open}
