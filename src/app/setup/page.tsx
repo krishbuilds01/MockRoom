@@ -11,7 +11,7 @@ export default function SetupPage() {
           <header className="pt-10 text-center">
             <h1 className="text-[32px] font-medium leading-tight tracking-tight text-neutral-900">Set up your interview</h1>
             <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-neutral-600">
-              Pick a mode, an interviewer and a difficulty, then start. There is no account and nothing to install.
+              Pick a mode, an interviewer and a difficulty, then start. Just open it and practice.
             </p>
           </header>
           <div className="mt-8">
