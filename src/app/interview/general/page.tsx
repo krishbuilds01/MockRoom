@@ -956,9 +956,9 @@ function GeneralRoom() {
       </header>
 
       <div className="mt-5 grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] items-stretch gap-4 overflow-hidden lg:grid-cols-[320px_1fr] lg:grid-rows-1">
-        <div className="max-h-[32vh] space-y-4 overflow-y-auto lg:max-h-none lg:h-full lg:min-h-0">
+        <div className="card max-h-[32vh] overflow-y-auto p-5 lg:h-full lg:max-h-none lg:min-h-0">
           {canRecord && (
-            <div className="flex items-center justify-between gap-3 border-t border-line pt-4">
+            <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <div className="text-sm font-semibold">Record my session</div>
                 <p className="mt-0.5 text-xs leading-5 text-neutral-600">
@@ -977,7 +977,7 @@ function GeneralRoom() {
               </button>
             </div>
           )}
-          <div className="border-t border-line pt-4 text-xs leading-5 text-neutral-600">
+          <div className={`${canRecord ? "mt-4 border-t border-line pt-4" : ""} text-xs leading-5 text-neutral-600`}>
             Speak your answer with the mic, or type it. One follow-up per question, a second if the first answer is thin.
             {resumed && <div className="mt-2 font-medium text-neutral-900">Resumed where you left off.</div>}
             {liveActive && <div className="mt-2 font-medium text-accent">Live conversation is on: {interviewer.name} leads and listens continuously. Use the button above to end live and return to standard mode at any time.</div>}
