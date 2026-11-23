@@ -932,7 +932,7 @@ function TechnicalRoom() {
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
       if (savedRef.current || endedRef.current) return;
       savePartialRef.current();
-      e.preventDefault();
+      if (transcriptRef.current.length > 0) e.preventDefault();
     };
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => {
