@@ -87,6 +87,11 @@ const PHASE_LABELS: Record<Phase, string> = {
   done: "Done",
 };
 
+function clampNum(v: unknown, min: number, max: number, fallback: number): number {
+  const n = typeof v === "number" && Number.isFinite(v) ? v : fallback;
+  return Math.min(max, Math.max(min, n));
+}
+
 const ackLines = [
   "Back to the code, and run it when you are ready.",
   "That is clear enough. Continue.",
@@ -125,6 +130,83 @@ function TechnicalRoom() {
   const [engine, setEngine] = useState<"gemini" | "local" | null>(null);
   const [waiting, setWaiting] = useState(false);
   const [resumed, setResumed] = useState(false);
+  const [isLg, setIsLg] = useState(false);
+  const [layout, setLayout] = useState({ left: 330, right: 340, editor: 64 });
+  const [dragging, setDragging] = useState<"left" | "right" | "editor" | null>(null);
+  const dragRef = useRef<{ kind: "left" | "right" | "editor"; startPos: number; startVal: number } | null>(null);
+  const editorSplitRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const apply = () => setIsLg(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("mockroom.layout.tech.v1");
+      if (raw) {
+        const p = JSON.parse(raw) as Partial<{ left: number; right: number; editor: number }>;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setLayout({
+          left: clampNum(p.left, 260, 560, 330),
+          right: clampNum(p.right, 280, 560, 340),
+          editor: clampNum(p.editor, 35, 85, 64),
+        });
+      }
+    } catch {}
+  }, []);
+  useEffect(() => {
+    try {
+      localStorage.setItem("mockroom.layout.tech.v1", JSON.stringify(layout));
+    } catch {}
+  }, [layout]);
+  useEffect(() => {
+    if (!dragging) return;
+    const move = (e: PointerEvent) => {
+      const d = dragRef.current;
+      if (!d) return;
+      if (d.kind === "editor") {
+        const zone = editorSplitRef.current;
+        if (!zone) return;
+        const rect = zone.getBoundingClientRect();
+        if (rect.height <= 0) return;
+        setLayout((prev) => ({ ...prev, editor: clampNum(((e.clientY - rect.top) / rect.height) * 100, 35, 85, 64) }));
+      } else if (d.kind === "left") {
+        setLayout((prev) => ({ ...prev, left: clampNum(d.startVal + (e.clientX - d.startPos), 260, 560, 330) }));
+      } else {
+        setLayout((prev) => ({ ...prev, right: clampNum(d.startVal - (e.clientX - d.startPos), 280, 560, 340) }));
+      }
+    };
+    const up = () => {
+      dragRef.current = null;
+      setDragging(null);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    document.body.style.cursor = dragging === "editor" ? "row-resize" : "col-resize";
+    document.body.style.userSelect = "none";
+    return () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+  }, [dragging]);
+  function beginDrag(kind: "left" | "right" | "editor") {
+    return (e: React.PointerEvent) => {
+      e.preventDefault();
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch {}
+      dragRef.current = {
+        kind,
+        startPos: kind === "editor" ? e.clientY : e.clientX,
+        startVal: layout[kind],
+      };
+      setDragging(kind);
+    };
+  }
   const [editorReady, setEditorReady] = useState(false);
   const [editorFailed, setEditorFailed] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -1166,8 +1248,6 @@ function TechnicalRoom() {
             <Link href="/" onClick={onBackHome} className="text-xs text-neutral-600 hover:text-neutral-800">Back to home</Link>
             <div className="mt-1 flex flex-wrap items-center gap-2">
               <span className="text-[15px] font-medium">Technical Interview</span>
-              <span className="badge">{problem.title}</span>
-              <span className={`badge ${problem.difficulty === "Easy" ? "badge-easy" : problem.difficulty === "Hard" ? "badge-hard" : "badge-mid"}`}>{problem.difficulty}</span>
               {company.id !== "any" && <span className="badge badge-accent">{company.name}</span>}
               <span className="badge">{interviewer.name}</span>
               <span className="badge badge-accent">{PHASE_LABELS[phase]}</span>
@@ -1210,15 +1290,15 @@ function TechnicalRoom() {
         </div>
       )}
 
-      <div className="mt-4 flex min-h-0 flex-1 flex-col items-stretch gap-4 overflow-hidden lg:flex-row">
-        <section className="card max-h-[36%] w-full shrink-0 overflow-y-auto p-4 lg:h-full lg:max-h-none lg:w-[330px] lg:shrink-0">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-base font-medium">{problem.title}</h1>
-              <span className={`badge ${problem.difficulty === "Easy" ? "badge-easy" : problem.difficulty === "Hard" ? "badge-hard" : "badge-mid"}`}>{problem.difficulty}</span>
-              <span className="badge">{problem.topic}</span>
-            </div>
-            <p className="mt-2.5 whitespace-pre-wrap text-[13px] leading-5 text-neutral-700">{problem.statement}</p>
+      <div className="mt-4 flex min-h-0 flex-1 flex-col items-stretch gap-4 overflow-hidden lg:flex-row lg:gap-0">
+        <section style={isLg ? { width: layout.left } : undefined} className="card flex max-h-[36%] w-full shrink-0 flex-col overflow-hidden lg:h-full lg:max-h-none lg:shrink-0">
+          <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-line px-4 py-3">
+            <h1 className="text-[15px] font-semibold">{problem.title}</h1>
+            <span className={`badge ${problem.difficulty === "Easy" ? "badge-easy" : problem.difficulty === "Hard" ? "badge-hard" : "badge-mid"}`}>{problem.difficulty}</span>
+            <span className="badge">{problem.topic}</span>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto p-4">
+            <p className="whitespace-pre-wrap text-[13px] leading-5 text-neutral-700">{problem.statement}</p>
             <h3 className="mt-4 text-[13px] font-semibold">Examples</h3>
             {problem.examples.map((ex, i) => (
               <div key={i} className="mt-2 break-words rounded-lg border border-line bg-panel2 p-2.5 font-mono text-xs leading-5">
@@ -1252,8 +1332,14 @@ function TechnicalRoom() {
           </div>
         </section>
 
+        {isLg && (
+          <div role="separator" aria-orientation="vertical" aria-label="Resize problem panel" onPointerDown={beginDrag("left")} className="group relative w-3 shrink-0 cursor-col-resize touch-none">
+            <span className={`absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 rounded-full transition-colors ${dragging === "left" ? "bg-accent" : "bg-transparent group-hover:bg-line2"}`} />
+          </div>
+        )}
+
         <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-line bg-panel">
-          <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-line bg-panel px-4 py-2.5">
+          <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-line bg-panel2 px-4 py-2.5">
             <div className="flex gap-2" role="group" aria-label="Language">
               {LANGS.map((l) => (
                 <button type="button" key={l.id} onClick={() => switchLang(l.id)} disabled={phaseIdx >= 4} title={phaseIdx >= 4 ? "Language is locked after you submit" : undefined} className={`btn btn-sm ${lang === l.id ? "btn-primary" : "btn-ghost"}`}>{l.label}</button>
@@ -1271,7 +1357,8 @@ function TechnicalRoom() {
               </div>
             )}
           </div>
-          <div className="min-h-0 flex-1 bg-panel p-3">
+          <div ref={editorSplitRef} className="flex min-h-0 flex-1 flex-col">
+          <div className={isLg ? "min-h-0 shrink-0 p-3 pb-1.5" : "min-h-0 flex-1 p-3"} style={isLg ? { height: `${layout.editor}%` } : undefined}>
             <div className="relative h-full min-h-0 overflow-hidden rounded-[10px] border border-line bg-[#1b1b1d]">
               {editorFailed ? (
                 <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
@@ -1309,7 +1396,12 @@ function TechnicalRoom() {
             </div>
           </div>
 
-          <div className="shrink-0 border-t border-line bg-panel p-3">
+          {isLg && (
+            <div role="separator" aria-orientation="horizontal" aria-label="Resize editor and test cases" onPointerDown={beginDrag("editor")} className="group relative h-3 shrink-0 cursor-row-resize touch-none">
+              <span className={`absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 rounded-full transition-colors ${dragging === "editor" ? "bg-accent" : "bg-transparent group-hover:bg-line2"}`} />
+            </div>
+          )}
+          <div className={isLg ? "min-h-0 flex-1 overflow-y-auto border-t border-line p-3 pt-1.5" : "shrink-0 border-t border-line p-3"}>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h3 className="text-sm font-semibold">Test cases {lastKind === "submit" ? "(last submit)" : lastKind === "run" ? "(last run)" : ""}</h3>
               <span className="text-xs text-neutral-600">Run checks {visibleTests} visible cases. Submit checks all {problem.tests.length} cases including hidden, then starts the dry run.</span>
@@ -1323,7 +1415,7 @@ function TechnicalRoom() {
             {!runOut && !runError && <p className="mt-2 text-xs text-neutral-600">No runs yet. We start with your introduction and clarifying questions, then your approach, then code.</p>}
             {runOut && (
               <div className="mt-2">
-                <div className={`text-[13px] font-semibold ${runOut.passed === runOut.total ? "text-accent" : "text-neutral-700"}`}>{runOut.passed} / {runOut.total} passed</div>
+                <div><span className={`chip ${runOut.passed === runOut.total ? "chip-pass" : "chip-fail"}`}>{runOut.passed} / {runOut.total} passed</span></div>
                 <div className="mt-1.5">
                   {runOut.results.map((r) => (
                     <div key={r.index} className="flex items-center gap-2 border-t border-line py-1.5 font-mono text-xs first:border-t-0">
@@ -1340,10 +1432,17 @@ function TechnicalRoom() {
               </div>
             )}
           </div>
+          </div>
         </section>
 
+        {showAi && isLg && (
+          <div role="separator" aria-orientation="vertical" aria-label="Resize interviewer panel" onPointerDown={beginDrag("right")} className="group relative w-3 shrink-0 cursor-col-resize touch-none">
+            <span className={`absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 rounded-full transition-colors ${dragging === "right" ? "bg-accent" : "bg-transparent group-hover:bg-line2"}`} />
+          </div>
+        )}
+
         {showAi && (
-          <aside className="card flex min-h-0 w-full flex-1 flex-col lg:h-full lg:w-[340px] lg:flex-none lg:shrink-0">
+          <aside style={isLg ? { width: layout.right } : undefined} className="card flex min-h-0 w-full flex-1 flex-col lg:h-full lg:flex-none lg:shrink-0">
             <div className="shrink-0 border-b border-line px-4 py-3">
               <div className="flex items-center gap-3">
                 <span className="avatar">{interviewer.name.charAt(0)}</span>
