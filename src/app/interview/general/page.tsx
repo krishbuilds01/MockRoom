@@ -682,6 +682,7 @@ function GeneralRoom() {
 
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [endOpen, setEndOpen] = useState(false);
+  const [ending, setEnding] = useState(false);
   function onBackHome(e: React.MouseEvent) {
     if (savedRef.current || endedRef.current) return;
     e.preventDefault();
@@ -699,6 +700,7 @@ function GeneralRoom() {
   }
 
   async function endInterview() {
+    setEnding(true);
     speaker.stop();
     voice.stop();
     live.close();
@@ -752,6 +754,14 @@ function GeneralRoom() {
     candidate: `Ask ${interviewer.name}, or say none`,
     done: "Interview complete",
   };
+
+  if (ending) {
+    return (
+      <main className="mx-auto flex min-h-dvh w-full max-w-6xl items-center justify-center px-4 py-5 sm:px-6">
+        <p className="text-sm text-neutral-600">Saving your feedback...</p>
+      </main>
+    );
+  }
 
   return (
     <main className="mx-auto min-h-dvh w-full max-w-6xl px-4 py-5 sm:px-6">

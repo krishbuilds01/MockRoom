@@ -943,6 +943,7 @@ function TechnicalRoom() {
 
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [endOpen, setEndOpen] = useState(false);
+  const [ending, setEnding] = useState(false);
   function onBackHome(e: React.MouseEvent) {
     if (savedRef.current || endedRef.current) return;
     e.preventDefault();
@@ -960,6 +961,7 @@ function TechnicalRoom() {
   }
 
   async function endInterview() {
+    setEnding(true);
     speaker.stop();
     voice.stop();
     endedRef.current = true;
@@ -1003,6 +1005,14 @@ function TechnicalRoom() {
     candidate: `Ask ${interviewer.name}, or say none`,
     done: "Interview complete",
   };
+
+  if (ending) {
+    return (
+      <main className="mx-auto flex min-h-dvh w-full max-w-[1440px] items-center justify-center px-4 py-5 sm:px-6">
+        <p className="text-sm text-neutral-600">Saving your feedback...</p>
+      </main>
+    );
+  }
 
   return (
     <main className="mx-auto min-h-dvh w-full max-w-[1440px] px-4 py-5 sm:px-6">
