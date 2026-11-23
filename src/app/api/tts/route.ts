@@ -29,7 +29,7 @@ async function tryEdge(text: string, edgeVoice: string): Promise<Buffer | null> 
     const chunks: Buffer[] = [];
     let total = 0;
     await new Promise<void>((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error("edge-timeout")), 15000);
+      const timer = setTimeout(() => reject(new Error("edge-timeout")), 10000);
       audioStream.on("data", (chunk: Buffer) => {
         chunks.push(chunk);
         total += chunk.length;
@@ -113,7 +113,7 @@ async function tryModel(
   voiceName: string
 ): Promise<{ wav: Buffer | null; status: number | null }> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 20000);
+  const timer = setTimeout(() => controller.abort(), 10000);
   try {
     const res = await fetch(`${API_BASE}/${model}:generateContent`, {
       method: "POST",

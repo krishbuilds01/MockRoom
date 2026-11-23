@@ -6,9 +6,9 @@ export function geminiAvailable(): boolean {
   return !!process.env.GEMINI_API_KEY;
 }
 
-async function callModel(model: string, key: string, prompt: string): Promise<string | null> {
+async function callModel(model: string, key: string, prompt: string, timeoutMs: number): Promise<string | null> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 12000);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await fetch(`${API_BASE}/${model}:generateContent`, {
       method: "POST",
@@ -48,7 +48,7 @@ async function callModel(model: string, key: string, prompt: string): Promise<st
 export async function askGemini(prompt: string): Promise<string | null> {
   const key = process.env.GEMINI_API_KEY;
   if (!key) return null;
-  const first = await callModel(PRIMARY_MODEL, key, prompt);
+  const first = await callModel(PRIMARY_MODEL, key, prompt, 8000);
   if (first !== null) return first;
-  return callModel(FALLBACK_MODEL, key, prompt);
+  return callModel(FALLBACK_MODEL, key, prompt, 6000);
 }
