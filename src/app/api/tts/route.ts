@@ -21,11 +21,13 @@ function resolveVoices(requested: string): { edge: string; gemini: string } {
   return { edge: DEFAULT_EDGE_VOICE, gemini: VOICE_NAME };
 }
 
+const EDGE_RATE = "-10%";
+
 async function tryEdge(text: string, edgeVoice: string): Promise<Buffer | null> {
   const tts = new MsEdgeTTS();
   try {
     await tts.setMetadata(edgeVoice, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
-    const { audioStream } = tts.toStream(text);
+    const { audioStream } = tts.toStream(text, { rate: EDGE_RATE });
     const chunks: Buffer[] = [];
     let total = 0;
     await new Promise<void>((resolve, reject) => {
@@ -152,42 +154,59 @@ async function tryModel(
   }
 }
 
+function edgeResponse(mp3: Buffer) {
+  return new NextResponse(new Uint8Array(mp3), {
+    status: 200,
+    headers: {
+      "Content-Type": "audio/mpeg",
+      "Cache-Control": "no-store",
+      "X-Voice-Engine": "edge",
+    },
+  });
+}
+
+function geminiResponse(wav: Buffer) {
+  return new NextResponse(new Uint8Array(wav), {
+    status: 200,
+    headers: {
+      "Content-Type": "audio/wav",
+      "Cache-Control": "no-store",
+      "X-Voice-Engine": "gemini",
+    },
+  });
+}
+
+async function tryGemini(text: string, geminiVoice: string): Promise<{ wav: Buffer | null; status: number | null }> {
+  const key = process.env.GEMINI_TTS_KEY || process.env.GEMINI_API_KEY;
+  if (!key && !geminiAvailable()) return { wav: null, status: null };
+  let lastStatus: number | null = null;
+  for (let i = 0; i < TTS_MODELS.length; i++) {
+    const result = await tryModel(TTS_MODELS[i], key as string, text, geminiVoice);
+    lastStatus = result.status;
+    if (result.wav) return { wav: result.wav, status: null };
+  }
+  return { wav: null, status: lastStatus };
+}
+
 export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const text = cleanText(body?.text);
   if (!text) return fallback("empty");
   const requestedVoice = typeof body?.voice === "string" ? body.voice : "";
   const voices = resolveVoices(requestedVoice);
+  const pinnedEngine = body?.engine === "edge" || body?.engine === "gemini" ? body.engine : null;
+
+  if (pinnedEngine === "gemini") {
+    const result = await tryGemini(text, voices.gemini);
+    if (result.wav) return geminiResponse(result.wav);
+    return fallback(result.status ? `gemini-failed-${result.status}` : "gemini-failed");
+  }
 
   const mp3 = await tryEdge(text, voices.edge);
-  if (mp3) {
-    return new NextResponse(new Uint8Array(mp3), {
-      status: 200,
-      headers: {
-        "Content-Type": "audio/mpeg",
-        "Cache-Control": "no-store",
-        "X-Voice-Engine": "edge",
-      },
-    });
-  }
+  if (mp3) return edgeResponse(mp3);
+  if (pinnedEngine === "edge") return fallback("edge-failed");
 
-  const key = process.env.GEMINI_TTS_KEY || process.env.GEMINI_API_KEY;
-  if (!key && !geminiAvailable()) return fallback("tts-failed");
-
-  let lastStatus: number | null = null;
-  for (let i = 0; i < TTS_MODELS.length; i++) {
-    const result = await tryModel(TTS_MODELS[i], key as string, text, voices.gemini);
-    lastStatus = result.status;
-    if (result.wav) {
-      return new NextResponse(new Uint8Array(result.wav), {
-        status: 200,
-        headers: {
-          "Content-Type": "audio/wav",
-          "Cache-Control": "no-store",
-          "X-Voice-Engine": i === 0 ? "gemini" : "gemini-pro",
-        },
-      });
-    }
-  }
-  return fallback(lastStatus ? `tts-failed-${lastStatus}` : "tts-failed");
+  const result = await tryGemini(text, voices.gemini);
+  if (result.wav) return geminiResponse(result.wav);
+  return fallback(result.status ? `tts-failed-${result.status}` : "tts-failed");
 }
