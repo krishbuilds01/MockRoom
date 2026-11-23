@@ -78,7 +78,7 @@ export default function Home() {
   const companyCount = bankCompanies().length;
 
   const firstSteps = [
-    "Head to the setup page, choose a mode, an interviewer and a difficulty, then start. There is no account and nothing to install.",
+    "Head to the setup page, choose a mode, an interviewer and a difficulty, then start. Just open it and practice.",
     "Voice room: an introduction, 5 questions with a follow-up on each, then your questions for the interviewer. Coding room: your approach is judged before you write code, and the interviewer watches the editor while you work.",
     "Every session ends with scores out of 10 on problem solving, coding, communication and complexity analysis, your weak areas, and the next problems to do.",
   ];
@@ -101,7 +101,7 @@ export default function Home() {
               <Link href="/problems" className="btn btn-secondary h-12 px-6 text-[15px]">Browse problems</Link>
             </div>
             <p className="tnum mt-6 font-mono text-[13px] text-neutral-500">
-              {problemBank.length} problems · {companyCount} companies · no account
+              {problemBank.length} problems · {companyCount} companies · free to use
             </p>
           </div>
 
