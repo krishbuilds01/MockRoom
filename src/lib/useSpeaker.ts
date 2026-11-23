@@ -4,8 +4,8 @@ import { chunkForSpeech, speakSentenceBrowser } from "./voice";
 
 export type VoiceSource = "gemini" | "edge" | "browser" | null;
 
-const FIRST_CHUNK_DEADLINE_MS = 9000;
-const LATER_CHUNK_GRACE_MS = 6000;
+const FIRST_CHUNK_DEADLINE_MS = 4000;
+const LATER_CHUNK_GRACE_MS = 4500;
 const CACHE_LIMIT = 60;
 const SILENT_WAV =
   "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=";
@@ -217,9 +217,22 @@ export function useSpeaker(callbacks?: SpeakerCallbacks, voiceName?: string, pit
           audio.onerror = null;
           resolve(ok && token === tokenRef.current);
         };
+        let lastTime = -1;
+        let lastProgressAt = Date.now();
         const watchdog = setInterval(() => {
-          if (token !== tokenRef.current) finish(false);
-        }, 200);
+          if (token !== tokenRef.current) {
+            finish(false);
+            return;
+          }
+          if (!audio.paused && !audio.ended) {
+            if (audio.currentTime !== lastTime) {
+              lastTime = audio.currentTime;
+              lastProgressAt = Date.now();
+            } else if (Date.now() - lastProgressAt > 5000) {
+              finish(false);
+            }
+          }
+        }, 250);
         audio.onended = () => finish(true);
         audio.onerror = () => finish(false);
         if (onNearEnd) audio.addEventListener("timeupdate", onTimeUpdate);

@@ -85,7 +85,14 @@ export function speakSentenceBrowser(text: string, pitch = 1.0): Promise<void> {
       u.onerror = finish;
       window.speechSynthesis.speak(u);
       const guard = Math.min(20000, 2500 + text.length * 110);
-      setTimeout(finish, guard);
+      setTimeout(() => {
+        if (!done) {
+          try {
+            window.speechSynthesis.cancel();
+          } catch {}
+        }
+        finish();
+      }, guard);
     } catch {
       finish();
     }
