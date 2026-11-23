@@ -1,15 +1,9 @@
-import { Suspense } from "react";
 import TopNav from "@/components/TopNav";
 import ProblemBank from "@/components/ProblemBank";
 import Footer from "@/components/Footer";
 import { countByFormat } from "@/lib/problemBank";
 
-async function FocusBank({ searchParams }: { searchParams: Promise<{ focus?: string }> }) {
-  const sp = await searchParams;
-  return <ProblemBank fixedFormat="system-design" focusSlug={sp.focus} showShortcuts={false} />;
-}
-
-export default function SystemDesignPage({ searchParams }: { searchParams: Promise<{ focus?: string }> }) {
+export default function SystemDesignPage() {
   return (
     <div className="min-h-dvh bg-paper">
       <TopNav active="system-design" />
@@ -26,9 +20,7 @@ export default function SystemDesignPage({ searchParams }: { searchParams: Promi
           </p>
         </header>
         <div className="mt-2">
-          <Suspense fallback={<p className="pt-6 text-sm text-neutral-600">Loading problems...</p>}>
-            <FocusBank searchParams={searchParams} />
-          </Suspense>
+          <ProblemBank fixedFormat="system-design" focusFromUrl showShortcuts={false} />
         </div>
         <Footer />
       </main>
