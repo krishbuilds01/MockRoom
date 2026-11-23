@@ -1,21 +1,35 @@
 # MockRoom
 
-Free AI mock interviews. No account, no payment.
+Helping CS students and fresh grads crack their interviews.
+
+Most of us prepare alone and find out what we are weak at in the real interview, when it is too late. MockRoom is a place to fail first, in practice, for free.
+
+No account. No payment. Just pick a mode and start.
 
 Live: https://ai-interview-platform-zeta-woad.vercel.app
 
-Practice with two AI interviewers, Maya and Rohan. They ask questions, push back on weak answers, watch your code, and score you at the end.
+![MockRoom home page](docs/screenshot.png)
+
+You practice with two AI interviewers, Maya and Rohan. They ask questions, push back when your answer is thin, watch your code while you write it, and score you honestly at the end.
 
 ## What you can do
 
 - Live voice interview - 5 questions, follow-ups, scored feedback
-- Technical interview - coding room with editor, test cases, and an interviewer who watches your code
+- Technical interview - coding room with editor and test cases
 - Resume interview - questions based on your own resume
 - Company mode - Google, Amazon, Microsoft, Meta, Adobe, Flipkart, TCS, Infosys, Wipro
 - Problem bank - 44 real interview questions at /problems
 - Progress - scores, streak and weak areas at /progress, saved in your browser
 
-Easy, Mid and Hard modes. Hard gives no hints.
+Easy, Mid and Hard modes. Hard gives no hints, like the real thing.
+
+## Contribute
+
+This project is open to contributions, and students are especially welcome.
+
+Add a problem to the bank, fix a bug, improve the feedback, or make the UI better. Small PRs are fine. If you are new to open source, this is a good place for your first PR.
+
+Open an issue first for big changes so we can talk it through.
 
 ## Run locally
 
@@ -34,4 +48,4 @@ Optional: add `GEMINI_API_KEY` in `.env.local` for Gemini replies and voice. Get
 
 Next.js, TypeScript, Tailwind CSS, Monaco Editor, Judge0 for code running, Edge TTS for voice.
 
-Your sessions and resume stay in your browser. Nothing is uploaded.
+Your sessions stay in your browser. Built by a student, for students.
