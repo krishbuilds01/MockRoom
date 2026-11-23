@@ -507,6 +507,14 @@ export default function FeedbackPage() {
         </section>
       </div>
 
+      <p className="mt-6 text-[13px] leading-5 text-neutral-600">
+        MockRoom is free and open source. If it helped, a{" "}
+        <a href="https://github.com/krishbuilds01/MockRoom" target="_blank" rel="noreferrer" className="font-medium text-accent hover:underline">
+          star on GitHub
+        </a>{" "}
+        keeps it going.
+      </p>
+
       <footer className="mt-6 flex flex-wrap items-center gap-3 border-t border-line pt-4">
         {recUrl && (
           <div className="flex flex-wrap items-center gap-3">
