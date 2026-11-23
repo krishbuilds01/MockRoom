@@ -114,7 +114,7 @@ export default function ProgressPage() {
       <div className="flex flex-wrap items-end justify-between gap-2 pt-8">
         <div>
           <h1 className="text-[32px] font-medium leading-tight tracking-tight">Your progress</h1>
-          <p className="mt-1 text-sm text-neutral-600">Computed from the interviews stored in this browser. Nothing here is estimated.</p>
+          <p className="mt-1 text-sm text-neutral-600">Computed from the interviews saved to your account. Nothing here is estimated.</p>
         </div>
       </div>
 
@@ -124,8 +124,8 @@ export default function ProgressPage() {
         <div className="card card-pad mt-4">
           <h2 className="text-h2 font-medium">No interviews yet</h2>
           <p className="mt-2 text-sm leading-6 text-neutral-600">
-            Finish one interview and your scores, streak and topic averages appear here, computed from the sessions stored in
-            this browser.
+            Finish one interview and your scores, streak and topic averages appear here, computed from the sessions saved to
+            your account.
           </p>
           <Link href="/setup" className="btn btn-primary mt-4">Start your first interview</Link>
         </div>
@@ -134,7 +134,7 @@ export default function ProgressPage() {
           <div className="card card-pad mt-6">
             <div className="flex flex-wrap gap-x-10 gap-y-4">
               <Stat label="Interviews finished" value={String(analytics.total)} sub={`${analytics.technicalCount} technical, ${analytics.generalCount} live or resume`} />
-              <Stat label="Average overall" value={`${analytics.averageOverall}/10`} sub="Across every session on this device" />
+              <Stat label="Average overall" value={`${analytics.averageOverall}/10`} sub="Across every session in your account" />
               <Stat label="Practice streak" value={`${analytics.streakDays} day${analytics.streakDays === 1 ? "" : "s"}`} sub={analytics.streakDays > 0 ? "Consecutive days with at least one session" : "Do a session today to start a streak"} />
               <Stat
                 label="Strongest area"

@@ -271,7 +271,7 @@ export default function Home() {
               <h3 className="text-base font-medium text-neutral-900">No sessions yet</h3>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
                 Your practice record appears here after your first session: scores, streak and weakest areas, computed from the
-                sessions stored in this browser.
+                sessions saved to your account.
               </p>
               <ol className="mt-4 space-y-3">
                 {firstSteps.map((step, i) => (
@@ -316,7 +316,7 @@ export default function Home() {
                 </div>
               ))}
             </div>
-            <p className="mt-2 text-xs text-neutral-600">History is stored only in this browser.</p>
+            <p className="mt-2 text-xs text-neutral-600">History is saved to your account, so it is here on any device.</p>
           </section>
         )}
 
