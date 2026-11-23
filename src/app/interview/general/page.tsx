@@ -727,7 +727,9 @@ function GeneralRoom() {
         ? "browser voice"
         : speakingNow
           ? null
-          : "connecting";
+          : transcript.length === 0
+            ? "connecting"
+            : null;
   const engineLabel: string | null = liveActive
     ? "Gemini Live"
     : engine === "gemini"
@@ -736,7 +738,9 @@ function GeneralRoom() {
         ? "local mode"
         : speakingNow || waiting
           ? null
-          : "connecting";
+          : transcript.length === 0
+            ? "connecting"
+            : null;
   const phaseIdx = PHASE_INDEX[phase];
   const statusLine =
     phase === "main"

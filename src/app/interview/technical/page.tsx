@@ -976,15 +976,18 @@ function TechnicalRoom() {
 
   const micState = micControlState({ speaking: speaker.speaking, gated: voice.gated, listening: voice.listening, supported: voice.supported });
   const visibleTests = problem.tests.filter((t) => !t.hidden).length;
-  const voiceLabel =
+  const voiceLabel: string | null =
     speaker.voiceSource === "edge"
       ? "Edge voice"
       : speaker.voiceSource === "gemini"
         ? "Gemini voice"
-      : speaker.voiceSource === "browser"
-        ? "browser voice"
-        : "connecting";
-  const engineLabel = engine === "gemini" ? "Gemini" : engine === "local" ? "local mode" : "connecting";
+        : speaker.voiceSource === "browser"
+          ? "browser voice"
+          : transcript.length === 0
+            ? "connecting"
+            : null;
+  const engineLabel: string | null =
+    engine === "gemini" ? "Gemini" : engine === "local" ? "local mode" : transcript.length === 0 ? "connecting" : null;
   const fallbackNotice =
     problem.difficulty !== difficulty || problem.topic !== topic
       ? `No ${difficulty} problem for ${topic} is ready yet, so your problem is ${problem.title}, ${aOrAn(problem.difficulty)} ${problem.difficulty} ${problem.topic} problem. It is set and scored at that level.`
@@ -1016,7 +1019,7 @@ function TechnicalRoom() {
               <span className="badge badge-accent">{PHASE_LABELS[phase]}</span>
             </div>
             <div className="tnum mt-1 font-mono text-xs text-neutral-500">
-              {`${difficulty} mode · ${problem.topic} · ${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, "0")} of about ${Math.round(targetSec / 60)} min target · AI: ${engineLabel} · Voice: ${voiceLabel}`}
+              {`${difficulty} mode · ${problem.topic} · ${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, "0")} of about ${Math.round(targetSec / 60)} min target${engineLabel ? ` · AI: ${engineLabel}` : ""}${voiceLabel ? ` · Voice: ${voiceLabel}` : ""}`}
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -1192,7 +1195,7 @@ function TechnicalRoom() {
                 <span className="avatar">{interviewer.name.charAt(0)}</span>
                 <div className="min-w-0">
                   <div className="text-sm font-semibold leading-5">{interviewer.name}</div>
-                  <div className="text-xs leading-4 text-neutral-600">Interviewer · AI: {engineLabel} · Voice: {voiceLabel}</div>
+                  <div className="text-xs leading-4 text-neutral-600">Interviewer{engineLabel ? ` · AI: ${engineLabel}` : ""}{voiceLabel ? ` · Voice: ${voiceLabel}` : ""}</div>
                 </div>
                 {speaker.speaking && (
                   <span className="ml-auto text-xs font-medium text-accent">
