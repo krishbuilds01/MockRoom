@@ -24,6 +24,29 @@ function validRecord(raw: string | null): SessionRecord | null {
   }
 }
 
+function useCountUp(target: number, duration = 600): number {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setValue(target);
+      return;
+    }
+    let raf = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setValue(Math.round(target * eased * 10) / 10);
+      if (t < 1) raf = requestAnimationFrame(tick);
+      else setValue(target);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+  return value;
+}
+
 function starLine(star: StarCheck): string {
   const parts: { key: keyof StarCheck; label: string }[] = [
     { key: "situation", label: "Situation" },
@@ -67,6 +90,7 @@ function axisNote(rec: SessionRecord, axis: "problemSolving" | "coding" | "commu
 
 export default function FeedbackPage() {
   const [rec, setRec] = useState<SessionRecord | null>(null);
+  const overallShown = useCountUp(rec ? overallScore(rec.scores) : 0);
   const [showTranscript, setShowTranscript] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [recUrl, setRecUrl] = useState<string | null>(null);
@@ -133,7 +157,7 @@ export default function FeedbackPage() {
   const weak = weakAreas(rec, techProblem);
   const next = recommendNext(rec, techProblem);
   const delivery = rec.delivery ?? computeDelivery(rec);
-  const overall = overallScore(rec.scores);
+  const overall = overallShown;
   const target = rec.targetSec;
   const duration = `${Math.floor(rec.timeSec / 60)} min ${rec.timeSec % 60} sec`;
   const timeNote = rec.incomplete
@@ -235,7 +259,7 @@ export default function FeedbackPage() {
                   <div className="flex items-center gap-3">
                     <span className="w-32 shrink-0 text-[13px] font-medium">{a.label}</span>
                     <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-line">
-                      <div className={`h-full rounded-full ${scoreBarClass(a.value)}`} style={{ width: `${a.value * 10}%` }} />
+                      <div className={`bar-in h-full rounded-full ${scoreBarClass(a.value)}`} style={{ width: `${a.value * 10}%` }} />
                     </div>
                     <span className="tnum w-12 shrink-0 text-right text-sm font-semibold">{a.value}/10</span>
                   </div>

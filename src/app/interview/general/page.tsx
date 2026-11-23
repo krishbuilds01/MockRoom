@@ -899,7 +899,7 @@ function GeneralRoom() {
             </div>
             <div className="divide-y divide-line">
               {transcript.map((m, i) => (
-                <div key={i} className="py-3">
+                <div key={i} className="msg-in py-3">
                   <div className="text-[13px] font-semibold">{m.role === "ai" ? interviewer.name : "You"}</div>
                   <p className={`mt-0.5 break-words whitespace-pre-wrap text-sm leading-6 ${m.role === "ai" ? "text-neutral-900" : "text-neutral-700"}`}>{m.text}</p>
                 </div>

@@ -1222,7 +1222,7 @@ function TechnicalRoom() {
             <div ref={transcriptBoxRef} className="min-h-0 flex-1 overflow-y-auto p-4" aria-live="polite">
               <div className="divide-y divide-line">
                 {transcript.map((m, i) => (
-                  <div key={i} className="py-2.5">
+                  <div key={i} className="msg-in py-2.5">
                     <div className="text-xs font-semibold">{m.role === "ai" ? interviewer.name : "You"}</div>
                     <p className={`mt-0.5 break-words whitespace-pre-wrap text-[13px] leading-5 ${m.role === "ai" ? "text-neutral-900" : "text-neutral-700"}`}>{m.text}</p>
                   </div>

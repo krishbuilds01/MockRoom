@@ -436,3 +436,50 @@ body {
     opacity: 0.35;
   }
 }
+
+@keyframes page-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+main {
+  animation: page-in 0.15s ease-out;
+}
+
+@keyframes msg-in {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.msg-in {
+  animation: msg-in 0.2s ease-out;
+}
+
+@keyframes bar-in {
+  0% {
+    transform: scaleX(0);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+.bar-in {
+  transform-origin: left;
+  animation: bar-in 0.6s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  main,
+  .msg-in,
+  .bar-in {
+    animation: none;
+  }
+}
