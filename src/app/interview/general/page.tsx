@@ -38,6 +38,7 @@ import {
   writeActiveSession,
   type StoredActiveSession,
 } from "@/lib/activeSession";
+import { clearResumeState, loadGeneralResume, saveResumeState, type GeneralResumeState } from "@/lib/resumeState";
 import { postInterview } from "@/lib/interviewApi";
 import { sanitizeAiText } from "@/lib/sanitize";
 import { useVoice } from "@/lib/useVoice";
@@ -185,6 +186,7 @@ function GeneralRoom() {
     }
   }
 
+  const [resumed, setResumed] = useState(false);
   const [liveSpeaking, setLiveSpeaking] = useState(false);
   const [liveGated, setLiveGated] = useState(false);
   const live = useLiveSession({
@@ -349,6 +351,42 @@ function GeneralRoom() {
     startedFpRef.current = null;
   }
 
+  function restoreGeneral(s: GeneralResumeState) {
+    startedRef.current = true;
+    startedFpRef.current = fingerprint;
+    sessionIdRef.current = s.sessionId;
+    setSessionId(s.sessionId);
+    setStartedAt(s.startedAt);
+    setElapsed(Math.floor((Date.now() - s.startedAt) / 1000));
+    setQset(s.qset);
+    setTranscript(s.transcript);
+    transcriptRef.current = s.transcript;
+    setPhase(s.phase);
+    phaseRef.current = s.phase;
+    setQIndex(s.qIndex);
+    setStage(s.stage);
+    setEngine(s.engine);
+    statsRef.current = { ...statsRef.current, ...s.stats };
+    introRef.current = s.intro;
+    qaRef.current = s.qa;
+    sessionConfigRef.current = {
+      difficulty,
+      companyId: company.id,
+      companyName: company.id !== "any" ? company.name : undefined,
+      resume: resumeMode,
+      targetSec,
+      interviewerId: interviewer.id,
+      interviewerName: interviewer.name,
+    };
+    writeActiveSession("general", {
+      fingerprint,
+      sessionId: s.sessionId,
+      hasContent: true,
+      incompleteSaved: false,
+    });
+    setResumed(true);
+  }
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (deadRef.current) {
@@ -374,6 +412,14 @@ function GeneralRoom() {
         clearActiveSession("general");
       }
     }
+    if (!startedRef.current) {
+      const savedState = loadGeneralResume(fingerprint);
+      if (savedState) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        restoreGeneral(savedState);
+        return;
+      }
+    }
     const qs = computeQset();
     setQset(qs);
     startSession(qs);
@@ -388,6 +434,28 @@ function GeneralRoom() {
       incompleteSaved: savedRef.current,
     });
   }, [transcript, fingerprint]);
+
+  useEffect(() => {
+    if (!startedRef.current || endedRef.current) return;
+    if (transcript.length === 0) return;
+    saveResumeState({
+      v: 1,
+      room: "general",
+      fingerprint,
+      sessionId: sessionIdRef.current,
+      savedAt: Date.now(),
+      startedAt,
+      phase,
+      qIndex,
+      stage,
+      transcript,
+      qset,
+      stats: statsRef.current,
+      intro: introRef.current,
+      qa: qaRef.current,
+      engine,
+    });
+  }, [transcript, phase, qIndex, stage, qset, engine, fingerprint, startedAt]);
 
   function questionText(idx: number): string {
     const halfway = idx === Math.floor(questions.length / 2);
@@ -697,6 +765,7 @@ function GeneralRoom() {
     setLeaveOpen(false);
     savePartial();
     clearActiveSession("general");
+    clearResumeState("general");
     deadRef.current = true;
     deadAtRef.current = Date.now();
     deadUrlRef.current = window.location.search;
@@ -714,6 +783,7 @@ function GeneralRoom() {
     await finalizeRecording();
     saveSession(buildRecord(false));
     clearActiveSession("general");
+    clearResumeState("general");
     deadRef.current = true;
     deadAtRef.current = Date.now();
     deadUrlRef.current = window.location.search;
@@ -849,6 +919,7 @@ function GeneralRoom() {
           )}
           <div className="border-t border-line pt-4 text-xs leading-5 text-neutral-600">
             Speak your answer with the mic, or type it. One follow-up per question, a second if the first answer is thin.
+            {resumed && <div className="mt-2 font-medium text-neutral-900">Resumed where you left off.</div>}
             {liveActive && <div className="mt-2 font-medium text-accent">Live conversation is on: {interviewer.name} leads and listens continuously. Use the button above to end live and return to standard mode at any time.</div>}
             {phase === "done" && <div className="mt-2 font-medium text-neutral-900">Interview complete. Click End Interview to see your feedback.</div>}
           </div>

@@ -5,6 +5,7 @@ import { topics } from "@/lib/problems";
 import { INTERVIEWERS } from "@/lib/interviewers";
 import { buildResumeQuestionsLocal, postResumeQuestions, RESUME_QUESTIONS_KEY, RESUME_STORAGE_KEY } from "@/lib/resume";
 import { markFreshStart } from "@/lib/activeSession";
+import { clearResumeState } from "@/lib/resumeState";
 import CompanySelect from "@/components/CompanySelect";
 
 const labelCls = "text-[13px] font-medium leading-[18px] text-neutral-600";
@@ -68,11 +69,13 @@ export default function SetupForm() {
       const q = new URLSearchParams({ difficulty, topic, interviewer: interviewerId });
       if (companyId !== "any") q.set("company", companyId);
       markFreshStart("technical");
+      clearResumeState("technical");
       router.push(`/interview/technical?${q}`);
     } else {
       const q = new URLSearchParams({ difficulty, interviewer: interviewerId });
       if (companyId !== "any") q.set("company", companyId);
       markFreshStart("general");
+      clearResumeState("general");
       router.push(`/interview/general?${q}`);
     }
   }
@@ -94,6 +97,7 @@ export default function SetupForm() {
       const q = new URLSearchParams({ difficulty, resume: "1", interviewer: interviewerId });
       if (companyId !== "any") q.set("company", companyId);
       markFreshStart("general");
+      clearResumeState("general");
       router.push(`/interview/general?${q}`);
     } finally {
       setResumeBusy(false);

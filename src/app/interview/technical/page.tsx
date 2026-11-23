@@ -21,6 +21,7 @@ import {
   type StoredActiveSession,
 } from "@/lib/activeSession";
 import { runCode, type RunOutput } from "@/lib/runner";
+import { clearResumeState, loadTechnicalResume, saveResumeState, type TechnicalResumeState } from "@/lib/resumeState";
 import {
   aOrAn,
   analyzeApproach,
@@ -123,6 +124,7 @@ function TechnicalRoom() {
   const [showAi, setShowAi] = useState(true);
   const [engine, setEngine] = useState<"gemini" | "local" | null>(null);
   const [waiting, setWaiting] = useState(false);
+  const [resumed, setResumed] = useState(false);
   const [editorReady, setEditorReady] = useState(false);
   const [editorFailed, setEditorFailed] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -411,6 +413,57 @@ function TechnicalRoom() {
     startedFpRef.current = null;
   }
 
+  function restoreTechnical(s: TechnicalResumeState, prob: Problem) {
+    startedRef.current = true;
+    startedFpRef.current = fingerprint;
+    sessionIdRef.current = s.sessionId;
+    setSessionId(s.sessionId);
+    setStartedAt(s.startedAt);
+    setElapsed(Math.floor((Date.now() - s.startedAt) / 1000));
+    setProblem(prob);
+    setLang(s.lang);
+    langRef.current = s.lang;
+    setCodeByLang(s.codeByLang);
+    codeRef.current = s.codeByLang[s.lang];
+    snapshotRef.current = s.codeByLang[s.lang];
+    setPhase(s.phase);
+    phaseRef.current = s.phase;
+    setTranscript(s.transcript);
+    transcriptRef.current = s.transcript;
+    setRunOut(s.runOut);
+    runOutRef.current = s.runOut;
+    submitOutRef.current = s.submitOut;
+    setLastKind(s.lastKind);
+    setEngine(s.engine);
+    runsRef.current = s.runs;
+    statsRef.current = { ...statsRef.current, ...s.stats };
+    introRef.current = s.intro;
+    approachRef.current = s.approach;
+    complexityRef.current = s.complexity;
+    statedComplexityRef.current = s.statedComplexity;
+    pendingQRef.current = s.pendingQ;
+    askedQuestionsRef.current = new Set(s.askedQuestions);
+    lastAiRef.current = Date.now();
+    lastChangeRef.current = Date.now();
+    lastProgressRef.current = Date.now();
+    sessionConfigRef.current = {
+      difficulty,
+      topic,
+      companyId: company.id,
+      companyName: company.id !== "any" ? company.name : undefined,
+      targetSec: targetSecFor("technical", difficulty, prob),
+      interviewerId: interviewer.id,
+      interviewerName: interviewer.name,
+    };
+    writeActiveSession("technical", {
+      fingerprint,
+      sessionId: s.sessionId,
+      hasContent: true,
+      incompleteSaved: false,
+    });
+    setResumed(true);
+  }
+
   useEffect(() => {
     if (deadRef.current) {
       const revived = consumeFreshStart("technical", deadAtRef.current) || window.location.search !== deadUrlRef.current;
@@ -438,6 +491,13 @@ function TechnicalRoom() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       if (problem.id !== prob.id) resetSessionState(prob);
     }
+    if (!startedRef.current) {
+      const savedState = loadTechnicalResume(fingerprint, prob.id);
+      if (savedState) {
+        restoreTechnical(savedState, prob);
+        return;
+      }
+    }
     startSession(prob);
   });
 
@@ -450,6 +510,36 @@ function TechnicalRoom() {
       incompleteSaved: savedRef.current,
     });
   }, [transcript, fingerprint]);
+
+  useEffect(() => {
+    if (!startedRef.current || endedRef.current) return;
+    if (transcript.length === 0) return;
+    saveResumeState({
+      v: 1,
+      room: "technical",
+      fingerprint,
+      sessionId: sessionIdRef.current,
+      savedAt: Date.now(),
+      startedAt,
+      problemId: problem.id,
+      phase,
+      transcript,
+      lang,
+      codeByLang,
+      stats: statsRef.current,
+      intro: introRef.current,
+      approach: approachRef.current,
+      complexity: complexityRef.current,
+      statedComplexity: statedComplexityRef.current,
+      runs: runsRef.current,
+      runOut,
+      submitOut: submitOutRef.current,
+      lastKind,
+      pendingQ: pendingQRef.current,
+      askedQuestions: [...askedQuestionsRef.current],
+      engine,
+    });
+  }, [transcript, phase, codeByLang, lang, runOut, lastKind, engine, fingerprint, startedAt, problem.id]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -958,6 +1048,7 @@ function TechnicalRoom() {
     setLeaveOpen(false);
     savePartial();
     clearActiveSession("technical");
+    clearResumeState("technical");
     deadRef.current = true;
     deadAtRef.current = Date.now();
     deadUrlRef.current = window.location.search;
@@ -974,6 +1065,7 @@ function TechnicalRoom() {
     await finalizeRecording();
     saveSession(buildRecord(false));
     clearActiveSession("technical");
+    clearResumeState("technical");
     deadRef.current = true;
     deadAtRef.current = Date.now();
     deadUrlRef.current = window.location.search;
@@ -1220,6 +1312,7 @@ function TechnicalRoom() {
               </div>
             </div>
             <div ref={transcriptBoxRef} className="min-h-0 flex-1 overflow-y-auto p-4" aria-live="polite">
+              {resumed && <p className="pb-2 text-xs font-medium text-neutral-900">Resumed where you left off.</p>}
               <div className="divide-y divide-line">
                 {transcript.map((m, i) => (
                   <div key={i} className="msg-in py-2.5">
