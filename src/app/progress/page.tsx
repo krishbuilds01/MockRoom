@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { computeAnalytics, loadHistory, type Analytics } from "@/lib/analytics";
+import { mergeServerHistory } from "@/lib/sync";
 import { scoreBarClass } from "@/lib/scoreColor";
 import TopNav from "@/components/TopNav";
 import Footer from "@/components/Footer";
@@ -94,6 +95,13 @@ export default function ProgressPage() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setAnalytics(computeAnalytics(loadHistory(), new Date()));
+    let live = true;
+    void mergeServerHistory().then((merged) => {
+      if (live && merged) setAnalytics(computeAnalytics(merged, new Date()));
+    });
+    return () => {
+      live = false;
+    };
   }, []);
 
   const enough = (analytics?.total ?? 0) >= 3;

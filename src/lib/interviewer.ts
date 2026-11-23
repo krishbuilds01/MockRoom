@@ -1,4 +1,5 @@
 import type { Difficulty, Problem } from "./problems";
+import { pushSession } from "./sync";
 
 export interface Msg {
   role: "ai" | "user" | "system";
@@ -663,5 +664,6 @@ export function saveSession(rec: SessionRecord) {
     const arr = Array.isArray(old) ? old : [];
     if (arr.some((r) => r && typeof r === "object" && (r as SessionRecord).id === rec.id)) return;
     localStorage.setItem(key, JSON.stringify([rec, ...arr].slice(0, 20)));
+    pushSession(rec);
   } catch {}
 }

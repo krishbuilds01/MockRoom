@@ -5,6 +5,7 @@ import { computeAnalytics, loadHistory } from "@/lib/analytics";
 import { scoreBarClass } from "@/lib/scoreColor";
 import { bankCompanies, countByFormat, problemBank, startHref } from "@/lib/problemBank";
 import { overallScore, type SessionRecord } from "@/lib/interviewer";
+import { mergeServerHistory } from "@/lib/sync";
 import { CompanyCell, DifficultyPill } from "@/components/ProblemBank";
 import TopNav from "@/components/TopNav";
 import Footer from "@/components/Footer";
@@ -61,6 +62,13 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setHistory(loadHistory());
     setHistoryLoaded(true);
+    let live = true;
+    void mergeServerHistory().then((merged) => {
+      if (live && merged) setHistory(merged);
+    });
+    return () => {
+      live = false;
+    };
   }, []);
 
   const analytics = history.length ? computeAnalytics(history) : null;
