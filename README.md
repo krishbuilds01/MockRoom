@@ -6,7 +6,7 @@ MockRoom is a free website. No download, no install, no account. Just open it an
 
 Most of us prepare alone and find out what we are weak at in the real interview, when it is too late. MockRoom is a place to fail first, in practice, for free.
 
-Live: https://ai-interview-platform-zeta-woad.vercel.app
+Live: https://beta-mockroom.vercel.app
 
 ![MockRoom home page](docs/screenshot.png)
 
