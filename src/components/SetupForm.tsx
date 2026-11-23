@@ -194,7 +194,7 @@ export default function SetupForm() {
       <p className="mt-4 border-t border-line pt-3 text-[13px] leading-5 text-neutral-600">
         {type === "resume"
           ? "Your resume stays in this browser, stored only on this device. It is sent once, only to build your questions."
-          : "Works best in Chrome. Allow camera and mic when asked. No account needed."}
+          : "Works best in Chrome. Allow camera and mic when asked."}
       </p>
     </div>
   );

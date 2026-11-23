@@ -11,7 +11,7 @@ export default function Footer() {
           <Link href="/system-design" className="transition-colors hover:text-neutral-900">System design</Link>
         </nav>
       </div>
-      <p className="mt-2">Built by Krishna. Free to use, no account needed.</p>
+      <p className="mt-2">Built by Krishna. Free to use, just open it and practice.</p>
     </footer>
   );
 }
