@@ -1,10 +1,11 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { getProblemById, langLabel, problems } from "@/lib/problems";
 import { overallScore, type SessionRecord } from "@/lib/interviewer";
 import { companyVerdict, phaseNotes, recommendNext, weakAreas } from "@/lib/feedback";
 import { computeDelivery, type StarCheck } from "@/lib/delivery";
+import { fetchStrongerRewrites, pickWeakAnswers, storeStronger, type StrongerAnswer } from "@/lib/stronger";
 import { deleteRecording, loadRecording } from "@/lib/recording";
 import { loadHistory } from "@/lib/analytics";
 import { scoreBarClass } from "@/lib/scoreColor";
@@ -18,6 +19,20 @@ function validRecord(raw: string | null): SessionRecord | null {
     if (!Array.isArray(parsed.transcript)) parsed.transcript = [];
     if (!Array.isArray(parsed.scores.strengths)) parsed.scores.strengths = [];
     if (!Array.isArray(parsed.scores.improvements)) parsed.scores.improvements = [];
+    if (parsed.stronger !== undefined) {
+      if (!Array.isArray(parsed.stronger)) delete parsed.stronger;
+      else
+        parsed.stronger = parsed.stronger.filter(
+          (s): s is StrongerAnswer =>
+            !!s &&
+            typeof s === "object" &&
+            typeof s.label === "string" &&
+            typeof s.question === "string" &&
+            typeof s.original === "string" &&
+            typeof s.stronger === "string" &&
+            s.stronger.trim().length > 0
+        );
+    }
     return parsed;
   } catch {
     return null;
@@ -94,6 +109,8 @@ export default function FeedbackPage() {
   const [showTranscript, setShowTranscript] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [recUrl, setRecUrl] = useState<string | null>(null);
+  const [strongerBusy, setStrongerBusy] = useState(false);
+  const strongerTriedRef = useRef<string | null>(null);
 
   useEffect(() => {
     let raw: string | null = null;
@@ -109,6 +126,42 @@ export default function FeedbackPage() {
     setRec(record);
     setLoaded(true);
   }, []);
+
+  useEffect(() => {
+    if (!rec || rec.stronger !== undefined) return;
+    if (strongerTriedRef.current === rec.id) return;
+    strongerTriedRef.current = rec.id;
+    const picks = pickWeakAnswers(rec);
+    if (!picks.length) {
+      const updated = { ...rec, stronger: [] };
+      storeStronger(updated);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setRec(updated);
+      return;
+    }
+    let alive = true;
+    setStrongerBusy(true);
+    fetchStrongerRewrites(picks)
+      .then((list) => {
+        if (!alive) return;
+        setStrongerBusy(false);
+        if (!list) return;
+        const items: StrongerAnswer[] = [];
+        picks.forEach((p, i) => {
+          const text = list[i];
+          if (text) items.push({ label: p.label, question: p.question, original: p.answer, stronger: text });
+        });
+        const updated = { ...rec, stronger: items };
+        storeStronger(updated);
+        setRec(updated);
+      })
+      .catch(() => {
+        if (alive) setStrongerBusy(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [rec]);
 
   useEffect(() => {
     if (!rec) return;
@@ -157,6 +210,7 @@ export default function FeedbackPage() {
   const weak = weakAreas(rec, techProblem);
   const next = recommendNext(rec, techProblem);
   const delivery = rec.delivery ?? computeDelivery(rec);
+  const strongerItems = rec.stronger ?? [];
   const overall = overallShown;
   const target = rec.targetSec;
   const duration = `${Math.floor(rec.timeSec / 60)} min ${rec.timeSec % 60} sec`;
@@ -351,6 +405,29 @@ export default function FeedbackPage() {
                   </div>
                 )}
                 {delivery.starOverall && <p className="mt-2 text-[13px] leading-5 text-neutral-600">{starLine(delivery.starOverall)} Judged across all your answers together.</p>}
+              </section>
+            )}
+
+            {(strongerItems.length > 0 || strongerBusy) && (
+              <section className="py-4">
+                <h2 className="text-sm font-semibold">Say it stronger</h2>
+                <p className="mt-1 text-xs text-neutral-600">Your weakest answers, rewritten using only what you actually said. Nothing added, just clearer structure and delivery.</p>
+                {strongerBusy && strongerItems.length === 0 ? (
+                  <p className="mt-2 text-[13px] leading-5 text-neutral-600">Rewriting your weakest answers...</p>
+                ) : (
+                  <div className="mt-2 divide-y divide-line">
+                    {strongerItems.map((item) => (
+                      <div key={item.label + item.question} className="py-3 first:pt-1 last:pb-0">
+                        <div className="text-[13px] font-medium">{item.label}</div>
+                        {item.question && <p className="mt-0.5 text-xs leading-5 text-neutral-600">{item.question}</p>}
+                        <p className="mt-2 text-xs font-medium text-neutral-600">You said</p>
+                        <p className="mt-0.5 line-clamp-3 break-words text-[13px] leading-5 text-neutral-600">{item.original}</p>
+                        <p className="mt-2 text-xs font-medium text-neutral-600">Stronger</p>
+                        <p className="mt-0.5 break-words border-l-2 border-accent pl-3 text-[13px] leading-5 text-neutral-800">{item.stronger}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </section>
             )}
 
