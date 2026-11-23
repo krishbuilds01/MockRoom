@@ -1,4 +1,5 @@
 import Link from "next/link";
+import AuthButton from "@/components/AuthButton";
 import Logo from "@/components/Logo";
 
 const LINKS = [
@@ -28,9 +29,12 @@ export default function TopNav({ active }: { active?: string }) {
             );
           })}
         </nav>
-        <Link href="/setup" className="btn btn-primary btn-sm">
-          Start interview
-        </Link>
+        <span className="flex items-center gap-3">
+          <AuthButton />
+          <Link href="/setup" className="btn btn-primary btn-sm">
+            Start interview
+          </Link>
+        </span>
       </div>
       <nav className="mx-auto flex w-full max-w-7xl items-center gap-6 px-5 pb-3 sm:hidden" aria-label="Main mobile">
         {LINKS.map((l) => (
