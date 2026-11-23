@@ -156,7 +156,12 @@ function TechnicalRoom() {
       }
     } catch {}
   }, []);
+  const layoutMountRef = useRef(true);
   useEffect(() => {
+    if (layoutMountRef.current) {
+      layoutMountRef.current = false;
+      return;
+    }
     try {
       localStorage.setItem("mockroom.layout.tech.v1", JSON.stringify(layout));
     } catch {}
