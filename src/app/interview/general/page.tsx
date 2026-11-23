@@ -219,8 +219,10 @@ function GeneralRoom() {
     liveOnRef.current = liveOn;
   }, [liveOn]);
   useEffect(() => {
-    const nearBottom = window.innerHeight + window.scrollY > document.documentElement.scrollHeight - 480;
-    if (nearBottom) requestAnimationFrame(() => { transcriptBoxRef.current?.scrollIntoView({ block: "end" }); });
+    const box = transcriptBoxRef.current;
+    if (!box) return;
+    const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 480;
+    if (nearBottom) requestAnimationFrame(() => { box.scrollTop = box.scrollHeight; });
   }, [transcript, waiting]);
 
   useEffect(() => {
@@ -764,7 +766,7 @@ function GeneralRoom() {
   }
 
   return (
-    <main className="mx-auto min-h-dvh w-full max-w-6xl px-4 py-5 sm:px-6">
+    <main className="mx-auto flex h-dvh w-full max-w-6xl flex-col overflow-hidden px-4 py-5 sm:px-6">
       <header className="shrink-0">
         <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
           <div className="min-w-0">
@@ -820,8 +822,8 @@ function GeneralRoom() {
         </div>
       </header>
 
-      <div className="mt-5 grid items-start gap-4 lg:grid-cols-[320px_1fr]">
-        <div className="space-y-4">
+      <div className="mt-5 grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] items-stretch gap-4 overflow-hidden lg:grid-cols-[320px_1fr] lg:grid-rows-1">
+        <div className="max-h-[32vh] space-y-4 overflow-y-auto lg:max-h-none lg:h-full lg:min-h-0">
           {canRecord && (
             <div className="flex items-center justify-between gap-3 border-t border-line pt-4">
               <div className="min-w-0">
@@ -849,7 +851,7 @@ function GeneralRoom() {
           </div>
         </div>
 
-        <section className="card flex flex-col">
+        <section className="card flex h-full min-h-0 flex-col">
           <div className="panel-head shrink-0">
             <div className="flex items-center gap-3">
               <span className="avatar">{interviewer.name.charAt(0)}</span>
@@ -866,7 +868,7 @@ function GeneralRoom() {
             {live.status === "connecting" && <span className="badge">Connecting live voice</span>}
             {liveOn && live.status === "fallback" && <span className="badge badge-mid">Live unavailable, standard mode</span>}
           </div>
-          <div className="p-5" aria-live="polite">
+          <div ref={transcriptBoxRef} className="min-h-0 flex-1 overflow-y-auto p-5" aria-live="polite">
             <div className="border-b border-line pb-4">
               <div className="text-xs font-medium text-neutral-500">Session brief</div>
               <dl className="mt-3 space-y-2 text-[13px] leading-5">
@@ -909,7 +911,6 @@ function GeneralRoom() {
             {transcript.length === 0 && (
               <p className="pt-3 text-sm leading-6 text-neutral-600">Connecting to your interviewer. {interviewer.name} will introduce {interviewer.reflexivePronoun} in a moment.</p>
             )}
-            <div ref={transcriptBoxRef} />
           </div>
           <div className="shrink-0 border-t border-line p-4">
             {!voice.supported && !liveActive && <p className="mb-2 text-xs text-neutral-600">Voice input is not supported in this browser. Type your answer instead. Chrome works best.</p>}
