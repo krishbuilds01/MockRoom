@@ -1078,7 +1078,7 @@ function TechnicalRoom() {
               <div className="mt-4 flex items-center justify-between gap-3 border-t border-line pt-4">
                 <div className="min-w-0">
                   <div className="text-xs font-semibold">Record my session</div>
-                  <p className="mt-0.5 text-xs leading-4 text-neutral-600">{recordOn ? "Recording. Watch it back on the feedback page." : "Self-review video, stored only in this browser."}</p>
+                  <p className="mt-0.5 text-xs leading-4 text-neutral-600">{recordOn ? "Recording. Watch it back on the feedback page." : hasStream ? "Self-review video, stored only in this browser." : "Turn on your camera first, then you can record."}</p>
                 </div>
                 <button type="button" onClick={toggleRecord} disabled={!hasStream && !recordOn} aria-pressed={recordOn} className={`btn btn-sm shrink-0 ${recordOn ? "btn-secondary" : "btn-ghost"}`}>
                   {recordOn ? (
