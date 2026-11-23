@@ -2,8 +2,6 @@ import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { getDb } from "@/lib/db";
 
-export const dynamic = "force-dynamic";
-
 interface ScoreSet {
   problemSolving: number;
   coding: number;
