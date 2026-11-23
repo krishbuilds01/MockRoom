@@ -2,9 +2,9 @@
 
 Helping CS students and fresh grads crack their interviews.
 
-Most of us prepare alone and find out what we are weak at in the real interview, when it is too late. MockRoom is a place to fail first, in practice, for free.
+MockRoom is a free website. No download, no install, no account. Just open it and start practicing.
 
-No account. No payment. Just pick a mode and start.
+Most of us prepare alone and find out what we are weak at in the real interview, when it is too late. MockRoom is a place to fail first, in practice, for free.
 
 Live: https://ai-interview-platform-zeta-woad.vercel.app
 
@@ -31,7 +31,7 @@ Add a problem to the bank, fix a bug, improve the feedback, or make the UI bette
 
 Open an issue first for big changes so we can talk it through.
 
-## Run locally
+For developers who want to run the code:
 
 ```bash
 npm install
