@@ -215,11 +215,45 @@ function TechnicalRoom() {
     interviewer.voice,
     interviewer.pitch
   );
-  const voice = useVoice((text) => setInput(text), gateRef);
+  const [handsFree, setHandsFree] = useState(true);
+  const autoSubmitRef = useRef<(text: string) => void>(() => {});
+  const voice = useVoice((text) => setInput(text), gateRef, {
+    handsFree,
+    onFinal: (text) => autoSubmitRef.current(text),
+    onHandsFreeError: () => setHandsFree(false),
+  });
   useEffect(() => {
     voice.applyGate(gate.gated);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gate.gated]);
+
+  useEffect(() => {
+    if (!voice.supported) return;
+    if (handsFree) dispatchGate({ type: "user-mic", on: true });
+    if (!handsFree) dispatchGate({ type: "user-mic", on: false });
+  }, [handsFree, voice.supported]);
+
+  useEffect(() => {
+    if (!handsFree || !voice.supported) return;
+    if (!startedRef.current || endedRef.current) return;
+    if (gate.speaking || gate.gated || waiting) return;
+    if (phase === "done") return;
+    voice.beginTurn();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [handsFree, voice.supported, gate.speaking, gate.gated, waiting, phase, transcript]);
+
+  useEffect(() => {
+    autoSubmitRef.current = (text: string) => {
+      setInput("");
+      void submitPanel(text);
+    };
+  });
+
+  function toggleHandsFree() {
+    const next = !handsFree;
+    setHandsFree(next);
+    if (!next) voice.endTurn();
+  }
 
   function onMicClick() {
     if (speaker.speaking || gateRef.current) {
@@ -228,6 +262,11 @@ function TechnicalRoom() {
       dispatchGate({ type: "interrupt" });
       dispatchGate({ type: "user-mic", on: true });
       voice.start();
+      return;
+    }
+    if (handsFree && voice.turnActive) {
+      setHandsFree(false);
+      voice.endTurn();
       return;
     }
     if (voice.listening || voice.userOn) {
@@ -670,6 +709,7 @@ function TechnicalRoom() {
   async function submitPanel(preset?: string) {
     const text = (preset ?? input).trim();
     if (!text || pendingRef.current) return;
+    voice.endTurn();
     if (!preset) setInput("");
     setTranscript((prev) => [...prev, { role: "user", text, ts: Date.now() }]);
 
@@ -717,6 +757,7 @@ function TechnicalRoom() {
         return;
       }
       statsRef.current.clarifyingCount += 1;
+      speaker.prefetch("Good. Then walk me through your approach before any code: the data structure, the main pass, and what you return. I will judge it before you start.");
       const api = await askEngine({
         mode: "clarifying",
         difficulty,
@@ -1337,6 +1378,12 @@ function TechnicalRoom() {
               )}
               {!voice.supported && <p className="mb-2 text-xs text-neutral-600">Voice input not supported here. Type instead.</p>}
               {voice.error && !speaker.speaking && <p className="mb-2 text-xs text-red-600" role="alert">{voice.error}</p>}
+              {handsFree && voice.turnActive && !voice.listening && !speaker.speaking && !waiting && micState !== "paused" && (
+                <p className="mb-2 flex items-center gap-1.5 text-xs text-accent" role="status">
+                  <span className="dot dot-pulse bg-accent" />
+                  Your turn
+                </p>
+              )}
               {micState === "paused" ? (
                 <p className="mb-2 flex items-center gap-1.5 text-xs text-neutral-600" role="status">
                   <span className="dot bg-neutral-400" />
@@ -1345,19 +1392,22 @@ function TechnicalRoom() {
               ) : micState === "listening" ? (
                 <p className="mb-2 flex items-center gap-1.5 text-xs text-accent" role="status">
                   <span className="dot dot-pulse bg-accent" />
-                  Listening, speak now
+                  {handsFree ? "Listening, speak now. It sends when you stop talking." : "Listening, speak now"}
                 </p>
               ) : null}
               <div className="flex gap-2">
                 <label htmlFor="tech-panel-input" className="sr-only">Message to the interviewer</label>
-                <input id="tech-panel-input" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submitPanel()} placeholder={inputPlaceholder[phase]} className="input min-w-0 flex-1" />
+                <input id="tech-panel-input" value={input} onChange={(e) => { setInput(e.target.value); if (handsFree) voice.endTurn(); }} onKeyDown={(e) => e.key === "Enter" && submitPanel()} placeholder={inputPlaceholder[phase]} className="input min-w-0 flex-1" />
+                {voice.supported && (
+                  <button type="button" onClick={toggleHandsFree} aria-pressed={handsFree} className={`btn btn-sm ${handsFree ? "border-line2 bg-accent-soft text-accent" : "btn-ghost"}`}>Hands-free {handsFree ? "on" : "off"}</button>
+                )}
                 {micState === "paused" ? (
                   <button type="button" onClick={onMicClick} aria-label={`Interrupt ${interviewer.name} and turn your mic on`} className="btn btn-ghost btn-sm">
                     <span className="dot bg-neutral-400" />
                     Mic paused
                   </button>
                 ) : (
-                  <button type="button" onClick={onMicClick} disabled={!voice.supported} aria-label="Toggle microphone input" className={`btn btn-sm ${voice.listening ? "border-line2 bg-accent-soft text-accent" : "btn-ghost"}`}>{voice.listening ? "Listening..." : "Mic"}</button>
+                  <button type="button" onClick={onMicClick} disabled={!voice.supported} aria-label="Toggle microphone input" className={`btn btn-sm ${voice.listening || (handsFree && voice.turnActive) ? "border-line2 bg-accent-soft text-accent" : "btn-ghost"}`}>{voice.listening || (handsFree && voice.turnActive) ? "Listening..." : "Mic"}</button>
                 )}
                 <button type="button" onClick={() => submitPanel()} disabled={waiting} className="btn btn-primary btn-sm">Send</button>
               </div>

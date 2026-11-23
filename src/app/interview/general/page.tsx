@@ -162,11 +162,38 @@ function GeneralRoom() {
     interviewer.voice,
     interviewer.pitch
   );
-  const voice = useVoice((text) => setInput(text), gateRef);
+  const [handsFree, setHandsFree] = useState(true);
+  const autoSubmitRef = useRef<(text: string) => void>(() => {});
+  const voice = useVoice((text) => setInput(text), gateRef, {
+    handsFree,
+    onFinal: (text) => autoSubmitRef.current(text),
+    onHandsFreeError: () => setHandsFree(false),
+  });
   useEffect(() => {
     voice.applyGate(gate.gated);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gate.gated]);
+
+  useEffect(() => {
+    if (!voice.supported) return;
+    if (handsFree && !liveOn) dispatchGate({ type: "user-mic", on: true });
+    if (!handsFree) dispatchGate({ type: "user-mic", on: false });
+  }, [handsFree, liveOn, voice.supported]);
+
+  useEffect(() => {
+    if (!handsFree || !voice.supported || liveOn) return;
+    if (!startedRef.current || endedRef.current) return;
+    if (gate.speaking || gate.gated || waiting) return;
+    if (phase === "done") return;
+    voice.beginTurn();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [handsFree, voice.supported, liveOn, gate.speaking, gate.gated, waiting, phase, transcript]);
+
+  function toggleHandsFree() {
+    const next = !handsFree;
+    setHandsFree(next);
+    if (!next) voice.endTurn();
+  }
 
   function onMicClick() {
     if (speaker.speaking || gateRef.current) {
@@ -175,6 +202,11 @@ function GeneralRoom() {
       dispatchGate({ type: "interrupt" });
       dispatchGate({ type: "user-mic", on: true });
       voice.start();
+      return;
+    }
+    if (handsFree && voice.turnActive) {
+      setHandsFree(false);
+      voice.endTurn();
       return;
     }
     if (voice.listening || voice.userOn) {
@@ -472,6 +504,7 @@ function GeneralRoom() {
   async function submitAnswer(preset?: string) {
     const answer = (preset ?? input).trim();
     if (!answer || pendingRef.current) return;
+    voice.endTurn();
     if (!preset) setInput("");
 
     if (liveOnRef.current) {
@@ -552,6 +585,9 @@ function GeneralRoom() {
       if (qaRef.current[qIndex]) qaRef.current[qIndex].answer = answer;
       statsRef.current.followUpsAsked += 1;
       setStage(1);
+      const upcoming = qIndex + 1;
+      if (upcoming < questions.length) speaker.prefetch(questionText(upcoming));
+      else speaker.prefetch("That covers my questions. We have a couple of minutes left. Do you have any questions for me, about the role or the team?");
       const api = await askEngine({
         mode: "general",
         difficulty,
@@ -621,7 +657,15 @@ function GeneralRoom() {
     passiveRef.current = (text: string) => passiveUserTurn(text);
   });
 
+  useEffect(() => {
+    autoSubmitRef.current = (text: string) => {
+      setInput("");
+      void submitAnswer(text);
+    };
+  });
+
   async function startLive() {
+    voice.endTurn();
     const companyLine = resumeMode
       ? "Every main question in this session was generated from the candidate's own resume: their projects, listed skills, and experience. Ask them exactly as written, in order, and dig hard where answers are thin."
       : company.id !== "any"
@@ -989,6 +1033,12 @@ function GeneralRoom() {
           <div className="shrink-0 border-t border-line p-4">
             {!voice.supported && !liveActive && <p className="mb-2 text-xs text-neutral-600">Voice input is not supported in this browser. Type your answer instead. Chrome works best.</p>}
             {voice.error && !liveActive && !speaker.speaking && <p className="mb-2 text-xs text-red-600" role="alert">{voice.error}</p>}
+            {!liveActive && handsFree && voice.turnActive && !voice.listening && !speaker.speaking && !waiting && (
+              <p className="mb-2 flex items-center gap-1.5 text-xs text-neutral-900" role="status">
+                <span className="dot dot-pulse bg-accent" />
+                Your turn
+              </p>
+            )}
             {!liveActive && micState === "paused" ? (
               <p className="mb-2 flex items-center gap-1.5 text-xs text-neutral-600" role="status">
                 <span className="dot bg-neutral-400" />
@@ -997,12 +1047,15 @@ function GeneralRoom() {
             ) : !liveActive && micState === "listening" ? (
               <p className="mb-2 flex items-center gap-1.5 text-xs text-neutral-900" role="status">
                 <span className="dot dot-pulse bg-accent" />
-                Listening, speak now
+                {handsFree ? "Listening, speak now. It sends when you stop talking." : "Listening, speak now"}
               </p>
             ) : null}
             <div className="flex gap-2">
               <label htmlFor="general-answer" className="sr-only">Your answer</label>
-              <input id="general-answer" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submitAnswer()} placeholder={inputPlaceholder[phase]} className="input min-w-0 flex-1" />
+              <input id="general-answer" value={input} onChange={(e) => { setInput(e.target.value); if (handsFree) voice.endTurn(); }} onKeyDown={(e) => e.key === "Enter" && submitAnswer()} placeholder={inputPlaceholder[phase]} className="input min-w-0 flex-1" />
+              {voice.supported && !liveActive && (
+                <button type="button" onClick={toggleHandsFree} aria-pressed={handsFree} className={`btn btn-sm ${handsFree ? "border-line2 bg-accent-soft text-accent" : "btn-ghost"}`}>Hands-free {handsFree ? "on" : "off"}</button>
+              )}
               {liveActive ? (
                 liveGated ? (
                   <span className="flex items-center gap-1.5 rounded-[10px] border border-line bg-panel2 px-4 text-sm text-neutral-600" role="status">
@@ -1021,7 +1074,7 @@ function GeneralRoom() {
                   Mic paused
                 </button>
               ) : (
-                <button type="button" onClick={onMicClick} disabled={!voice.supported} aria-label="Toggle microphone input" className={`btn btn-sm ${voice.listening ? "border-line2 bg-accent-soft text-accent" : "btn-ghost"}`}>{voice.listening ? "Listening..." : "Mic"}</button>
+                <button type="button" onClick={onMicClick} disabled={!voice.supported} aria-label="Toggle microphone input" className={`btn btn-sm ${voice.listening || (handsFree && voice.turnActive) ? "border-line2 bg-accent-soft text-accent" : "btn-ghost"}`}>{voice.listening || (handsFree && voice.turnActive) ? "Listening..." : "Mic"}</button>
               )}
               <button type="button" onClick={() => submitAnswer()} disabled={waiting && !liveActive} className="btn btn-primary btn-sm">Send</button>
             </div>
