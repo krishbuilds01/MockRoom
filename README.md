@@ -31,9 +31,13 @@ Add a problem to the bank, fix a bug, improve the feedback, or make the UI bette
 
 Open an issue first for big changes so we can talk it through.
 
-For developers who want to run the code:
+## Quick start
+
+For developers who want to run the code locally:
 
 ```bash
+git clone https://github.com/krishbuilds01/MockRoom.git
+cd MockRoom
 npm install
 npm run dev
 ```
