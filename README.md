@@ -19,7 +19,7 @@ You practice with two AI interviewers, Maya and Rohan. They ask questions, push 
 - Resume interview - questions based on your own resume
 - Company mode - Google, Amazon, Microsoft, Meta, Adobe, Flipkart, TCS, Infosys, Wipro
 - Problem bank - 44 real interview questions at /problems
-- Progress - scores, streak and weak areas at /progress, saved in your browser
+- Progress - scores, streak and weak areas at /progress, saved to your account
 
 Easy, Mid and Hard modes. Hard gives no hints, like the real thing.
 
@@ -52,4 +52,4 @@ Optional: add `GEMINI_API_KEY` in `.env.local` for Gemini replies and voice. Get
 
 Next.js, TypeScript, Tailwind CSS, Monaco Editor, Judge0 for code running, Edge TTS for voice.
 
-Your sessions stay in your browser. Built by a student, for students.
+Your sessions save to your account, so your progress is there on any device. Built by a student, for students.
