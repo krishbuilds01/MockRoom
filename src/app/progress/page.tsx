@@ -30,16 +30,22 @@ function TrendChart({ analytics }: { analytics: Analytics }) {
   const labelX = (i: number) => Math.min(Math.max(x(i), padL + 6), W - padR - 6);
   const y = (v: number) => padT + ih - (v / 11) * ih;
   const line = pts.map((p, i) => `${x(i)},${y(p.overall)}`).join(" ");
-  const labelStep = Math.max(1, Math.ceil(pts.length / 7));
-  const fmtDay = (iso: string) => new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" });
-  const firstDay = pts.length ? fmtDay(pts[0].date) : "";
-  const lastDay = pts.length ? fmtDay(pts[pts.length - 1].date) : "";
-  const range = firstDay === lastDay ? firstDay : `${firstDay} to ${lastDay}`;
+  const labelStep = Math.max(1, Math.ceil(pts.length / 6));
+  const labelIndices = new Set<number>();
+  for (let i = 0; i < pts.length; i += labelStep) labelIndices.add(i);
+  if (pts.length > 1) {
+    const last = pts.length - 1;
+    const prev = [...labelIndices].filter((i) => i < last).pop();
+    if (prev !== undefined && last - prev < labelStep) labelIndices.delete(prev);
+    labelIndices.add(last);
+  }
+  const scoreStep = Math.max(1, Math.ceil(pts.length / 12));
+  const showScore = (i: number) => i % scoreStep === 0 || i === pts.length - 1;
   return (
     <div>
       <div>
         <h2 className="text-h2 font-medium">Score trend</h2>
-        <p className="mt-0.5 text-xs leading-5 text-neutral-600">Overall score per session, numbered in the order you did them{range ? ` · ${range}` : ""}</p>
+        <p className="mt-0.5 text-xs leading-5 text-neutral-600">Overall score per session, numbered in the order you did them.</p>
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} className="mt-2 w-full" role="img" aria-label="Overall score trend over time">
         {[0, 5, 10].map((g) => (
@@ -52,10 +58,12 @@ function TrendChart({ analytics }: { analytics: Analytics }) {
         {pts.map((p, i) => (
           <g key={p.date + i}>
             <circle cx={x(i)} cy={y(p.overall)} r="4.5" fill="#e8702a" stroke="#201c16" strokeWidth="2" />
-            <text x={labelX(i)} y={y(p.overall) - 10} textAnchor="middle" fontSize="12" fontWeight="600" fill="#f2ede3" style={{ fontVariantNumeric: "tabular-nums" }}>
-              {p.overall}
-            </text>
-            {(i % labelStep === 0 || i === pts.length - 1) && (
+            {showScore(i) && (
+              <text x={labelX(i)} y={y(p.overall) - 10} textAnchor="middle" fontSize="12" fontWeight="600" fill="#f2ede3" style={{ fontVariantNumeric: "tabular-nums" }}>
+                {p.overall}
+              </text>
+            )}
+            {labelIndices.has(i) && (
               <text x={labelX(i)} y={H - 8} textAnchor="middle" fontSize="12" fill="#a89d88">
                 {p.label}
               </text>
