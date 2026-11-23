@@ -838,6 +838,16 @@ function GeneralRoom() {
   const micState = micControlState({ speaking: speaker.speaking, gated: voice.gated, listening: voice.listening, supported: voice.supported });
   const liveActive = liveOn && live.status === "live";
   const speakingNow = speaker.speaking || liveSpeaking;
+  const callMode = handsFree && !liveActive;
+  const presenceLine = speakingNow
+    ? `${interviewer.name} is speaking`
+    : waiting
+      ? `${interviewer.name} is thinking`
+      : voice.listening
+        ? "Listening, your turn"
+        : voice.turnActive
+          ? "Your turn"
+          : "Your interviewer";
   const voiceLabel: string | null = liveActive
     ? "Gemini Live"
     : speaker.voiceSource === "edge"
@@ -972,10 +982,10 @@ function GeneralRoom() {
         <section className="card flex h-full min-h-0 flex-col">
           <div className="panel-head shrink-0">
             <div className="flex items-center gap-3">
-              <span className="avatar">{interviewer.name.charAt(0)}</span>
+              <span className="avatar" style={callMode ? { width: "2.75rem", height: "2.75rem", fontSize: "1rem" } : undefined}>{interviewer.name.charAt(0)}</span>
               <div>
-                <div className="text-sm font-semibold leading-5">{interviewer.name}</div>
-                <div className="text-xs leading-4 text-neutral-600">Your interviewer</div>
+                <div className={`${callMode ? "text-base" : "text-sm"} font-semibold leading-5`}>{interviewer.name}</div>
+                <div className="text-xs leading-4 text-neutral-600">{callMode ? presenceLine : "Your interviewer"}</div>
               </div>
               {(speaker.speaking || liveSpeaking) && (
                 <span className="text-xs font-medium text-accent">
@@ -987,6 +997,7 @@ function GeneralRoom() {
             {liveOn && live.status === "fallback" && <span className="badge badge-mid">Live unavailable, standard mode</span>}
           </div>
           <div ref={transcriptBoxRef} className="min-h-0 flex-1 overflow-y-auto p-5" aria-live="polite">
+            {!callMode && (
             <div className="border-b border-line pb-4">
               <div className="text-xs font-medium text-neutral-500">Session brief</div>
               <dl className="mt-3 space-y-2 text-[13px] leading-5">
@@ -1012,6 +1023,7 @@ function GeneralRoom() {
                 </div>
               </dl>
             </div>
+            )}
             <div className="divide-y divide-line">
               {transcript.map((m, i) => (
                 <div key={i} className="msg-in py-3">
