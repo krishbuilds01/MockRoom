@@ -1,8 +1,8 @@
 # MockRoom
 
-Helping CS students and fresh grads crack their interviews.
+Helping CS students and fresh grads crack interviews. Free, just open it and practice.
 
-MockRoom is a free website. No download, no install, no account. Just open it and start practicing.
+MockRoom is a free website. No download, no install. Just open it and start practicing.
 
 Most of us prepare alone and find out what we are weak at in the real interview, when it is too late. MockRoom is a place to fail first, in practice, for free.
 
