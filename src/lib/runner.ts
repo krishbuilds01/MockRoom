@@ -79,8 +79,59 @@ function jLit(v: unknown): string {
   return "null";
 }
 
+function jTreeLit(v: unknown): string {
+  if (Array.isArray(v)) {
+    return `new Integer[]{${v.map((x) => (x === null ? "null" : String(x))).join(",")}}`;
+  }
+  return jLit(v);
+}
+
 const JAVA_HELPERS = `
+class TreeNode {
+  int val;
+  TreeNode left;
+  TreeNode right;
+  TreeNode(int v) { val = v; }
+}
 public class Main {
+  static TreeNode buildTree(Integer[] a) {
+    if (a == null || a.length == 0 || a[0] == null) return null;
+    TreeNode root = new TreeNode(a[0]);
+    java.util.Queue<TreeNode> q = new java.util.ArrayDeque<>();
+    q.add(root);
+    int i = 1;
+    while (!q.isEmpty() && i < a.length) {
+      TreeNode cur = q.poll();
+      if (i < a.length) { if (a[i] != null) { cur.left = new TreeNode(a[i]); q.add(cur.left); } i++; }
+      if (i < a.length) { if (a[i] != null) { cur.right = new TreeNode(a[i]); q.add(cur.right); } i++; }
+    }
+    return root;
+  }
+  static String groupsJson(java.util.List<java.util.List<Integer>> in, boolean unordered) {
+    java.util.List<java.util.List<Integer>> c = new java.util.ArrayList<>();
+    if (in != null) {
+      for (java.util.List<Integer> g : in) {
+        java.util.List<Integer> x = new java.util.ArrayList<>(g);
+        if (unordered) java.util.Collections.sort(x);
+        c.add(x);
+      }
+    }
+    if (unordered) c.sort((a, b) -> a.toString().compareTo(b.toString()));
+    StringBuilder sb = new StringBuilder("[");
+    for (int i = 0; i < c.size(); i++) {
+      if (i > 0) sb.append(",");
+      sb.append("[");
+      java.util.List<Integer> g = c.get(i);
+      for (int j = 0; j < g.size(); j++) { if (j > 0) sb.append(","); sb.append(g.get(j)); }
+      sb.append("]");
+    }
+    return sb.append("]").toString();
+  }
+  static java.util.List<java.util.List<Integer>> expGroups(int[][] e) {
+    java.util.List<java.util.List<Integer>> out = new java.util.ArrayList<>();
+    for (int[] g : e) { java.util.List<Integer> x = new java.util.ArrayList<>(); for (int n : g) x.add(n); out.add(x); }
+    return out;
+  }
   static String esc(String s) {
     if (s == null) return "";
     return s.replace("\\\\", "\\\\\\\\").replace("\\"", "\\\\\\"").replace("\\n", " ");
@@ -153,6 +204,11 @@ function javaTestBlock(problem: Problem, t: TestCase, i: number): string {
     case "intervals":
       body = `int[][] got = ${call}; boolean pass = java.util.Arrays.deepEquals(got, ${exp}); System.out.println("__RESULT__{\\"index\\":${i},\\"got\\":" + gridJson(got) + ",\\"passed\\":" + pass + "}");`;
       break;
+    case "treeGroups": {
+      const treeCall = `sol.${problem.javaMethod}(${t.args.map((a, ai) => (ai === 0 ? `buildTree(${jTreeLit(a)})` : jLit(a))).join(", ")})`;
+      body = `java.util.List<java.util.List<Integer>> got = ${treeCall}; String gotJson = groupsJson(got, ${problem.compare === "unorderedGroups"}); boolean pass = gotJson.equals(groupsJson(expGroups(${exp}), ${problem.compare === "unorderedGroups"})); System.out.println("__RESULT__{\\"index\\":${i},\\"got\\":" + gotJson + ",\\"passed\\":" + pass + "}");`;
+      break;
+    }
   }
   return `    try { ${body} } catch (Throwable e) { System.out.println("__RESULT__{\\"index\\":${i},\\"got\\":null,\\"passed\\":false,\\"error\\":\\"" + esc(String.valueOf(e.getMessage())) + "\\"}"); }`;
 }
