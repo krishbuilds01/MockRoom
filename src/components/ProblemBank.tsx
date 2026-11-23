@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import {
   bankCompanies,
@@ -63,11 +63,13 @@ export default function ProblemBank({
   fixedFormat,
   initialFormat = "all",
   focusSlug,
+  focusFromUrl = false,
   showShortcuts = true,
 }: {
   fixedFormat?: BankFormat;
   initialFormat?: FormatFilter;
   focusSlug?: string;
+  focusFromUrl?: boolean;
   showShortcuts?: boolean;
 }) {
   const [format, setFormat] = useState<FormatFilter>(fixedFormat ?? initialFormat);
@@ -75,7 +77,13 @@ export default function ProblemBank({
   const [company, setCompany] = useState("All");
   const [difficulty, setDifficulty] = useState("All");
   const [topic, setTopic] = useState("All");
+  const urlFocus = useSyncExternalStore(
+    () => () => {},
+    () => (focusFromUrl ? new URLSearchParams(window.location.search).get("focus") ?? undefined : undefined),
+    () => undefined
+  );
   const focusRef = useRef<HTMLTableRowElement | null>(null);
+  const activeFocus = focusSlug ?? urlFocus;
 
   const companies = useMemo(() => bankCompanies(), []);
   const topics = useMemo(() => bankTopics(fixedFormat ?? format), [fixedFormat, format]);
@@ -102,10 +110,10 @@ export default function ProblemBank({
   }, [format, query, company, difficulty, topic]);
 
   useEffect(() => {
-    if (focusSlug && focusRef.current) {
+    if (activeFocus && focusRef.current) {
       focusRef.current.scrollIntoView({ block: "center" });
     }
-  }, [focusSlug, filtered]);
+  }, [activeFocus, filtered]);
 
   function chooseFormat(f: FormatFilter) {
     setFormat(f);
@@ -220,7 +228,7 @@ export default function ProblemBank({
           <tbody className="divide-y divide-line">
             {filtered.map((p: BankProblem) => {
               const slug = slugify(p.title);
-              const isFocus = focusSlug === slug;
+              const isFocus = activeFocus === slug;
               return (
                 <tr key={slug} ref={isFocus ? focusRef : undefined} className={isFocus ? "bg-accent-soft" : "transition hover:bg-panel2"}>
                   <td className="px-4 py-3.5">
