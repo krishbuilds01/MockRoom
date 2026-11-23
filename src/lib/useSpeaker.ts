@@ -270,7 +270,6 @@ export function useSpeaker(callbacks?: SpeakerCallbacks, voiceName?: string, pit
           if (token !== tokenRef.current) return;
           const isLast = i === chunks.length - 1;
           if (result !== "timeout" && result) {
-            if (isLast) fireAboutToEnd();
             played = await playUrl(result, token, isLast ? fireAboutToEnd : undefined);
             if (token !== tokenRef.current) return;
             if (played) setVoiceSource(engineByUrlRef.current.get(result) === "edge" ? "edge" : "gemini");

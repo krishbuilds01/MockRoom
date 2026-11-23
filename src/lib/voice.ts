@@ -37,6 +37,16 @@ export function chunkForSpeech(text: string): string[] {
     }
   }
   if (buf) chunks.push(buf);
+  if (chunks.length > 1 && chunks[0].length > 160) {
+    const first = splitSentences(chunks[0]);
+    let head = "";
+    let rest: string[] = [];
+    for (const s of first) {
+      if (!head || (head + " " + s).length <= 160) head = head ? head + " " + s : s;
+      else rest.push(s);
+    }
+    if (rest.length) chunks.splice(0, 1, head, rest.join(" "));
+  }
   return chunks;
 }
 
