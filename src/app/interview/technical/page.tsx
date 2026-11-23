@@ -1128,10 +1128,10 @@ function TechnicalRoom() {
             )}
           </div>
           <div className="bg-panel p-3">
-            <div className="relative h-[380px] overflow-hidden rounded-[10px] border border-line bg-[#1b1813] sm:h-[440px] lg:h-[520px]">
+            <div className="relative h-[380px] overflow-hidden rounded-[10px] border border-line bg-[#1b1b1d] sm:h-[440px] lg:h-[520px]">
               {editorFailed ? (
                 <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
-                  <p className="text-sm font-medium text-[#ede8de]">The code editor could not load</p>
+                  <p className="text-sm font-medium text-white">The code editor could not load</p>
                   <p className="max-w-sm text-[13px] leading-5 text-neutral-400">
                     The editor loads from a CDN, so a blocked or slow connection can stop it. Check your connection and try again.
                   </p>
@@ -1153,9 +1153,9 @@ function TechnicalRoom() {
                     inherit: true,
                     rules: [],
                     colors: {
-                      "editor.background": "#1b1813",
-                      "editor.lineHighlightBackground": "#26221b",
-                      "editorGutter.background": "#1b1813",
+                      "editor.background": "#1b1b1d",
+                      "editor.lineHighlightBackground": "#29292d",
+                      "editorGutter.background": "#1b1b1d",
                     },
                   });
                 }}

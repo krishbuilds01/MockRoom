@@ -122,7 +122,7 @@ export default function Home() {
               <p className="text-sm leading-6 text-neutral-700">
                 Given an array of strings strs, group the anagrams together. You can return the answer in any order.
               </p>
-              <pre className="mt-4 overflow-x-auto rounded-lg bg-[#12100d] p-4 font-mono text-[13px] leading-6 text-[#ede8de]">{PREVIEW_CODE}</pre>
+              <pre className="mt-4 overflow-x-auto rounded-lg bg-[#131315] p-4 font-mono text-[13px] leading-6 text-[#e8e8eb]">{PREVIEW_CODE}</pre>
               <div className="mt-4 space-y-3 border-t border-line pt-4">
                 {PREVIEW_LINES.map((line) => (
                   <div key={line} className="flex gap-3">
@@ -228,7 +228,7 @@ export default function Home() {
                     {`${new Date(latest.date).toLocaleDateString()} · Overall `}
                     <span className="tnum font-medium text-neutral-900">{latestOverall}/10</span>
                     {trendDelta !== null && (
-                      <span className={trendDelta >= 0 ? "font-medium text-[#6fd598]" : "font-medium text-neutral-600"}>
+                      <span className={trendDelta >= 0 ? "font-medium text-[#73c493]" : "font-medium text-neutral-600"}>
                         {` · ${trendDelta >= 0 ? "+" : ""}${trendDelta} vs the one before`}
                       </span>
                     )}
