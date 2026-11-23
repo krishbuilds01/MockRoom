@@ -172,6 +172,16 @@ export function candidateQuestionAnswer(qRaw: string): string {
   return "Good question. The short answer: this role sits in a product team that ships weekly, reviews carefully, and expects engineers to own their work end to end. The longer answer would come from the hiring manager round.";
 }
 
+export function answerExcerpt(answer: string): string {
+  const words = answer.replace(/\s+/g, " ").trim().split(" ").filter(Boolean);
+  const fillers = new Set(["so", "well", "um", "uh", "basically", "actually", "like", "okay", "right", "yeah"]);
+  let i = 0;
+  while (i < words.length - 6 && fillers.has(words[i].toLowerCase().replace(/[^a-z]/g, ""))) i++;
+  const slice = words.slice(i, i + 6);
+  if (slice.length < 3) return "";
+  return slice.join(" ").replace(/[.!?,;:]+$/, "");
+}
+
 export function generalFollowUp(answer: string, difficulty: string, qIndex: number): string {
   const a = answer.toLowerCase();
   const ack = pickAck(qIndex * 7 + wordCount(answer));
@@ -181,6 +191,8 @@ export function generalFollowUp(answer: string, difficulty: string, qIndex: numb
     }
     return `${ack} That is too vague, and I am not moving on yet. Give me a concrete example, exact steps, or numbers. No general statements.`;
   }
+  const excerpt = wordCount(answer) >= 10 ? answerExcerpt(answer) : "";
+  const heard = excerpt ? ` You said "${excerpt}...".` : "";
   if (a.includes("trade") || a.includes("because") || a.includes("so that")) {
     return difficulty === "Hard"
       ? `${ack} You gave a reason. Now defend it: what alternative did you reject, and what evidence would change your mind?`
@@ -189,11 +201,23 @@ export function generalFollowUp(answer: string, difficulty: string, qIndex: numb
   if (a.includes("example") || a.includes("project") || a.includes("built") || a.includes("work")) {
     return difficulty === "Hard"
       ? `${ack} Now the hard part: what was the trade-off in that choice, and what breaks first at ten times the scale? Be specific.`
-      : `${ack} Good, a real example. Why did you pick that approach over the simpler option? What did it cost you?`;
+      : `${ack} Good, a real example.${heard} Why did you pick that approach over the simpler option? What did it cost you?`;
   }
-  if (difficulty === "Easy") return `${ack} Decent start, but I need one layer deeper: give me one real example and say exactly why it worked.`;
-  if (difficulty === "Hard") return `${ack} You gave me the what, not the why. Justify it: name the alternative you rejected and the evidence behind the choice.`;
-  return `${ack} That is surface level. Give me one concrete example and explain why you chose that approach over the alternatives.`;
+  if (difficulty === "Easy") {
+    const probes = [
+      `Decent start.${heard} But I need one layer deeper: give me one real example and say exactly why it worked.`,
+      `That is the outline.${heard} Now fill it in: one real case where you used this, and what happened.`,
+      `Okay, that is the textbook version.${heard} Now yours: where have you actually run into this, and what did you do?`,
+    ];
+    return `${ack} ${probes[qIndex % probes.length]}`;
+  }
+  if (difficulty === "Hard") return `${ack} You gave me the what, not the why.${heard} Justify it: name the alternative you rejected and the evidence behind the choice.`;
+  const probes = [
+    `That is surface level.${heard} Give me one concrete example and explain why you chose that approach over the alternatives.`,
+    `That stays general.${heard} Pin it down: one real example, with the steps in order.`,
+    `I have heard the general version.${heard} Give me the specific one: a real case, the numbers, and the outcome.`,
+  ];
+  return `${ack} ${probes[qIndex % probes.length]}`;
 }
 
 export function generalSecondFollowUp(answer: string, difficulty: string): string {

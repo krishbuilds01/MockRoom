@@ -706,6 +706,12 @@ function TechnicalRoom() {
     commitAi(reply);
   }
 
+  function wrapLine(): string {
+    return Math.floor((Date.now() - startedAt) / 1000) > targetSec
+      ? "We are right at time. Before we finish, do you have any questions for me, about the role or the team?"
+      : "We have a couple of minutes left. Do you have any questions for me, about the role or the team?";
+  }
+
   async function submitPanel(preset?: string) {
     const text = (preset ?? input).trim();
     if (!text || pendingRef.current) return;
@@ -821,7 +827,7 @@ function TechnicalRoom() {
       if (stated) {
         complexityRef.current = { answer: stated.answer, correct: stated.correct };
         setPhase("candidate");
-        commitAi(`${reaction} ${complexityConfirmation(problem, stated.correct)} We have a couple of minutes left. Do you have any questions for me, about the role or the team?`, true);
+        commitAi(`${reaction} ${complexityConfirmation(problem, stated.correct)} ${wrapLine()}`, true);
         return;
       }
       setPhase("review");
@@ -838,7 +844,7 @@ function TechnicalRoom() {
         ? `Right, that is correct, and it is recorded. For the record: ${problem.complexity}`
         : `That is not right, and it is recorded. ${problem.complexity}`;
       setPhase("candidate");
-      commitAi(`${reaction} We have a couple of minutes left. Do you have any questions for me, about the role or the team?`, true);
+      commitAi(`${reaction} ${wrapLine()}`, true);
       return;
     }
 

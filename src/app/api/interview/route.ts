@@ -89,7 +89,7 @@ function buildPrompt(mode: Mode, body: Record<string, unknown>): string {
 
   if (mode === "general") {
     base.push(`The candidate just answered an interview question. Their answer: "${message}"`);
-    base.push("Judge the answer hard. If it is thin or generic, say so plainly and demand a concrete example with specifics. If it has substance, ask ONE deeper follow-up about trade-offs, failure cases, or scale. Do not start a new topic.");
+    base.push("Judge the answer hard. If it is thin or generic, say so plainly and demand a concrete example with specifics. If it has substance, ask ONE deeper follow-up about trade-offs, failure cases, or scale. Name one specific thing from their answer in your reply: a tool, a step, a number, or a phrase they used, so it is clear you listened to that answer and are not asking a generic question. Do not start a new topic.");
   } else if (mode === "approach") {
     base.push(`Before coding, the candidate explained their approach: "${message}"`);
     base.push("React like a strict interviewer. If the approach is brute force and the difficulty is Mid or Hard, challenge them to find the faster approach before coding. If it is vague, demand the data structure, the main pass, and the return value. If it is sound, say so in a few words and ask ONE probing question about complexity or an edge case, then tell them to start coding. If the candidate already stated a time or space complexity in the approach, acknowledge it in a few words, say it is recorded, and do not ask for the complexity again.");

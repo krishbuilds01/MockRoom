@@ -491,7 +491,8 @@ function GeneralRoom() {
 
   function questionText(idx: number): string {
     const halfway = idx === Math.floor(questions.length / 2);
-    const prefix = halfway ? "We are about halfway through. " : "";
+    const transitions = ["Alright, moving on. ", "Okay, next one. ", "Let us switch gears. ", "Right, next question. "];
+    const prefix = halfway ? "We are about halfway through. " : idx > 0 ? transitions[(idx - 1) % transitions.length] : "";
     const star = isBehavioural(questions[idx]) ? STAR_SUFFIX : "";
     return `${prefix}Question ${idx + 1}: ${questions[idx]}${star}`;
   }
@@ -619,7 +620,12 @@ function GeneralRoom() {
     if (next >= questions.length) {
       setQIndex(next);
       setPhase("candidate");
-      sayNow("That covers my questions. We have a couple of minutes left. Do you have any questions for me, about the role or the team?");
+      const overTime = Math.floor((Date.now() - startedAt) / 1000) > targetSec;
+      sayNow(
+        overTime
+          ? "That covers my questions, and we are right at time. Before we finish, do you have any questions for me, about the role or the team?"
+          : "That covers my questions. We have a couple of minutes left. Do you have any questions for me, about the role or the team?"
+      );
       return;
     }
     setQIndex(next);
