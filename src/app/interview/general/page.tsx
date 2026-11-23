@@ -782,7 +782,7 @@ function GeneralRoom() {
                 </span>
               )}
             </div>
-            <div className="tnum mt-1 font-mono text-xs text-neutral-500">
+            <div className="tnum mt-1 text-xs text-neutral-500">
               {`${statusLine} · ${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, "0")} of about ${Math.round(targetSec / 60)} min target${engineLabel ? ` · AI: ${engineLabel}` : ""}${voiceLabel ? ` · Voice: ${voiceLabel}` : ""}`}
             </div>
           </div>

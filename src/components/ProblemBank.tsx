@@ -146,7 +146,7 @@ export default function ProblemBank({
                 onClick={() => chooseFormat(t.key)}
                 className={`relative pb-3 text-[15px] transition-colors ${isActive ? "font-medium text-neutral-900" : "text-neutral-600 hover:text-neutral-900"}`}
               >
-                {t.label} <span className="tnum font-mono text-[13px] text-neutral-500">{counts.get(t.key)}</span>
+                {t.label} <span className="tnum text-[13px] text-neutral-500">{counts.get(t.key)}</span>
                 {isActive && <span className="absolute inset-x-0 bottom-0 h-[2px] bg-accent" aria-hidden="true" />}
               </button>
             );
@@ -203,7 +203,7 @@ export default function ProblemBank({
                   {c.name.charAt(0)}
                 </span>
                 {c.name}
-                <span className="tnum font-mono text-neutral-500">{c.count}</span>
+                <span className="tnum text-neutral-500">{c.count}</span>
               </button>
             );
           })}

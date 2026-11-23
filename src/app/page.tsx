@@ -108,15 +108,15 @@ export default function Home() {
               <Link href="/setup" className="btn btn-primary h-12 px-6 text-[15px]">Start an interview</Link>
               <Link href="/problems" className="btn btn-secondary h-12 px-6 text-[15px]">Browse problems</Link>
             </div>
-            <p className="tnum mt-6 font-mono text-[13px] text-neutral-500">
+            <p className="mt-6 text-[13px] text-neutral-500">
               {problemBank.length} problems · {companyCount} companies · free to use
             </p>
           </div>
 
-          <div className="card overflow-hidden shadow-[0_8px_24px_rgba(0,0,0,0.4)]" aria-label="Preview of the coding room">
+          <div className="card overflow-hidden" aria-label="Preview of the coding room">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-5 py-4">
               <span className="text-sm font-medium text-neutral-900">Technical interview</span>
-              <span className="font-mono text-xs text-neutral-500">Group Anagrams · Medium</span>
+              <span className="text-xs text-neutral-500">Group Anagrams · Medium</span>
             </div>
             <div className="px-5 py-4">
               <p className="text-sm leading-6 text-neutral-700">
@@ -180,7 +180,7 @@ export default function Home() {
               <Link key={f.key} href={`/problems?format=${f.key}`} className="card block p-5 transition-colors hover:border-line2">
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="text-base font-medium text-neutral-900">{f.label}</span>
-                  <span className="tnum font-mono text-sm text-neutral-500">{countByFormat(f.key)} problems</span>
+                  <span className="tnum text-sm text-neutral-500">{countByFormat(f.key)} problems</span>
                 </div>
                 <p className="mt-2 text-sm leading-6 text-neutral-600">{f.line}</p>
                 <span className="mt-3 block text-sm font-medium text-accent">View problems</span>
@@ -259,7 +259,7 @@ export default function Home() {
                     </div>
                     <div className="mt-1.5 flex gap-2">
                       {chartSessions.map((h, i) => (
-                        <span key={h.id} className={`tnum flex-1 text-center font-mono text-xs leading-none text-neutral-500 ${chartLabelShown(i) ? "" : "invisible"}`}>{`#${chartOffset + i + 1}`}</span>
+                        <span key={h.id} className={`tnum flex-1 text-center text-xs leading-none text-neutral-500 ${chartLabelShown(i) ? "" : "invisible"}`}>{`#${chartOffset + i + 1}`}</span>
                       ))}
                     </div>
                   </div>
@@ -276,7 +276,7 @@ export default function Home() {
               <ol className="mt-4 space-y-3">
                 {firstSteps.map((step, i) => (
                   <li key={step} className="flex items-baseline gap-3 text-sm leading-6 text-neutral-600">
-                    <span className="tnum shrink-0 font-mono text-[13px] font-medium text-accent">{i + 1}</span>
+                    <span className="tnum shrink-0 text-[13px] font-medium text-accent">{i + 1}</span>
                     <span>{step}</span>
                   </li>
                 ))}
@@ -303,7 +303,7 @@ export default function Home() {
                       {h.resumeInterview && <span className="badge">Resume</span>}
                       {h.incomplete && <span className="badge badge-mid">Incomplete</span>}
                     </div>
-                    <div className="tnum mt-0.5 font-mono text-xs text-neutral-500">{`${new Date(h.date).toLocaleString()} · ${Math.round(h.timeSec / 60)} min${h.targetSec ? ` of ${Math.round(h.targetSec / 60)} target` : ""}${h.interviewerName ? ` · Interviewer: ${h.interviewerName}` : ""}`}</div>
+                    <div className="tnum mt-0.5 text-xs text-neutral-500">{`${new Date(h.date).toLocaleString()} · ${Math.round(h.timeSec / 60)} min${h.targetSec ? ` of ${Math.round(h.targetSec / 60)} target` : ""}${h.interviewerName ? ` · Interviewer: ${h.interviewerName}` : ""}`}</div>
                   </div>
                   <div className="flex flex-wrap items-center gap-4 text-xs text-neutral-600">
                     {h.type === "technical" && (

@@ -121,7 +121,7 @@ export default function ProgressPage() {
       {!analytics ? (
         <p className="pt-8 text-sm text-neutral-600">Loading your history...</p>
       ) : analytics.total === 0 ? (
-        <div className="card card-pad mt-4 max-w-xl">
+        <div className="card card-pad mt-4">
           <h2 className="text-h2 font-medium">No interviews yet</h2>
           <p className="mt-2 text-sm leading-6 text-neutral-600">
             Finish one interview and your scores, streak and topic averages appear here, computed from the sessions stored in
