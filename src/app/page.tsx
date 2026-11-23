@@ -65,8 +65,10 @@ export default function Home() {
 
   const analytics = history.length ? computeAnalytics(history) : null;
   const chronological = [...history].reverse();
-  const chartSessions = chronological.slice(-30);
+  const chartSessions = chronological.slice(-20);
   const chartOffset = chronological.length - chartSessions.length;
+  const chartLabelStep = Math.max(1, Math.ceil(chartSessions.length / 8));
+  const chartLabelShown = (i: number) => i % chartLabelStep === 0 || i === chartSessions.length - 1;
   const latest = history[0] ?? null;
   const latestOverall = latest ? overallScore(latest.scores) : null;
   const previousOverall = history.length > 1 ? overallScore(history[1].scores) : null;
@@ -232,14 +234,14 @@ export default function Home() {
                   <div>
                     <div className="text-[13px] text-neutral-600">
                       Overall score per session, numbered in the order you did them
-                      {chartOffset > 0 && <> · Showing the most recent 30 of {chronological.length} sessions</>}
+                      {chartOffset > 0 && <> · Showing the most recent 20 of {chronological.length} sessions</>}
                     </div>
                     <div className="mt-2 flex gap-2 border-b border-line2">
-                      {chartSessions.map((h) => {
+                      {chartSessions.map((h, i) => {
                         const o = overallScore(h.scores);
                         return (
                           <div key={h.id} className="flex min-w-0 flex-1 flex-col items-center gap-1.5" title={`${o}/10`}>
-                            <span className="tnum text-xs font-medium leading-none text-neutral-700">{o}</span>
+                            <span className={`tnum text-xs font-medium leading-none text-neutral-700 ${chartLabelShown(i) ? "" : "invisible"}`}>{o}</span>
                             <div className="relative h-16 w-full rounded-t bg-panel2">
                               <div className={`absolute inset-x-0 bottom-0 rounded-t ${scoreBarClass(o)}`} style={{ height: `${o * 10}%` }} />
                             </div>
@@ -249,7 +251,7 @@ export default function Home() {
                     </div>
                     <div className="mt-1.5 flex gap-2">
                       {chartSessions.map((h, i) => (
-                        <span key={h.id} className="tnum flex-1 text-center font-mono text-xs leading-none text-neutral-500">{`#${chartOffset + i + 1}`}</span>
+                        <span key={h.id} className={`tnum flex-1 text-center font-mono text-xs leading-none text-neutral-500 ${chartLabelShown(i) ? "" : "invisible"}`}>{`#${chartOffset + i + 1}`}</span>
                       ))}
                     </div>
                   </div>
