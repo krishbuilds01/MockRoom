@@ -122,6 +122,8 @@ function TechnicalRoom() {
   const [showAi, setShowAi] = useState(true);
   const [engine, setEngine] = useState<"gemini" | "local" | null>(null);
   const [waiting, setWaiting] = useState(false);
+  const [editorReady, setEditorReady] = useState(false);
+  const [editorFailed, setEditorFailed] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [sessionId, setSessionId] = useState(() => String(Date.now()));
   const sessionIdRef = useRef(sessionId);
@@ -129,6 +131,11 @@ function TechnicalRoom() {
   const [canRecord] = useState(recorderSupported);
   const [recordOn, setRecordOn] = useState(false);
   const [hasStream, setHasStream] = useState(false);
+  useEffect(() => {
+    if (editorReady) return;
+    const t = setTimeout(() => setEditorFailed(true), 12000);
+    return () => clearTimeout(t);
+  }, [editorReady]);
   const streamRef = useRef<MediaStream | null>(null);
   const pendingBlobRef = useRef<Blob | null>(null);
   const [startedAt, setStartedAt] = useState(() => Date.now());
@@ -1109,11 +1116,23 @@ function TechnicalRoom() {
           </div>
           <div className="bg-panel p-3">
             <div className="relative h-[380px] overflow-hidden rounded-[10px] border border-line bg-[#1b1813] sm:h-[440px] lg:h-[520px]">
+              {editorFailed ? (
+                <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
+                  <p className="text-sm font-medium text-[#ede8de]">The code editor could not load</p>
+                  <p className="max-w-sm text-[13px] leading-5 text-neutral-400">
+                    The editor loads from a CDN, so a blocked or slow connection can stop it. Check your connection and try again.
+                  </p>
+                  <button type="button" onClick={() => window.location.reload()} className="btn btn-secondary btn-sm">
+                    Retry
+                  </button>
+                </div>
+              ) : (
               <Editor
                 height="100%"
                 language={lang}
                 value={code}
                 onChange={onCodeChange}
+                onMount={() => setEditorReady(true)}
                 theme="interviewai-dark"
                 beforeMount={(monaco) => {
                   monaco.editor.defineTheme("interviewai-dark", {
@@ -1129,6 +1148,7 @@ function TechnicalRoom() {
                 }}
                 options={{ minimap: { enabled: false }, fontSize: 14, scrollBeyondLastLine: false, wordWrap: "on" }}
               />
+              )}
             </div>
           </div>
 
