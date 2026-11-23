@@ -292,5 +292,13 @@ export function useSpeaker(callbacks?: SpeakerCallbacks, voiceName?: string, pit
     [fetchTts, playUrl, stop, beginSpeech, endSpeech, fireAboutToEnd, pitch]
   );
 
-  return { speak, stop, voiceSource, speaking, unlock };
+  const prefetch = useCallback(
+    (text: string) => {
+      if (!text.trim()) return;
+      for (const c of chunkForSpeech(text)) void fetchTts(c);
+    },
+    [fetchTts]
+  );
+
+  return { speak, stop, voiceSource, speaking, unlock, prefetch };
 }
