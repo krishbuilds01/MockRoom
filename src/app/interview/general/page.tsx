@@ -24,6 +24,7 @@ import {
   type SessionRecord,
 } from "@/lib/interviewer";
 import { getInterviewer } from "@/lib/interviewers";
+import { computeDelivery } from "@/lib/delivery";
 import { targetSecFor } from "@/lib/problems";
 import { companyContext, companyQuestions, getCompany } from "@/lib/companies";
 import { buildResumeQuestionsLocal, RESUME_QUESTIONS_KEY, RESUME_STORAGE_KEY, type ResumeQuestion } from "@/lib/resume";
@@ -602,7 +603,7 @@ function GeneralRoom() {
       hintsUsed: 0,
     };
     const scores = computeScores(signals);
-    return {
+    const rec: SessionRecord = {
       id: sessionIdRef.current,
       type: "general",
       difficulty: sessionConfigRef.current.difficulty,
@@ -628,6 +629,8 @@ function GeneralRoom() {
       incomplete,
       qaPairs: qaRef.current.filter(Boolean),
     };
+    rec.delivery = computeDelivery(rec) ?? undefined;
+    return rec;
   }
 
   function onCameraStream(s: MediaStream | null) {

@@ -1,4 +1,5 @@
 import type { Difficulty, Problem } from "./problems";
+import type { DeliverySummary } from "./delivery";
 import { pushSession } from "./sync";
 
 export interface Msg {
@@ -649,6 +650,7 @@ export interface SessionRecord {
   incomplete?: boolean;
   codeChanged?: boolean;
   qaPairs?: { question: string; answer?: string; target?: string }[];
+  delivery?: DeliverySummary;
 }
 
 export function saveSession(rec: SessionRecord) {

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getProblemById, langLabel, problems } from "@/lib/problems";
 import { overallScore, type SessionRecord } from "@/lib/interviewer";
 import { companyVerdict, phaseNotes, recommendNext, weakAreas } from "@/lib/feedback";
+import { computeDelivery, type StarCheck } from "@/lib/delivery";
 import { deleteRecording, loadRecording } from "@/lib/recording";
 import { loadHistory } from "@/lib/analytics";
 import { scoreBarClass } from "@/lib/scoreColor";
@@ -21,6 +22,20 @@ function validRecord(raw: string | null): SessionRecord | null {
   } catch {
     return null;
   }
+}
+
+function starLine(star: StarCheck): string {
+  const parts: { key: keyof StarCheck; label: string }[] = [
+    { key: "situation", label: "Situation" },
+    { key: "task", label: "Task" },
+    { key: "action", label: "Action" },
+    { key: "result", label: "Result" },
+  ];
+  const present = parts.filter((p) => star[p.key]).map((p) => p.label);
+  const missing = parts.filter((p) => !star[p.key]).map((p) => p.label);
+  if (!missing.length) return "STAR: all four parts came through - Situation, Task, Action and Result.";
+  if (!present.length) return "STAR: none of the four parts came through. Structure it as Situation, Task, Action, Result.";
+  return `STAR: ${present.join(", ")} came through; ${missing.join(", ")} missing.`;
 }
 
 function axisNote(rec: SessionRecord, axis: "problemSolving" | "coding" | "communication" | "complexity"): string | null {
@@ -117,6 +132,7 @@ export default function FeedbackPage() {
   const notes = phaseNotes(rec, techProblem);
   const weak = weakAreas(rec, techProblem);
   const next = recommendNext(rec, techProblem);
+  const delivery = rec.delivery ?? computeDelivery(rec);
   const overall = overallScore(rec.scores);
   const target = rec.targetSec;
   const duration = `${Math.floor(rec.timeSec / 60)} min ${rec.timeSec % 60} sec`;
@@ -266,6 +282,51 @@ export default function FeedbackPage() {
                     </div>
                   ))}
                 </div>
+              </section>
+            )}
+
+            {delivery && (
+              <section className="py-4">
+                <h2 className="text-sm font-semibold">Delivery</h2>
+                <p className="mt-1 text-xs text-neutral-600">How you sounded, counted from your own words. The scores are about content; this is about how the answers landed.</p>
+                <dl className="mt-2 space-y-1.5 text-[13px] leading-5">
+                  <div className="flex gap-3">
+                    <dt className="w-32 shrink-0 text-neutral-600">Filler words</dt>
+                    <dd className="min-w-0 text-neutral-700">
+                      {delivery.fillerCount} in {delivery.totalWords} words ({delivery.fillerPer100.toFixed(1)} per 100 words). {delivery.fillerVerdict}
+                    </dd>
+                  </div>
+                  <div className="flex gap-3">
+                    <dt className="w-32 shrink-0 text-neutral-600">{rec.type === "technical" ? "Chat answers" : "Answer length"}</dt>
+                    <dd className="min-w-0 text-neutral-700">
+                      {rec.type === "technical" ? (
+                        <>About {delivery.avgAnswerWords} words per chat answer, not counting short commands like run or hint.</>
+                      ) : (
+                        <>
+                          About {delivery.avgAnswerWords} words per answer.
+                          {delivery.thinCount > 0 && ` ${delivery.thinCount} answer${delivery.thinCount > 1 ? "s were" : " was"} too thin (under 25 words).`}
+                          {delivery.ramblingCount > 0 && ` ${delivery.ramblingCount} answer${delivery.ramblingCount > 1 ? "s" : ""} ran long (over 220 words) and risked losing the interviewer.`}
+                        </>
+                      )}
+                    </dd>
+                  </div>
+                </dl>
+                {delivery.answers.length > 0 && (
+                  <div className="mt-2 divide-y divide-line">
+                    {delivery.answers.map((a) => (
+                      <div key={a.label} className="py-2.5 last:pb-0">
+                        <div className="flex items-baseline justify-between gap-3">
+                          <span className="text-[13px] font-medium">{a.label}</span>
+                          <span className="tnum text-[13px] text-neutral-600">{a.words} words</span>
+                        </div>
+                        {a.flag === "thin" && <p className="mt-0.5 text-[13px] leading-5 text-neutral-700">Too thin. Add an example, the steps you took, and the result.</p>}
+                        {a.flag === "rambling" && <p className="mt-0.5 text-[13px] leading-5 text-neutral-700">Long. Land the point earlier; detail comes after the headline, not before it.</p>}
+                        {a.star && <p className="mt-0.5 text-[13px] leading-5 text-neutral-600">{starLine(a.star)}</p>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {delivery.starOverall && <p className="mt-2 text-[13px] leading-5 text-neutral-600">{starLine(delivery.starOverall)} Judged across all your answers together.</p>}
               </section>
             )}
 

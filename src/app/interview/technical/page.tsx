@@ -51,6 +51,7 @@ import {
   type Msg,
   type SessionRecord,
 } from "@/lib/interviewer";
+import { computeDelivery } from "@/lib/delivery";
 import { postInterview, type InterviewApiResponse } from "@/lib/interviewApi";
 import { companyTechnicalContext, getCompany } from "@/lib/companies";
 import { getInterviewer } from "@/lib/interviewers";
@@ -855,7 +856,7 @@ function TechnicalRoom() {
       transcriptCount: finalTranscript.length,
     };
     const scores = computeScores(signals);
-    return {
+    const rec: SessionRecord = {
       id: sessionIdRef.current,
       type: "technical",
       difficulty: sessionConfigRef.current.difficulty,
@@ -889,6 +890,8 @@ function TechnicalRoom() {
       incomplete,
       codeChanged: codeChangedNow(),
     };
+    rec.delivery = computeDelivery(rec) ?? undefined;
+    return rec;
   }
 
   function onCameraStream(s: MediaStream | null) {
